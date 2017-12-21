@@ -316,7 +316,6 @@ public class AdapterContent extends AbstractQCModule {
 		}
 		
 		public void expandLengthTo (int newLength) {
-			System.err.println("Expanding to "+newLength);
 			long [] newPositions = new long[newLength];
 			for (int i=0;i<positions.length;i++) {
 				newPositions[i] = positions[i];
