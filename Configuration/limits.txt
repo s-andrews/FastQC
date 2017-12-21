@@ -1,0 +1,84 @@
+# For each of the modules you can choose to not run that
+# module at all by setting the value below to 1 for the
+# modules you want to remove.
+duplication 		ignore 		0
+kmer 				ignore 		0
+n_content 			ignore 		0
+overrepresented 	ignore 		0
+quality_base 		ignore 		0
+sequence 			ignore 		0
+gc_sequence			ignore 		0
+quality_sequence	ignore		0
+tile				ignore		0
+sequence_length		ignore		0
+adapter				ignore		0
+
+# For the duplication module the value is the percentage
+# remaining after deduplication.  Measured levels below
+# these limits trigger the warning / error.
+duplication	warn	70
+duplication error	50
+
+# For the kmer module the filter is on the -log10 binomial
+# pvalue for the most significant Kmer, so 5 would be 
+# 10^-5 = p<0.00001
+kmer	warn	2
+kmer	error	5
+
+# For the N module the filter is on the percentage of Ns
+# at any position in the library
+n_content	warn	5
+n_content	error	20
+
+# For the overrepresented seqs the warn value sets the
+# threshold for the overrepresented sequences to be reported
+# at all as the proportion of the library which must be seen
+# as a single sequence
+overrepresented	warn	0.1
+overrepresented	error	1
+
+# The per base quality filter uses two values, one for the value
+# of the lower quartile, and the other for the value of the
+# median quality.  Failing either of these will trigger the alert
+quality_base_lower	warn	10
+quality_base_lower	error	5
+quality_base_median	warn	25
+quality_base_median	error	20
+
+# The per base sequence content module tests the maximum deviation
+# between A and T or C and G
+sequence	warn	10
+sequence	error	20
+
+# The per sequence GC content tests the maximum deviation between
+# the theoretical distribution and the real distribution
+gc_sequence	warn	15
+gc_sequence	error	30
+
+# The per sequence quality module tests the phred score which is
+# most frequently observed
+quality_sequence	warn	27
+quality_sequence	error	20
+
+# The per tile module tests the maximum phred score loss between 
+# and individual tile and the average for that base across all tiles
+tile	warn	5
+tile	error	10
+
+# The sequence length module tests are binary, so the values here
+# simply turn them on or off.  The actual tests warn if you have
+# sequences of different length, and error if you have sequences
+# of zero length.
+
+sequence_length	warn	1
+sequence_length	error	1
+
+# The adapter module's warnings and errors are based on the 
+# percentage of reads in the library which have been observed
+# to contain an adapter associated Kmer at any point
+
+adapter	warn	5
+adapter	error	10
+
+
+	

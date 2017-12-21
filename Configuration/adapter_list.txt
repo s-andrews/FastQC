@@ -1,0 +1,26 @@
+# This file contains a set of sequence fragments which will be explicitly
+# searched against your library.  The reporting will be similar to the 
+# Kmer plot, except that every sequence in this list will be shown so 
+# you can use this to judge the level of adapter read-through even if those
+# adapter sequences aren't picked out by the Kmer module.
+#
+# Since every sequence here will be analysed and the results plotted it 
+# doesn't make any sense to include duplicate sequences, or to add too
+# many sequences since your plot will end up a mess.
+#
+# You can add more sequences to the file by putting one line per entry
+# and specifying a name[tab]sequence.  If the contaminant you add is 
+# likely to be of use to others please consider sending it to the FastQ
+# authors, either via a bug report at www.bioinformatics.babraham.ac.uk/bugzilla/
+# or by directly emailing simon.andrews@babraham.ac.uk so other users of
+# the program can benefit.
+#
+# For the time being it's going to be easier to interpret this plot if all
+# of the sequences provided are the same length, so we've gone with 12bp
+# fragments for now.
+
+Illumina Universal Adapter					AGATCGGAAGAG
+Illumina Small RNA 3' Adapter				TGGAATTCTCGG
+Illumina Small RNA 5' Adapter				GATCGTCGGACT
+Nextera Transposase Sequence				CTGTCTCTTATA
+SOLID Small RNA Adapter						CGCCTTGGCCGT

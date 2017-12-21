@@ -1,0 +1,63 @@
+<html>
+
+<head>
+<title>Per Sequence GC Content</title>
+<style type="text/css">
+	body {
+		font-family: sans-serif;
+	}
+</style>
+</head>
+<body>
+<h1>Per Sequence GC Content</h1>
+<h2>Summary</h2>
+<p>
+This module measures the GC content across the whole length
+of each sequence in a file and compares it to a modelled 
+normal distribution of GC content.
+</p>
+
+<p><img src="per_sequence_gc_content.png"></p>
+
+<p>
+In a normal random library you would expect to see a roughly
+normal distribution of GC content where the central peak 
+corresponds to the overall GC content of the underlying genome.
+Since we don't know the the GC content of the genome the modal
+GC content is calculated from the observed data and used to
+build a reference distribution.
+</p>
+
+<p>
+An unusually shaped distribution could indicate a contaminated
+library or some other kinds of biased subset.  A normal distribution
+which is shifted indicates some systematic bias which is independent
+of base position.  If there is a systematic bias which creates a
+shifted normal distribution then this won't be flagged as an error
+by the module since it doesn't know what your genome's GC content
+should be.
+</p>
+
+<h2>Warning</h2>
+<p>
+A warning is raised if the sum of the deviations from the normal 
+distribution represents more than 15% of the reads.
+</p>
+
+<h2>Failure</h2>
+<p>
+This module will indicate a failure if the sum of the deviations from
+the normal distribution represents more than 30% of the reads.
+</p>
+
+<h2>Common reasons for warnings</h2>
+<p>
+Warnings in this module usually indicate a problem with the library.  Sharp
+peaks on an otherwise smooth distribution are normally the result of a specific
+contaminant (adapter dimers for example), which may well be picked up by the
+overrepresented sequences module.  Broader peaks may represent contamination
+with a different species.
+</p>
+
+</body>
+</html>

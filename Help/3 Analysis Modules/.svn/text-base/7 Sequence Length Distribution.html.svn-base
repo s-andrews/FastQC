@@ -1,0 +1,49 @@
+<html>
+
+<head>
+<title>Sequence Length Distribution</title>
+<style type="text/css">
+	body {
+		font-family: sans-serif;
+	}
+</style>
+</head>
+<body>
+<h1>Sequence Length Distribution</h1>
+<h2>Summary</h2>
+<p>
+Some high throughput sequencers generate sequence fragments
+of uniform length, but others can contain reads of wildly
+varying lengths.  Even within uniform length libraries some 
+pipelines will trim sequences to remove poor quality base calls 
+from the end.
+</p>
+<p>
+This module generates a graph showing the distribution of fragment
+sizes in the file which was analysed.
+</p>
+<p><img src="sequence_length_distribution.png"></p>
+<p>
+In many cases this will produce a simple graph showing a peak only
+at one size, but for variable length FastQ files this will show the
+relative amounts of each different size of sequence fragment.
+</p>
+
+<h2>Warning</h2>
+<p>
+This module will raise a warning if all sequences are not the same length.
+</p>
+
+<h2>Failure</h2>
+<p>
+This module will raise an error if any of the sequences have zero length.
+</p>
+
+<h2>Common reasons for warnings</h2>
+<p>
+For some sequencing platforms it is entirely normal to have different read
+lengths so warnings here can be ignored.
+</p>
+
+</body>
+</html>

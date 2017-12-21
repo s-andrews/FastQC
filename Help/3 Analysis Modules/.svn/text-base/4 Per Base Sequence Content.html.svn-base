@@ -1,0 +1,85 @@
+<html>
+
+<head>
+<title>Per Base Sequence Content</title>
+<style type="text/css">
+	body {
+		font-family: sans-serif;
+	}
+</style>
+</head>
+<body>
+<h1>Per Base Sequence Content</h1>
+<h2>Summary</h2>
+<p>
+Per Base Sequence Content plots out the proportion of each base
+position in a file for which each of the four normal DNA bases
+has been called.
+</p>
+<p><img src="per_base_sequence_content.png"></p>
+<p>
+In a random library you would expect that there would be little
+to no difference between the different bases of a sequence run, so
+the lines in this plot should run parallel with each other.  The
+relative amount of each base should reflect the overall amount of
+these bases in your genome, but in any case they should not be
+hugely imbalanced from each other.
+</p>
+<p>
+It's worth noting that some types of library will always produce biased
+sequence composition, normally at the start of the read.  Libraries 
+produced by priming using random hexamers (including nearly all RNA-Seq libraries)
+and those which were fragmented using transposases inherit an intrinsic
+bias in the positions at which reads start. This bias does not concern 
+an absolute sequence, but instead provides enrichement of a number of 
+different K-mers at the 5' end of the reads.  Whilst this is a true
+technical bias, it isn't something which can be corrected by trimming
+and in most cases doesn't seem to adversely affect the downstream analysis.
+It will however produce a warning or error in this module.
+</p>
+
+<h2>Warning</h2>
+<p>
+This module issues a warning if the difference between A and T, or G
+and C is greater than 10% in any position.
+</p>
+
+<h2>Failure</h2>
+<p>
+This module will fail if the difference between A and T, or G and C
+is greater than 20% in any position.
+</p>
+
+<h2>Common reasons for warnings</h2>
+<p>
+There are a number of common scenarios which would ellicit a warning 
+or error from this module.
+</p>
+
+<ol>
+<li>Overrepresented sequences: If there is any evidence of overrepresented
+sequences such as adapter dimers or rRNA in a sample then these sequences 
+may bias the overall composition and their sequence will emerge from this plot.
+<li>Biased fragmentation: Any library which is generated based on the ligation
+of random hexamers or through tagmentation should theoretically have good
+diversity through the sequence, but experience has shown that these libraries 
+always have a selection bias in around the first 12bp of each run.  This is
+due to a biased selection of random primers, but doesn't represent any individually
+biased sequences.  Nearly all RNA-Seq libraries will fail this module because of
+this bias, but this is not a problem which can be fixed by processing, and it 
+doesn't seem to adversely affect the ablity to measure expression.
+<li>Biased composition libraries: Some libraries are inherently biased in their
+sequence composition.  The most obvious example would be a library which has been 
+treated with sodium bisulphite which will then have converted most of the cytosines
+to thymines, meaning that the base composition will be almost devoid of cytosines 
+and will thus trigger an error, despite this being entirely normal for that type of
+library</li>
+<li>If you are analysing a library which has been aggressivley adapter trimmed 
+then you will naturally introduce a composition bias at the end of the reads as 
+sequences which happen to match short stretches of adapter are removed, leaving 
+only sequences which do not match.  Sudden deviations in composition at the end
+of libraries which have undergone aggressive trimming are therefore likely to be
+spurious.</li>
+
+</body>
+</html>

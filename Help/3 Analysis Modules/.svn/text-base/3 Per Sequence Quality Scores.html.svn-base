@@ -1,0 +1,58 @@
+<html>
+
+<head>
+<title>Per Sequence Quality Scores</title>
+<style type="text/css">
+	body {
+		font-family: sans-serif;
+	}
+</style>
+</head>
+<body>
+<h1>Per Sequence Quality Scores</h1>
+<h2>Summary</h2>
+<p>
+The per sequence quality score report allows you to see if a subset
+of your sequences have universally low quality values.  It is often
+the case that a subset of sequences will have universally poor quality,
+often because they are poorly imaged (on the edge of the field of view
+etc), however these should represent only a small percentage of the total
+sequences.
+</p>
+<p><img src="per_sequence_quality.png"></p>
+<p>
+If a significant proportion of the sequences in a run have overall low
+quality then this could indicate some kind of systematic problem - possibly
+with just part of the run (for example one end of a flowcell).
+</p>
+
+<p>
+Results from this module will not be displayed if your input is a BAM/SAM
+file in which quality scores have not been recorded.
+</p>
+
+
+<h2>Warning</h2>
+<p>
+A warning is raised if the most frequently observed mean quality is below 27 -
+this equates to a 0.2% error rate.
+</p>
+
+<h2>Failure</h2>
+<p>
+An error is raised if the most frequently observed mean quality is below 20 -
+this equates to a 1% error rate.
+</p>
+
+<h2>Common reasons for warnings</h2>
+<p>
+This module is generally fairly robust and errors here usually indicate a general
+loss of quality within a run.  For long runs this may be alleviated through quality
+trimming.  If a bi-modal, or complex distribution is seen then the results should
+be evaluated in concert with the per-tile qualities (if available) since this might
+indicate the reason for the loss in quality of a subset of sequences.
+</p>
+
+
+</body>
+</html>

@@ -1,0 +1,853 @@
+RELEASE NOTES FOR FastQC v0.11.5
+--------------------------------
+
+This is a minor bug-fix release which addresses issues found in
+the previous release.
+
+1)  Fixed a bug in the per-base sequence content module where the warn
+    error flags were incorrectly being calculated on G-A and C-T instead
+    of G-C and T-A. 
+
+2)  Fixed the small-RNA adapter molecule sequence so that all possible
+    adapter variants would be found - the previous version would 
+    under-estimate the amount of small RNA adapter which was present in
+    a sample.
+
+3)  Fixed a typo in the documentation for the duplication plot.
+
+RELEASE NOTES FOR FastQC v0.11.4
+--------------------------------
+
+This is a minor bug-fix release which addresses issues found in
+the previous release.
+
+1) 	Changed the OSX launcher to not rely on the Mac specific JVM
+	framework, but to use any command line java which is found.  This
+	will require the user to install the JDK on newer OSX releases
+	rather than just the JVM.  See the updated version of the INSTALL.txt
+	document if you have problems with this on OSX.
+
+2)	Fixed a typo in one of the included adapter sequences in the search
+	set.
+	
+3) 	Fixed a bug which failed to remove an fq.gz extension from the 
+	name used in the report when running in offline mode.
+	
+4)	Made the per-tile quality module not collect any stats if it's
+	been disabled in limits.txt, rather than just not being included
+	in the output.
+	
+5)	Fixed a bug in the calculation of duplication levels which only 
+	affected highly duplicated ordered libraries where the count limit
+	was not reached.
+	
+6)  Fixed a bug which triggered an error flag on the per-base quality
+	plot for positions with fewer than 100 observations, where we can't
+	calculate a sensible percentile value.  Changed the text report to
+	assign NaN to these positions rather than 0.
+	
+
+
+
+RELEASE NOTES FOR FastQC v0.11.3
+--------------------------------
+
+This is a minor bug-fix release which addresses some issues 
+reported with the v0.11.2 release.
+
+1) Fixed a bug when using the limits.txt file to disable the per
+   tile analysis module.
+   
+2) Fixed a documentation error in the duplicated sequences plot.
+
+3) Fixed a thread safety bug when processing multiple files in a 
+   single session which caused the program not to exit when all
+   processing had in fact completed.
+   
+4) Fixed a bug which meant that forced formats in the interactive
+   application weren't being honoured.
+   
+5) Fixed a bug in the way soft clipping was applied when we were
+   analysing only mapped data.
+   
+6) Fix a memory issue when trying to parse tile names in cases where
+   we mistakenly think we're identify tile numbers, but we aren't
+   
+7) Fix a bug in the text reporting of per-tile quality scores
+
+8) Add the SOLID smallRNA adapter to the default adapter search set
+
+9) Fix a bug in casava mode when using uncompressed fastq files
+
+10) Increase the number of sampled sequences in the duplicate and 
+   overrepresented module to 100,000.
+   
+11) Add a clean up of data structures for the Kmer module so that
+    the interactive mode can process more files without dying.
+
+
+RELEASE NOTES FOR FastQC v0.11.2
+--------------------------------
+
+This is a minor bug-fix release which addresses some issues 
+reported with the v0.11.1 release.
+
+1) Added a proper implementation of a --limits command line
+option to allow users to specify a custom limits file for an 
+individual run.  This also fixed a bug seen if the user used the
+--adapter option.
+
+2) Fixed an error in the naming of the folder inside the zip file
+such that it couldn't be extracted into the same folder as the
+main HTML file.
+
+3) Fixed an overly large data structure which was causing some
+runs to terminate due to a lack of memory.
+
+4) Fixed a poor implementation in the Kmer module which was 
+causing unusually high memory usage.
+
+5) Fixed incorrect defaults for the warn/fail values in the per
+sequence quality module.
+
+RELEASE NOTES FOR FastQC V0.11.1
+--------------------------------
+
+FastQC v0.11.1 is the first release for a long time and is a 
+major update to the package.  This release adds some significant
+new features to the program which will hopefully make it more 
+useful.
+
+The major new features in this release are:
+
+1) Configurable thresholds for modules.  For all modules you can
+now alter a configuration file to set the thresholds used by the 
+program for warnings and errors so that you can flag up only the
+types of problem which you are concerned by.
+
+2) Optional modules.  The same configuration file used to set 
+the warn / error thresholds can also be used to selectively 
+disable modules you don't want to see at all.
+
+3) New per-tile quality analysis.  If you are running Illumina
+libraries through FastQC it will now analyse the quality calls
+on a per-tile basis and will flag up points in the run where the
+quality in individual tiles fell below the average quality for 
+that cycle.  This can help to spot technical problems during the
+run.
+
+4) New adapter content module.  A new module has been added to
+specifically search for the presence of adapters in your library.
+This operates in a similar way to the existing Kmer analysis but 
+allows you to specify individual adapter sequences to screen and
+will always show the results for each adapter so you can easily
+see what you might gain if you chose to adapter trim your library.
+
+5) Improved duplication plot.  The duplication plot has been given
+an overhaul so that it now reports values which are real read 
+numbers rather than always giving relative values.  This is thanks
+to work done by Brian Howard of sciome.com who worked out the right
+way to extrapolate from the data we sample to the full library.  It 
+also shows how the level of duplication would affect the library 
+both before and after deduplication, and the headline figure is now 
+much more  useful as it shows the percentage of the library which 
+would remain if you chose to deduplicate.
+
+6) Improved Kmer module.  The Kmer module has been changed so that
+instead of trying to search for individual Kmers which are present
+at higher than expected frequency (which actually happens all the 
+time in real libraries), it now looks for Kmers which are present 
+in significantly different amounts at different starting positions
+within the library.  This has allowed the use of longer Kmer 
+sequences to give a more useful result.
+
+7) Since file reports.  The default output format for the program 
+is now a single HTML file with all of the various graphs embedded 
+into it.  The .zip file output with the individual graphs is still 
+produced as are the associated data files, but you can just 
+distribute the one HTML file alone - the other data is no longer 
+required.
+
+8) Ability to read from stdin.  If you want to pipe a stream of
+data into fastqc rather than using a real file then you can just
+use  'stdin' as the filename to process and then stream uncompressed
+fastq data on stdin.
+
+9) Changed base groupings.  For long reads we used to use an 
+exponential series to group bases together to summarise the sequence
+content and qualities.  We've now switched the default to be that
+for grouped plots the first 9 individual bases will always be shown
+(since this often roots out problems in the libraries), after that
+there will be a series of evenly sized windows so that the same number
+of bases fall into each window.  You can bring back the old behaviour
+with the new --expgroup option, and you can remove grouping all together
+with the --nogroup option (although this will do bad things to your
+plots if you have really long reads).
+
+10) Dropped support for the Solaxa64 (but NOT Phred64) encoding.  We
+have removed the ability of the program to reliably detect the original
+Solexa64 encoding which was used in the GA pipeline prior to v1.3.
+This was a 64 offset encoding but which allowed scores which ranged
+down to -5.  Supporting this encoding meant that we would incorrectly 
+guess the encoding on Phred33 files which had no bases with quality 
+scores below 26, which could happen if you aggressively trimmed your
+data.  Supporting just Phred33 and Phred64 now means that we wouldn't
+mis-detect unless there were no bases with qualities below 31, which 
+is much less likely, even in trimmed data.  Since no Solexa64 data
+will have been produced since early 2009 it is unlikely that removing
+support for this format will adversely affect users of the program.
+
+
+RELEASE NOTES FOR FastQC V0.10.1
+--------------------------------
+
+FastQC v0.10.1 is a bugfix release which works around two problems
+people have encountered with previous releases:
+
+1) A work-round has been put into place for a limitation in the
+java gzip decompressor, where it would read only the first
+compressed block in a file created by concatenating multiple 
+gzipped files directly, rather than decompressing and recompressing
+them.
+
+2) Users who had installed the program in directories containing
+characters required to be encoded in URLs (= & ? etc) were finding
+that the report generation generated an error.  This encoding has
+now been fixed and the program should now have no limits in the 
+name of the directory in which it can be installed.
+
+One additional feature is that in the fastqc wrapper you can now
+specify the location of the java interpreter on the command line
+using the --java parameter, rather than having to have it included
+in the path.
+
+One other change in this release is that the package names for all
+of the java classes have been changed to reflect a change in the
+official project URL.  This means that the launchers for the 
+program have had to be updated to use these new names.  If you have
+created your own launcher, or had copied any of the old ones you'll
+need to update this to use the launchers included in this version
+of the program.
+
+The new URL for the project is:
+
+www.bioinformatics.babraham.ac.uk/projects/fastqc/
+
+..and if you want to report bugs the bugzilla URL is now:
+
+www.bioinformatics.babraham.ac.uk/bugzilla/
+
+
+RELEASE NOTES FOR FastQC V0.10.0
+--------------------------------
+
+The major feature of FastQC v0.10.0 is the addition of support
+for fastq files generated directly by the latest version of the
+illumina pipeline (Casava v1.8).  In this version the pipeline
+generates gzipped fastq files by default rather than using qseq
+files which can then be converted to fastq.  However the fastq
+files generated by casava are unusual in two ways:
+
+1) A single sample produces a set of fastq files with a common
+   name, but an incrementing number at the end.
+   
+2) Casava FastQ files contain sequences from clusters which have
+   failed the internal QC, and been flagged to be filtered.
+
+FastQC v0.10.0 introduces a Casava mode which will merge together
+fastq files from the same sample group and produce a single report.
+It will also exclude any flagged entries from the analysis.  You
+would therefore run FastQC as normal but selecting all of the
+fastq files from Casava and using casava mode for your analysis.
+
+Casava mode is activated from the command line by adding the 
+--casava option to the launch command. From the interactive 
+application you need to select 'Casava FastQ Files' from the drop 
+down file selector filter options.
+
+If you want to analyse casava fastq files without these extra
+options then you can use treat them as normal fastq files with 
+no problems.
+
+In addition to this change there have also been changes to allow 
+the wrapper script to work properly under windows, and a bug was
+fixed which missed of the last possible Kmer from every sequence
+in a library.
+
+
+RELEASE NOTES FOR FastQC V0.9.6
+-------------------------------
+
+FastQC v0.9.6 fixes a couple of bugs which aren't likely to have
+affected the majority of fastqc users:
+
+- Fixed a crash in the Kmer module when analysing a sequence where
+  every sequence in a library contained a poly-N stretch at its
+  3' end.
+  
+- Fixed the wrapper script so that OSX users launching fastqc
+  through the script rather than the Mac application bundle get
+  their classpath set correctly, and can therefore analyse bam/sam
+  files.
+
+
+RELEASE NOTES FOR FastQC V0.9.5
+-------------------------------
+
+FastQC v0.9.5 fixes some bugs in the programs text output and
+improves a few things in the graphical interface.  Main changes
+are:
+
+- Progress calculations are now exact and not approximate
+
+- The UI now has a welcome screen so you're not just presented
+  with a blank screen when the program starts
+
+- The wrapper script now sets the classpath correctly in windows
+  as well as linux.
+
+- The text report for per-base sequence content now reports
+  correct values for grouped bases
+
+- The HTML report uses a custom stylesheet for print output so
+  graphs aren't cut off when reports are printed.
+
+- Fixed a bug in testing for a warning in the per-base sequence
+  content module.
+  
+- Alt text in HTML reports now matches the graphic it describes
+
+
+RELEASE NOTES FOR FastQC V0.9.4
+-------------------------------
+
+FastQC v0.9.4 is a minor bugfix release which changes the offline
+version of the program so that if a file fails to be processed a
+full backtrace of the error is produced, rather than just a
+simple generic error message.
+
+RELEASE NOTES FOR FastQC V0.9.3
+-------------------------------
+
+FastQC v0.9.3 adds support for fastq files compressed with
+bzip2 in addition to its existing support for gzip compressed
+files.  It's worth noting that although bzip2 offers a reduction
+in the file size of the compressed files (about a 5-fold size
+reduction compared to raw fastq.  Gzip is a 4-fold decrease),
+there is a significant penalty in terms of the speed of
+decompression of these files.  In our tests gzipped files were
+actually processed slightly faster than raw FastQ files, presumably
+due to the lower amount of data transfer from disk required, 
+however bzip2 compressed files took around 6X as long to 
+process as gzipped files.
+
+The other big change in this release is an update to the default
+CSS layout such that viewing the HTML reports doesn't require
+lots of scrolling up and down the page. As before the CSS can
+be edited and customised by editing the templates shipped with
+the program.  Many thanks to Phil Ewels who did much of the 
+work on the new layout.
+
+
+
+RELEASE NOTES FOR FastQC V0.9.2
+-------------------------------
+
+FastQC v0.9.2 fixes two bugs which were identified in the
+previous release.
+
+1) In the text output for the per-base quality module the 
+correct base numbers weren't being included for files which
+used grouped base ranges.
+
+2) The Kmer analysis module could crash when analysing very
+small files, such that no position in the file had more than
+1000 instances of an enriched Kmer.
+
+Both of these issues should now be resolved.
+
+
+RELEASE NOTES FOR FastQC V0.9.1
+-------------------------------
+
+FastQC v0.9.1 adds some new command line options and fixes a
+couple of usability issues.
+
+The new command line options are:
+
+--quiet Will suppress all progress messages and ensure that only
+warnings or errors are written to stderr.  This might be useful
+for people running fastqc as part of a pipeline.
+
+--nogroup Will turn off the dynamic grouping of bases in the 
+various per-base plots.  This would allow you to see a result
+for each base of a 100bp run for example.  This option should
+not be used for really long reads (454, PacBio etc) since it
+has the potential to crash the program or generate very wide
+output plots
+
+In addition to these the following changes have been made:
+
+The basic stats module now includes a line to say which type
+of quality encoding was found so this information isn't just
+present in the header of the per-base quality plot, and will
+appear in the text based output.
+
+We now distinguish between Illumina <1.3, 1.3 and 1.5 encodings
+rather than just <1.3 and >=1.3.  The Sanger encoding is now
+labelled as Sanger / Illumina 1.9+ to allow for the change in
+encoding in the latest illumina pipeline.
+
+A bug was fixed which caused the program to crash when encountering
+a zero length colorspace file (which shouldn't happen anyway, but
+crashing wasn't the correct response).
+
+The interactive over-represented sequence table now allows you
+to copy out each cell individually which makes it easy to copy
+any unknown sequences into other programs.
+
+
+RELEASE NOTES FOR FastQC V0.9.0
+-------------------------------
+
+FastQC v0.9.0 makes a number of changes primarily targetted at
+datasets containing longer reads.  It allows all of the analyses
+within FastQC to be completed sensibly and without excessive
+resource usage on runs containing reads up to tens of kilobases
+in length.
+
+For long reads the program now converts many of its plots to
+variably sized bins so that, for example you see every base for
+the first 10 bases, then every 5 bases for the next 40 bases,
+then every 50, then 100 then 1kb per bin, until the end of the
+sequence is reached.  For sequences below 75bp the reports will
+look exactly the same as before.  For groups running slightly
+longer Illumina or ABI runs you'll see some compression at the
+end of your reads, and people using 454 or PacBio will get 
+sensible results for all analyses for the first time.
+
+One additional change which will impact anyone using reads over
+75bp is that the duplicate sequence and overrepresented sequence
+plots now only use the first 50bp of each read if the total read
+length is over 75bp.  This is because these plots work on the 
+basis of an exact sequence match, and longer reads tend to show
+more errors at the end which makes them look like different
+sequences when they're actually the same.  50bp should be enough
+that you won't see exact matches by chance.
+
+
+
+RELEASE NOTES FOR FastQC V0.8.0
+-------------------------------
+
+FastQC v0.8.0 adds some new options for parsing BAM/SAM files and
+makes the graphs in the report easier to interpret.
+
+All graphs in v0.8.0 now have marker lines going across them to make
+it easier to relate the data in the graph to the y-axis.  The per
+base quality boxplots have shading behind the graph to indicate ranges
+of good, medium and bad quality sequence.
+
+For BAM/SAM files you can now specify that you wish to analyse only
+the mapped sequences in the file.  This is particularly of use to
+people working on colorspace data where the mapped data should
+produce reliable sequence, whereas the current raw conversion to
+base space may overrepresent any errors which are present.  The 
+option to use only mapped data is set by using the
+
+-f bam_mapped or -f sam_mapped
+
+option on the command line, or by specifying Mapped BAM/SAM files
+from the drop down file filter in the file chooser in the interactive
+version of the program.
+
+For FastQ files the parser has been updated to not treat blank lines
+between entries or at the end of the file as a format violation since
+many sequences in the public repositories can have this problem.
+
+From the command line we now offer the option to process multiple
+files in parallel by setting the -t/--threads option.  Please note that
+using more than 1 thread will increase the amount of allocated memory
+(250MB per thread), so you need to be sure you have enough memory (and
+disk bandwidth) to be able to process more than one file.  The
+interactive application still defaults to a single processing thread
+but you could theoretically change this by passing the correct java
+properties in the startup command.
+
+
+RELEASE NOTES FOR FastQC V0.7.2
+-------------------------------
+
+FastQC v0.7.2 fixes a bug in libraries where no unique sequences
+were observed.  It also improves the collection of duplicate 
+statistics on libraries with very low diversity.
+
+A new command line option has been added to allow the user to
+manually specify a contaminant's file rather than using the sitewide
+default.  This would be useful if you have different sets of
+contaminants to screen against for different libraries, or if you
+wanted to make a custom set of contaminants, but didn't have 
+sufficient privileges to modify the sitewide contaminants file.
+
+
+RELEASE NOTES FOR FastQC V0.7.1
+-------------------------------
+
+FastQC v0.7.1 makes some significant enhancements to the fastqc
+wrapper script which make it easier to use as part of a pipeline.
+
+You can now use normal unix options to create your fastqc
+command rather than having to pass java system properties.  The
+old options will continue to work though, so the updated 
+wrapper is still compatible with any previous commands you may
+have in place.  Full details of the new options can be found
+by running 
+
+fastqc --help
+
+One new option is the --format option which allows you to manually
+specify the input format of a file, rather than having FastQC
+guess the format from the file name.  This would allow you to have
+a BAM file called test.dat and process it using:
+
+fastqc --format bam test.dat
+
+
+
+
+RELEASE NOTES FOR FastQC V0.7.0
+-------------------------------
+
+FastQC v0.7.0 introduces a new analysis module which looks at the 
+enrichment of short sequences within the library.  It is possible
+to get enrichment of unaligned subsequences to quite a high degree
+without this being apparent in any of the existing modules.  This
+new module should find problems such as read through into the 
+adapters at the other end of libraries, which other analyses would
+miss.
+
+Other changes in this release include:
+
+* Altering the fastqc wrapper script so it can identify when it's
+  being used on the source distribution of the software so it can
+  issue an appropriate warning.
+
+* Tidied up all of the y-axes on the graphs so that scaling should
+  now always be perfect in all graphs.
+
+
+RELEASE NOTES FOR FastQC V0.6.1
+-------------------------------
+
+FastQC v0.6.1 is a bugfix release which fixes a problem with sequences
+from BAM/SAM files which map to the reverse strand of the reference.
+
+In these cases the sequence contained in the BAM/SAM file is reverse
+complemented and the qualities are reversed relative to the original
+sequence which came off the sequencer.  In the previous release this
+meant that the plots were incorrectly showing a mix of forward and 
+reversed sequences.
+
+In v0.6.1 any sequences mapping to the reverse strand of the reference
+are converted back to their original state before being analysed which
+should give a clearer view of the overall qualities and sequence biases
+within the run.
+
+
+RELEASE NOTES FOR FastQC V0.6.0
+-------------------------------
+
+FastQC v0.6 adds support for reading SAM/BAM files as well as still
+supporting fastq files.  File type detection is based on the filename
+so SAM/BAM files need to be named .sam or .bam.  Any other form of
+filename is assumed to be a fastq file.
+
+SAM/BAM reading was added through the use of the picard libraries, which
+means that the launcher for FastQC has had to be modified to include
+the picard libraries into the classpath.  If you use the bat file launcher,
+the wrapper script or the Mac application bundle then you won't need to
+do anything to get the new version to work, but if you've created your
+own launcher then you will need to modify your classpath statement to
+include the sam-1.32.jar file into the classpath.
+
+The only other change in this release is that the line graphs have been
+improved to use smoother lines for the graphs.
+
+
+
+RELEASE NOTES FOR FastQC V0.5.1
+-------------------------------
+
+Release 0.5.1 fixes a couple of bugs and makes some improvements to 
+existing functions.
+
+* A bug was fixed which caused the headers of the overrepresented
+  sequences results to not be separated in the text output.
+  
+* A bug was fixed which caused spikes to appear in the %GC profile
+  when using read lengths >100bp
+
+* The fitting of the theoretical distribution to the %GC profile
+  was improved
+  
+* Some new entries were added to the contaminants file to cover
+  Illumina oligos for multiplexing, tag expression and small RNA
+  protocols (thanks to Aaron Statham for providing these)
+
+
+RELEASE NOTES FOR FastQC V0.5.0
+-------------------------------
+
+FastQC v0.4.4 makes a number of changes to the previous
+release which hopefully improve the relevance of the output.
+
+* The fitting of the normal curve to the %GC distribution has
+  been improved for shorter sequences
+  
+* Each section of the HTML report output now has a pass/warn/fail
+  icon next to it, rather than just having them at the top
+
+* The duplicate level analysis now estimates the total percentage
+  of sequences which are not unique, reports this on the graph and
+  uses this as the basis for the pass/warn/fail filtering
+  
+* The structure of the HTML output folder has been changed so that
+  icons and images are put into subfolders so the only files at
+  the top level are ones which the user is intended to open directly.
+
+
+RELEASE NOTES FOR FastQC V0.4.3
+-------------------------------
+
+FastQC v0.4.3 is a bugfix release which fixes a bug and adds
+an extra check to the interactive program.
+
+In versions of the program since v0.2 the total sequence count
+in the Basic Stats module may have been incorrect by a few percent
+(either high or low).  This is because instead of using the real
+sequence count the module was using an estimated count which should
+only be used for updating the progress indicators.  The module
+has now been fixed to report the actual sequence count.
+
+In the interactive application there was no warning given if you 
+chose to save a report and opted to overwrite an existing report.  You
+will now be warned in this case an offered the chance to use a
+different filename.  This change won't affect the non-interactive
+mode of the program where report files will be overwritten if the
+program is run more than once on the same set of data.
+
+RELEASE NOTES FOR FastQC V0.4.2
+-------------------------------
+
+FastQC v0.4.2 is a minor release which fixes some bugs and improves
+the warnings on some of the analysis modules.
+
+Bugs which were fixed were:
+
+* The per-base quality plot showed an incorrect scale on the
+  y-axis.  This was usually off by about 2, but could be more
+  depending on the data.  The relative relationships shown
+  were correct, it was just the scale bar which was wrong.
+  
+* The sequence parser incorrectly identified some base called
+  files as colorspace files where they contained dots in place
+  of N base calls.  This has now been improved but will still
+  fail for the base where a base called file starts with an 
+  entry which is a single called base followed by all dots
+  since this is indistinguishable from a colorspace fastq file.
+  
+* Some JREs (notably OpenJDK) can't cope with a headless environment
+  being set from within the program.  I've therefore added code
+  to the fastqc wrapper script to externally set the headless 
+  environment up to bypass this problem.
+  
+Other improvements which have been made are:
+
+* When writing out graphs for the HTML report we now scale some
+  graphs by the length of the sequences analysed so we don't get
+  really squashed graphs.  The interactive application will still
+  scale the graphs to the size of the window
+  
+* More checks have been added to the parsing of FastQ files to
+  ensure we're looking at the correct file format.  A better reporting
+  mechanism has been added to allow the program to cope better with
+  problems during parsing.
+  
+* The per-sequence GC plot has been modified to add in a modelled
+  normal distribtion over the observed distribution so you can see
+  how well the two fit.
+  
+* All modules (apart from the general stats) now have valid checks
+  in place, and all can now produce warnings and failures.  Some of
+  the checks in the existing modules have been changed to better cope
+  with libraries with very low or high GC content.
+
+
+RELEASE NOTES FOR FastQC V0.4.1
+-------------------------------
+
+FastQC v0.4.1 is a bugfix release which changes the operation
+of the duplicate sequence and overrepresented sequence modules.
+
+Both of these modules now only track sequences which appear in
+the first 200,000 sequences of a file.  This change was made
+because people using longer read lengths found that tracking
+the first million sequences led to the program exhausting its
+allocated memory.
+
+The other change is that the duplicate sequence module now
+tracks sequence counts to the end of the file rather than
+stopping after a million sequences.  This means the final
+duplication counts seen are much more realistic and should
+match with what you would see in a genome browser.  Because
+of this change the cutoffs to flag a file with a warning or
+an error have been increased.  You now get a warning when 
+the sum of duplicated sequences is more than 20% of the
+unique sequences.  You get an error when there are more
+duplicated sequences than unique sequences.
+
+
+RELEASE NOTES FOR FastQC V0.4
+-----------------------------
+
+FastQC v0.4 introduces a new analysis module, and easier way
+to launch the program from the command line and a new output 
+file, as well as fixing a few minor bugs.
+
+The new analysis module is the sequence duplication level
+module.  This is a complement to the existing overrepresented
+sequences module in that it looks at sequences which occur
+more than once in your data.  The new module takes a more
+global view and says what proportion of all of your sequences
+occur once, twice, three times etc. In a diverse library most
+sequences should occur only once.  A highly enriched library
+may have some duplication, but higher levels of duplication
+may indicate a problem, such as a PCR overamplification.
+
+In response to several requests we've also now introduced a
+new output file into the report.  This is a text based, tab
+delimited file which includes all of the data show in the
+graphs in the graphical report.  This would allow people
+running pipelines to store the data generated by fastQC and
+analyse it systematically rather than just taking the 
+pass/fail/warn summary, or reviewing the reports manually.
+
+Finally, if you're running fastqc from the command line we've
+now included a 'fastqc' wrapper script which you can launch
+directly rather than having to construct a java launch
+command.  You can still pass -Dxxx options through to the 
+program, but for simple analyses you can now simply run:
+
+fastqc [some files]
+
+..once you have included the FastQC install directory into your
+path.  More details are in the install document.
+
+Other minor changes:
+
+- The over-represented sequences module now scans the first
+million sequences to decide which sequences to track to the
+end of the file.
+
+- The labeling on the per-base N content graph is now correct
+
+
+
+RELEASE NOTES FOR FastQC V0.3.1
+-------------------------------
+
+V0.3.1 is a bugfix release which fixes a few minor problems.
+
+1) The template system now correctly checks that it only imports
+graphics files from the templates directory into the report
+files and doesn't break when it encounters unexpected files.
+
+2) The offline mode now correctly reports the progress of all
+processed files rather than just the first one.
+
+3) The documentation has been updated to include information on
+the blue mean line in the per base quality plot.
+
+
+RELEASE NOTES FOR FastQC V0.3
+-----------------------------
+
+Major new additions to v0.3 are listed below:
+
+1) Support for gzip compressed fastq files.  You can now
+load gzip compressed fastq files into FastQC in the same
+way as uncompressed files.  The files will be decompressed
+interactively and can be viewed in the same way as for
+uncompressed files.
+
+2) Contaminant identification.  If your library is found to
+have overrepresented sequences in it these are now scanned 
+against a database of common contaminants (primers, adapters etc)
+to see if the source of the contamination can be identified.
+The database is stored in a new Contaminants folder in the
+main installation directory, and can be updated with your
+own protocol specific sequences.
+
+3) When in non-interactive mode you can now pass a 
+preference -Dfastqc.output_dir to provide an alternative location
+to save reports to, rather than having them in the same
+directory as the source fastq files.
+
+Some improvements have also been made to the colorspace support
+so this version should support a wider range of colorspace
+fastq files.
+
+
+RELEASE NOTES FOR FastQC V0.2
+-----------------------------
+
+There are a few new additions in v0.2 of FastQC
+
+1) Colorspace support: We now have rudimentary support for the
+analysis of fastq files in colorspace.  The analysis is done by
+converting the colorspace calls to basecalls, which isn't ideal
+but is hopefully more useful than nothing.
+
+2) Option to unzip reports.  The default action in non-interactive
+mode is now to both create a zip file containing the FastQC report
+and to unzip this into a folder of the same name.  If you just want
+to generate the zip files you can add -Dfastqc.unzip=false to the
+command line to suppress this new behaviour
+
+3) It is now possible to customise the HTML report for your site.
+There is an HTML template which can be edited to add your own 
+branding to the reports you generate.
+
+4) In addition to the human readable HTML report we now also
+generate a tab delimited summary file which should make it 
+easier to integrate FastQC into an automated reporting system
+which spots any potential problems with the data.
+
+
+RELEASE NOTES FOR FastQC V0.1.1
+-------------------------------
+
+This point release fixes a problem when running FastQC in a
+non-interactive mode on a system without a graphical display.
+The program should now operate correctly on headless systems
+as long as the filename(s) to process are specified on the
+command line.
+
+
+RELEASE NOTES FOR FastQC V0.1
+-------------------------------
+
+FastQC v0.1 is a beta release it should work in its present state but
+we are keen to get feedback on the program.  In particular we are
+interested to hear if anyone has:
+
+1) Suggestions for other checks we could be performing.
+
+2) Comments about the criteria we set for issuing warnings or errors and
+suggestions for how these could be improved.
+
+You can report feedback either though our bug reporting tool at:
+
+www.bioinformatics.bbsrc.ac.uk/bugzilla/
+
+...or directly to simon.andrews@bbsrc.ac.uk

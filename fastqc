@@ -1,0 +1,408 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use FindBin qw($RealBin);
+use Getopt::Long;
+
+#####################################################################################
+# Copyright Copyright 2010-17 Simon Andrews                                         #
+#                                                                                   #
+#    This file is part of FastQC.                                                   #
+#                                                                                   #
+#    FastQC is free software; you can redistribute it and/or modify                 #
+#    it under the terms of the GNU General Public License as published by           #
+#    the Free Software Foundation; either version 3 of the License, or              #
+#    (at your option) any later version.                                            #
+#                                                                                   #
+#    FastQC is distributed in the hope that it will be useful,                      #
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of                 #
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                  #
+#    GNU General Public License for more details.                                   #
+#                                                                                   #
+#    You should have received a copy of the GNU General Public License              #
+#    along with FastQC; if not, write to the Free Software                          #
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA     #
+#####################################################################################
+
+
+# Check to see if they've mistakenly downloaded the source distribution
+# since several people have made this mistake
+
+if (-e "$RealBin/uk/ac/babraham/FastQC/FastQCApplication.java") {
+	die "This is the source distribution of FastQC.  You need to get the compiled version if you want to run the program\n";
+}
+
+my $delimiter = ':';
+
+if ($^O =~ /Win/) {
+	$delimiter = ';';
+}
+
+if ($ENV{CLASSPATH}) {
+	$ENV{CLASSPATH} .= "$delimiter$RealBin$delimiter$RealBin/sam-1.103.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+}
+else {
+	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/sam-1.103.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+}
+
+my @java_args;
+my @files;
+
+if ($^O =~/darwin/) {
+		
+	# Add the OSX specific options to use a standard OSX menu bar
+	# and set the program name to something sensible.
+				
+	push @java_args, '-Xdock:name=FastQC';
+	push @java_args, "-Xdock:icon=$RealBin/../Resources/seqmonk.icns";
+	push @java_args, '-Dapple.laf.useScreenMenuBar=true';
+	
+}
+
+# We now need to scan the command line for switches which we're going
+# to pass on to the main java program.
+
+my $version;
+my $help;
+my $outdir;
+my $unzip;
+my $format;
+my $contaminant;
+my $adapter;
+my $limits;
+my $threads;
+my $quiet;
+my $nogroup;
+my $expgroup;
+my $casava;
+my $nano;
+my $nofilter;
+my $kmer_size;
+my $temp_directory;
+my $java_bin = 'java';
+my $min_length;
+
+my $result = GetOptions('version' => \$version,
+						'help' => \$help,
+						'quiet' => \$quiet,
+						'nogroup' => \$nogroup,
+						'expgroup' => \$expgroup,
+						'outdir=s' => \$outdir,
+						'extract!' => \$unzip,
+						'format=s' => \$format,
+						'threads=i' => \$threads,
+						'kmers=i' => \$kmer_size,
+						'casava' => \$casava,
+						'nano' => \$nano,
+						'nofilter' => \$nofilter,
+						'contaminants=s' => \$contaminant,
+						'adapters=s' => \$adapter,
+						'limits=s' => \$limits,
+						'dir=s' => \$temp_directory,
+						'java=s' => \$java_bin,
+						'min_length=i' => \$min_length,
+						 );
+
+# Check the simple stuff first
+
+if ($help) {
+	# Just print the help and exit
+	print while(<DATA>);
+	exit;
+}
+
+if ($version) {
+	push @java_args ,"-Dfastqc.show_version=true";
+}
+
+# Now parse any additional options
+if ($outdir) {
+	unless(-e $outdir and -d $outdir) {
+		die "Specified output directory '$outdir' does not exist\n";
+	}
+	
+	push @java_args ,"-Dfastqc.output_dir=$outdir";
+}
+
+if ($contaminant)  {
+	unless (-e $contaminant and -r $contaminant) {
+		die "Contaminant file '$contaminant' did not exist, or could not be read\n";
+	}
+	push @java_args ,"-Dfastqc.contaminant_file=$contaminant";
+}
+
+if ($adapter)  {
+	unless (-e $adapter and -r $adapter) {
+		die "Adapters file '$adapter' did not exist, or could not be read\n";
+	}
+	push @java_args ,"-Dfastqc.adapter_file=$adapter";
+}
+
+if ($limits)  {
+	unless (-e $limits and -r $limits) {
+		die "Limits file '$limits' did not exist, or could not be read\n";
+	}
+	push @java_args ,"-Dfastqc.limits_file=$limits";
+}
+
+if ($temp_directory) {
+	unless (-e $temp_directory and -d $temp_directory and -w $temp_directory) {
+		die "Temp directory '$temp_directory' doesn't exist, or can't be written to\n";
+	}
+	push @java_args, "-Djava.io.tmpdir=$temp_directory";
+
+}
+
+if ($min_length) {
+	push @java_args ,"-Dfastqc.min_length=$min_length";
+}
+
+if ($threads) {
+	if ($threads < 1) {
+		die "Number of threads must be a positive integer";
+	}
+	
+	push @java_args ,"-Dfastqc.threads=$threads";
+	my $memory = 250 * $threads;
+	unshift @java_args,"-Xmx${memory}m";
+}
+else {
+	unshift @java_args,'-Xmx250m';
+}
+
+if ($kmer_size) {
+	unless ($kmer_size =~ /^\d+$/) {
+		die "Kmer size '$kmer_size' was not a number";
+	}
+	
+	if ($kmer_size < 2 or $kmer_size > 10) {
+		die "Kmer size must be in the range 2-10";
+	}
+	
+	push @java_args,"-Dfastqc.kmer_size=$kmer_size";
+}
+
+if ($quiet) {
+	push @java_args ,"-Dfastqc.quiet=true";	
+}
+
+if ($casava) {
+	push @java_args ,"-Dfastqc.casava=true";		
+}
+
+if ($nano) {
+	push @java_args ,"-Dfastqc.nano=true";		
+}
+
+
+if ($nofilter) {
+	push @java_args ,"-Dfastqc.nofilter=true";		
+}
+
+
+if ($nogroup) {
+	push @java_args ,"-Dfastqc.nogroup=true";	
+}
+
+if ($expgroup) {
+	if ($nogroup) {
+		die "You can't specify both --expgroup and --nogroup in the same run\n";
+	}	
+	push @java_args ,"-Dfastqc.expgroup=true";
+}
+
+if (defined $unzip) {
+	
+	if ($unzip) {
+		$unzip = 'true';
+	}
+	else {
+		$unzip = 'false';
+	}
+	
+	push @java_args,"-Dfastqc.unzip=$unzip";	
+}
+
+if ($format) {
+	
+	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped') {
+		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,bam_mapped,sam_mapped and fastq\n";
+	}
+	
+	push @java_args,"-Dfastqc.sequence_format=$format";	
+	
+}
+
+if ($java_bin ne 'java') {
+#	$java_bin =~ s/\\/\//g;
+	
+	unless (-e $java_bin) {
+		die "Couldn't find java interpreter at '$java_bin'";
+	}
+	
+#	if ($java_bin =~ / /) {
+#		$java_bin = "\"$java_bin\"";
+#	}	
+}
+
+
+# We've found that on systems with large numbers of CPUs, and especially on systems
+# where IO contention can occur, that the program can consume large amounts of CPU
+# during parallel garbage collection.  Since interactive performance isn't really
+# important when running non-interactively we'll limit the GC to using only a single
+# thread if running with a list of filenames
+
+if (@ARGV) {
+	push @java_args,"-XX:ParallelGCThreads=1";
+}
+
+
+foreach (@ARGV) {
+  if (/^\-D/) {
+    push @java_args,$_;
+  }
+  else {
+    push @files,$_;
+  }
+}
+
+# This is set internally as well, but on some JREs it doesn't
+# pick up the internally set value properly, so we'll set it
+# outside as well which should work.
+if (@files or $version or $help) {
+	push @java_args, "-Djava.awt.headless=true";
+}
+
+#warn "Running 'exec $java_bin,@java_args, \"uk.ac.babraham.FastQC.FastQCApplication\", @files, CLASSPATH is $ENV{CLASSPATH}";
+
+
+if ($java_bin ne 'java') {
+	system $java_bin,@java_args, "uk.ac.babraham.FastQC.FastQCApplication", @files;
+}
+else {
+	exec $java_bin,@java_args, "uk.ac.babraham.FastQC.FastQCApplication", @files;
+}
+
+__DATA__
+
+            FastQC - A high throughput sequence QC analysis tool
+
+SYNOPSIS
+
+	fastqc seqfile1 seqfile2 .. seqfileN
+
+    fastqc [-o output dir] [--(no)extract] [-f fastq|bam|sam] 
+           [-c contaminant file] seqfile1 .. seqfileN
+
+DESCRIPTION
+
+    FastQC reads a set of sequence files and produces from each one a quality
+    control report consisting of a number of different modules, each one of 
+    which will help to identify a different potential type of problem in your
+    data.
+    
+    If no files to process are specified on the command line then the program
+    will start as an interactive graphical application.  If files are provided
+    on the command line then the program will run with no user interaction
+    required.  In this mode it is suitable for inclusion into a standardised
+    analysis pipeline.
+    
+    The options for the program as as follows:
+    
+    -h --help       Print this help file and exit
+    
+    -v --version    Print the version of the program and exit
+    
+    -o --outdir     Create all output files in the specified output directory.
+                    Please note that this directory must exist as the program
+                    will not create it.  If this option is not set then the 
+                    output file for each sequence file is created in the same
+                    directory as the sequence file which was processed.
+                    
+    --casava        Files come from raw casava output. Files in the same sample
+                    group (differing only by the group number) will be analysed
+                    as a set rather than individually. Sequences with the filter
+                    flag set in the header will be excluded from the analysis.
+                    Files must have the same names given to them by casava
+                    (including being gzipped and ending with .gz) otherwise they
+                    won't be grouped together correctly.
+                    
+    --nano          Files come from naopore sequences and are in fast5 format. In
+                    this mode you can pass in directories to process and the program
+                    will take in all fast5 files within those directories and produce
+                    a single output file from the sequences found in all files.                    
+                    
+    --nofilter      If running with --casava then don't remove read flagged by
+                    casava as poor quality when performing the QC analysis.
+                   
+    --extract       If set then the zipped output file will be uncompressed in
+                    the same directory after it has been created.  By default
+                    this option will be set if fastqc is run in non-interactive
+                    mode.
+                    
+    -j --java       Provides the full path to the java binary you want to use to
+                    launch fastqc. If not supplied then java is assumed to be in
+                    your path.
+                   
+    --noextract     Do not uncompress the output file after creating it.  You
+                    should set this option if you do not wish to uncompress
+                    the output when running in non-interactive mode.
+                    
+    --nogroup       Disable grouping of bases for reads >50bp. All reports will
+                    show data for every base in the read.  WARNING: Using this
+                    option will cause fastqc to crash and burn if you use it on
+                    really long reads, and your plots may end up a ridiculous size.
+                    You have been warned!
+                    
+    --min_length    Sets an artificial lower limit on the length of the sequence
+                    to be shown in the report.  As long as you set this to a value
+                    greater or equal to your longest read length then this will be
+                    the sequence length used to create your read groups.  This can
+                    be useful for making directly comaparable statistics from 
+                    datasets with somewhat variable read lengths.
+                    
+    -f --format     Bypasses the normal sequence file format detection and
+                    forces the program to use the specified format.  Valid
+                    formats are bam,sam,bam_mapped,sam_mapped and fastq
+                    
+    -t --threads    Specifies the number of files which can be processed
+                    simultaneously.  Each thread will be allocated 250MB of
+                    memory so you shouldn't run more threads than your
+                    available memory will cope with, and not more than
+                    6 threads on a 32 bit machine
+                  
+    -c              Specifies a non-default file which contains the list of
+    --contaminants  contaminants to screen overrepresented sequences against.
+                    The file must contain sets of named contaminants in the
+                    form name[tab]sequence.  Lines prefixed with a hash will
+                    be ignored.
+
+    -a              Specifies a non-default file which contains the list of
+    --adapters      adapter sequences which will be explicity searched against
+                    the library. The file must contain sets of named adapters
+                    in the form name[tab]sequence.  Lines prefixed with a hash
+                    will be ignored.
+                    
+    -l              Specifies a non-default file which contains a set of criteria
+    --limits        which will be used to determine the warn/error limits for the
+                    various modules.  This file can also be used to selectively 
+                    remove some modules from the output all together.  The format
+                    needs to mirror the default limits.txt file found in the
+                    Configuration folder.
+                    
+   -k --kmers       Specifies the length of Kmer to look for in the Kmer content
+                    module. Specified Kmer length must be between 2 and 10. Default
+                    length is 7 if not specified.
+                    
+   -q --quiet       Supress all progress messages on stdout and only report errors.
+   
+   -d --dir         Selects a directory to be used for temporary files written when
+                    generating report images. Defaults to system temp directory if
+                    not specified.
+                    
+BUGS
+
+    Any bugs in fastqc should be reported either to simon.andrews@babraham.ac.uk
+    or in www.bioinformatics.babraham.ac.uk/bugzilla/
+                   
+    

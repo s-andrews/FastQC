@@ -1,0 +1,69 @@
+<html>
+
+<head>
+<title>Adapter Content</title>
+<style type="text/css">
+	body {
+		font-family: sans-serif;
+	}
+</style>
+</head>
+<body>
+<h1>Adapter Content</h1>
+<h2>Summary</h2>
+<p>
+The Kmer Content module will do a generic analysis of all of the Kmers
+in your library to find those which do not have even coverage through 
+the length of your reads.  This can find a number of different sources
+of bias in the library which can include the presence of read-through
+adapter sequences building up on the end of your sequences.
+</p>
+<p>
+You can however find that the presence of any overrepresented sequences
+in your library (such as adapter dimers) will cause the Kmer plot to
+be dominated by the Kmers these sequences contain, and that it's not
+always easy to see if there are other biases present in which you might
+be interested.
+</p>
+<p>
+One obvious class of sequences which you might want to analyse are 
+adapter sequences.  It is useful to know if your library contains a 
+significant amount of adapter in order to be able to assess whether 
+you need to adapter trim or not.  Although the Kmer analysis can 
+theoretically spot this kind of contamination it isn't always clear.
+This module therefore does a specific search for a set of separately
+defined Kmers and will give you a view of the total proportion of your
+library which contain these Kmers.  A results trace will always be 
+generated for all of the sequences present in the adapter config file 
+so you can see the adapter content of your library, even if it's low.
+</p>
+<p>
+The plot itself shows a cumulative percentage count of the proportion
+of your library which has seen each of the adapter sequences at each
+position.  Once a sequence has been seen in a read it is counted as
+being present right through to the end of the read so the percentages
+you see will only increase as the read length goes on.
+</p>
+
+<h2>Warning</h2>
+<p>
+This module will issue a warning if any sequence is present in more
+than 5% of all reads.
+</p>
+
+<h2>Failure</h2>
+<p>
+This module will issue a warning if any sequence is present in more
+than 10% of all reads.
+</p>
+
+<h2>Common reasons for warnings</h2>
+<p>
+Any library where a reasonable proportion of the insert sizes are shorter
+than the read length will trigger this module.  This doesn't indicate a 
+problem as such - just that the sequences will need to be adapter trimmed
+before proceeding with any downstream analysis.
+</p>
+
+</body>
+</html>

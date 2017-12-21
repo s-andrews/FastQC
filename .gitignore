@@ -1,3 +1,6 @@
+# Compiled files
+/bin/
+
 # Compiled class file
 *.class
 
