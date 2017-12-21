@@ -1,3 +1,57 @@
+RELEASE NOTES FOR FastQC v0.11.6
+--------------------------------
+
+This update fixes some bugs and updates some of the functionality to 
+accommodate changes in some of the sequencing platforms.
+
+There is one major change which is that by default we now disable the
+kmer module. With the inclusion of the adapter plot the value of the 
+information in the Kmer plot is often not great, and it is easy to 
+confound it if there are any over-represented sequences, or primer
+compositional bias.  Overall therefore we consider it best to not
+routinely include this module.
+
+If you want to turn this module back on, then simply edit the 
+limits.txt file in the Configuration folder of the FastQC installation
+and change the line near the top which says:
+
+kmer 				ignore 		1
+
+..to..
+
+kmer 				ignore 		0
+
+..and the module will be re-enabled.
+
+Other changes in this release are:
+
+1) Fixed a bug which prematurely abandoned the adapter content plot
+   when long custom adapters were being used.
+   
+2) Changed the cutoff for the maximum number of tiles to allow for 
+   the novaseq which has lots of them.
+   
+3) Fixed a bug in the parsing of tile numbers on some illumina 
+   sequencers
+
+4) Added some new Clontech sequences to the contaminants list.
+
+5) Made the --nanopore option work with the new multi-folder ONT 
+   folder structure
+   
+6) Added an option to specify a file name when streaming data into
+   FastQC
+   
+7) Added new RDF paths to check for fastq data in nanopore fast5 files
+
+8) Fix parsing of newer nanopore base names to correctly collate sequences
+
+9) Fixed a typo in the documentation for the per tile plot documentation
+
+10) Added a --min-length option to ignore short sequences making it easier
+    to generate directly comparable statistics between runs.
+
+
 RELEASE NOTES FOR FastQC v0.11.5
 --------------------------------
 
