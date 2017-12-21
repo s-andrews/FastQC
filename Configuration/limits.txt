@@ -2,7 +2,7 @@
 # module at all by setting the value below to 1 for the
 # modules you want to remove.
 duplication 		ignore 		0
-kmer 				ignore 		0
+kmer 				ignore 		1
 n_content 			ignore 		0
 overrepresented 	ignore 		0
 quality_base 		ignore 		0
