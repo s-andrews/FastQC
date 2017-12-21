@@ -37,8 +37,8 @@ instructions in the INSTALL.txt document to tell you how to get a
 suitable java version to run FastQC on your system.
 
 If you have any comments about FastQC we would like to hear them.  You
-can either enter them in our bug tracking system at:
+can either enter them into the github bug tracker at:
 
-http://www.bioinformatics.babraham.ac.uk/bugzilla/
+https://github.com/s-andrews/FastQC/issues/
 
 ..or send them directly to simon.andrews@babraham.ac.uk.
