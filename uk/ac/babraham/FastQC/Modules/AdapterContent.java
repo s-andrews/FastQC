@@ -142,7 +142,11 @@ public class AdapterContent extends AbstractQCModule {
 		calculated = false;
 		++totalCount;
 
-		if (sequence.getSequence().length() > longestSequence) {
+		// We need to be careful about making sure that a sequence is not only longer
+		// than we've seen before, but also that the last position we could find a hit
+		// is a positive position.
+		
+		if (sequence.getSequence().length() > longestSequence && sequence.getSequence().length() - longestAdapter > 0) {
 			longestSequence = sequence.getSequence().length();
 			for (int a=0;a<adapters.length;a++) {
 				adapters[a].expandLengthTo(longestSequence-longestAdapter);
