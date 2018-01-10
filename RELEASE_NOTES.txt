@@ -1,3 +1,12 @@
+RELEASE NOTES FOR FastQC v0.11.7
+--------------------------------
+
+This is a bugfix release for a bug introduced in 0.11.6. Specifically
+this version would crash if the first sequence in a file was <12bp
+(or less than the length of the longest adapter if a custom adapters
+file was being used).
+
+
 RELEASE NOTES FOR FastQC v0.11.6
 --------------------------------
 
