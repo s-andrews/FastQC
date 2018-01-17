@@ -73,7 +73,7 @@ public class DuplicationLevel extends AbstractQCModule {
 		HashMap<Integer, Integer> collatedCounts = new HashMap<Integer, Integer>();
 		
 		Iterator<String> it = overrepresentedModule.sequences.keySet().iterator();
-				
+			
 		while (it.hasNext()) {
 			int thisCount = overrepresentedModule.sequences.get(it.next());
 		
@@ -96,9 +96,7 @@ public class DuplicationLevel extends AbstractQCModule {
 			int count = collatedCounts.get(dupLevel);
 			
 			correctedCounts.put(dupLevel,getCorrectedCount(overrepresentedModule.countAtUniqueLimit, overrepresentedModule.count, dupLevel, count));
-			
-//			System.err.println("For dup level "+dupLevel+" raw count was "+count+" corrected count was "+correctedCounts.get(dupLevel));
-			
+
 		}
 		
 		// From the corrected counts we can now work out the raw and deduplicated proportions
@@ -132,7 +130,6 @@ public class DuplicationLevel extends AbstractQCModule {
 		}
 		
 //		System.err.println("True total = "+overrepresentedModule.count+" inferred total is "+rawTotal+" dedup total is "+dedupTotal);
-		
 		
 		labels = new String [16];
 		for (int i=0;i<deduplicatedPercentages.length;i++) {
@@ -177,11 +174,24 @@ public class DuplicationLevel extends AbstractQCModule {
 		
 		double pNotSeeingAtLimit = 1;
 		
+		
+		// To save doing long calculations which are never going to produce anything meaningful
+		// we'll set a limit to our p-value calculation.  This is the probability below which we
+		// won't increase our count by 0.01 of an observation.  Once we're below this we stop caring
+		// about the corrected value since it's going to be so close to the observed value that
+		// we can just return that instead.
+		double limitOfCaring = 1d - (numberOfObservations/(numberOfObservations+0.01d));
+				
 		for (int i=0;i<countAtLimit;i++) {
 			pNotSeeingAtLimit *= ((totalCount-i)-duplicationLevel)/(double)(totalCount-i);
-//			System.err.println("At i="+i+" p is "+pNotSeeingAtLimit);
+			
+			if (pNotSeeingAtLimit < limitOfCaring) {
+				pNotSeeingAtLimit = 0;
+				break;
+			}
+			
 		}
-		
+				
 		// Now we can invert this to get the chance of seeing a sequence with this count
 		double pSeeingAtLimit = 1 - pNotSeeingAtLimit;
 		
@@ -260,5 +270,5 @@ public class DuplicationLevel extends AbstractQCModule {
 	public void reset() {
 		deduplicatedPercentages = null;
 	}
-
+	
 }
