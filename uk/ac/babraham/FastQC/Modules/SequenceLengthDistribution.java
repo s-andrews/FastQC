@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -130,6 +131,11 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	
 	private int [] getSizeDistribution (int min, int max) {
 		
+		// We won't group if they've asked us not to
+		if (FastQCConfig.getInstance().nogroup) {
+			return(new int [] {min,1});
+		}
+		
 		int base = 1;
 		
 		while (base > (max-min)) {
@@ -221,7 +227,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {
 		if (!calculated) calculateDistribution();
 
-		writeDefaultImage(report, "sequence_length_distribution.png", "Sequence length distribution", 800, 600);
+		writeDefaultImage(report, "sequence_length_distribution.png", "Sequence length distribution",  Math.max(800, graphCounts.length*15), 600);
 		
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Length\tCount\n");
