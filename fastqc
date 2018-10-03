@@ -327,7 +327,7 @@ DESCRIPTION
                     (including being gzipped and ending with .gz) otherwise they
                     won't be grouped together correctly.
                     
-    --nano          Files come from naopore sequences and are in fast5 format. In
+    --nano          Files come from nanopore sequences and are in fast5 format. In
                     this mode you can pass in directories to process and the program
                     will take in all fast5 files within those directories and produce
                     a single output file from the sequences found in all files.                    
