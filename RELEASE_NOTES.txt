@@ -1,3 +1,11 @@
+RELEASE NOTES FOR FastQC v0.11.8
+--------------------------------
+
+This release works around some edge cases in unusual sequence libraries
+and changes the behaviour of the read length module when run with the
+--nogroup option. Other minor fixes are also present.
+
+
 RELEASE NOTES FOR FastQC v0.11.7
 --------------------------------
 
