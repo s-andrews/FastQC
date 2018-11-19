@@ -322,7 +322,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {
 		if (!calculated) getPercentages();
 		
-		writeDefaultImage(report, "per_tile_quality.png", "Per base quality graph", Math.max(800, xLabels.length*15), 600);
+		writeDefaultImage(report, "per_tile_quality.png", "Per tile quality graph", Math.max(800, xLabels.length*15), 600);
 
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Tile\tBase\tMean\n");
