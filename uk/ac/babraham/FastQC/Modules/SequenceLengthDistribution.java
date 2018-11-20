@@ -68,7 +68,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 				}
 				maxLen = i;
 			}
-		}		
+		}
+		
+		// We can get a -1 value for min if there aren't any valid sequences
+		// at all.
+		
+		if (minLen < 0) minLen = 0;
 		
 		// We put one extra category either side of the actual size
 		if (minLen>0) minLen--;
@@ -194,9 +199,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			return false;
 		}
 
-
-		if (lengthCounts[0] > 0) {
-			return true;
+		// We might not have any sequences so only check if we do
+		if (lengthCounts.length > 0) {
+			// Empty sequences get us an error
+			if (lengthCounts[0] > 0) {
+				return true;
+			}
 		}
 		return false;
 	}

@@ -151,6 +151,7 @@ public class DuplicationLevel extends AbstractQCModule {
 		
 		
 		percentDifferentSeqs = (dedupTotal/rawTotal)*100;
+		if (rawTotal == 0) percentDifferentSeqs = 100;
 		
 	}
 	

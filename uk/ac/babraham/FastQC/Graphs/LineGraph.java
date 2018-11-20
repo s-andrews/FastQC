@@ -139,7 +139,7 @@ public class LineGraph extends JPanel {
 		
 		
 		// Now draw the data points
-		int baseWidth = (getWidth()-(xOffset+10))/data[0].length;
+		int baseWidth = (getWidth()-(xOffset+10))/Math.max(data[0].length,1); // Math.max is there in case we have no data (no sequences)
 		if (baseWidth<1) baseWidth=1;
 		
 //		System.out.println("Base Width is "+baseWidth);
@@ -183,8 +183,9 @@ public class LineGraph extends JPanel {
 		
 		for (int d=0;d<data.length;d++) {
 			g.setColor(COLOURS[d % COLOURS.length]);
-						
-			lastY = getY(data[d][0]);
+			
+			if (data[d].length > 0)
+				lastY = getY(data[d][0]);
 			for (int i=1;i<data[d].length;i++) {
 				int thisY = getY(data[d][i]);
 				g.drawLine((baseWidth/2)+xOffset+(baseWidth*(i-1)), lastY, (baseWidth/2)+xOffset+(baseWidth*i), thisY);
