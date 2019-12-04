@@ -1,5 +1,6 @@
 # Compiled files
 /bin/
+/test/
 
 # Compiled class file
 *.class
