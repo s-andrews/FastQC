@@ -213,14 +213,14 @@ public class BasicStats extends AbstractQCModule {
 						}
 					case 7 :
 						if (aCount+tCount+gCount+cCount+nCount > 0) {
-							return String.format("%.2f", (float)(q20_count*100/(aCount+tCount+gCount+cCount+nCount)));
+							return String.format("%.2f", (float)(q20_count*100)/(aCount+tCount+gCount+cCount+nCount));
 							
 						} else {
 							return 0;
 						}
 					case 8 :
 						if (aCount+tCount+gCount+cCount+nCount > 0) {
-							return String.format("%.2f", (float)(q30_count*100/(aCount+tCount+gCount+cCount+nCount)));
+							return String.format("%.2f", (float)(q30_count*100)/(aCount+tCount+gCount+cCount+nCount));
 						} else {
 							return 0;
 						}
