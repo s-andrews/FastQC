@@ -83,12 +83,16 @@ public class BasicStats extends AbstractQCModule {
 	public String name() {
 		return "Basic Statistics";
 	}
+	
+	public void setFileName (String name) {
+		this.name = name;
+		
+		this.name = this.name.replaceFirst("stdin:", "");
+	}
 
 	public void processSequence(Sequence sequence) {
 
-		if (name == null) name = sequence.file().name();
-		
-		name = name.replaceFirst("stdin:", "");
+		if (name == null) setFileName(sequence.file().name());
 		
 		// If this is a filtered sequence we simply count it and move on.
 		if (sequence.isFiltered()) {
