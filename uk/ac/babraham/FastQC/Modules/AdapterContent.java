@@ -146,10 +146,13 @@ public class AdapterContent extends AbstractQCModule {
 		// than we've seen before, but also that the last position we could find a hit
 		// is a positive position.
 		
+		// If the sequence is longer than it was then we need to expand the storage in
+		// all of the adapter objects to account for this.
+		
 		if (sequence.getSequence().length() > longestSequence && sequence.getSequence().length() - longestAdapter > 0) {
 			longestSequence = sequence.getSequence().length();
 			for (int a=0;a<adapters.length;a++) {
-				adapters[a].expandLengthTo(longestSequence-longestAdapter);
+				adapters[a].expandLengthTo((longestSequence-longestAdapter)+1);
 			}
 		}
 
@@ -311,9 +314,10 @@ public class AdapterContent extends AbstractQCModule {
 
 		public void incrementCount (int position) {
 
-			if (position >= positions.length) {
-				expandLengthTo(position+1);
-			}
+			// Don't ever check or expand the storage within this
+			// function as it ends up double counting previously
+			// incremented positions.  Rely on the upstream code
+			// having done the expansion correctly already.
 
 			++positions[position];			
 
