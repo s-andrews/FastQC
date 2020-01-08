@@ -256,6 +256,8 @@ if ($format) {
 }
 
 if ($java_bin ne 'java') {
+
+	warn "Java is $java_bin\n";
 #	$java_bin =~ s/\\/\//g;
 	
 	unless (-e $java_bin) {
