@@ -25,6 +25,13 @@ and those from the adoptOpenJDK project (https://adoptopenjdk.net/).  You need t
 download and install a suitable 64-bit JRE and make sure that the java application 
 is in your path (most installers will take care of this for you).
 
+On linux most distributions will have java installed already so you might not need to
+do anything.  If java isn't installed then you can add it by doing:
+
+Ubuntu / Mint: sudo apt install default-jre
+
+CentOS / Redhat: sudo yum install java-1.8.0-openjdk
+
 You can check whether java is installed by opening the 'cmd' program on windows, or
 any shell on linux and typing:
 
