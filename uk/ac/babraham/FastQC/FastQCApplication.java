@@ -318,8 +318,14 @@ public class FastQCApplication extends JFrame {
 		}
 		
 		else {
+			// Recent java themes for linux are just horribly broken with missing
+			// bits of UI.  We're therefore not going to set a native look if
+			// we're on linux.  See seqmonk bug #95 for details.
+			
 			try {
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				if (! System.getProperty("os.name").toLowerCase().contains("linux")) {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				}
 			} catch (Exception e) {}
 			
 	
