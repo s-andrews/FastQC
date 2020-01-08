@@ -120,12 +120,19 @@ public class OfflineRunner implements AnalysisListener {
 			try {
 				processFile(fileGroups[i]);
 			}
+			catch (OutOfMemoryError e) {
+				System.err.println("Ran out of memory for "+fileGroups[i][0]);
+				e.printStackTrace();
+				System.exit(2);
+			}
 			catch (Exception e) {
 				System.err.println("Failed to process "+fileGroups[i][0]);
 				e.printStackTrace();
 				filesRemaining.decrementAndGet();
 				somethingFailed = true;
 			}
+			
+
 		}
 		
 		// We need to hold this class open as otherwise the main method
