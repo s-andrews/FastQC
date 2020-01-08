@@ -54,7 +54,7 @@ import uk.ac.babraham.FastQC.Utilities.NanoporeBasename;
 
 public class FastQCApplication extends JFrame {	
 	
-	public static final String VERSION = "0.11.9.devel";
+	public static final String VERSION = "0.11.9";
 	
 	private JTabbedPane fileTabs;
 	private WelcomePanel welcomePanel;
