@@ -45,6 +45,29 @@ else {
 	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/sam-1.103.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
 }
 
+
+# We need to find the java interpreter.  We'll start from the assumption that this
+# is included in the path.
+
+my $java_bin = "java";
+
+# We might have bundled a jre with the installation.  If that's the case then we'll
+# use the interpreter which is bundled in preference to the system one.
+
+# Windows first
+if (-e "$RealBin/jre/bin/java.exe") {
+	$java_bin = "$RealBin/jre/bin/java.exe";
+}
+# Linux
+elsif (-e "$RealBin/jre/bin/java") {
+	$java_bin = "$RealBin/jre/bin/java";
+}
+# OSX
+elsif (-e "$RealBin/jre/Contents/Home/bin/java") {
+	$java_bin = "$RealBin/jre/Contents/Home/bin/java";
+}
+
+
 my @java_args;
 my @files;
 
@@ -79,7 +102,6 @@ my $nano;
 my $nofilter;
 my $kmer_size;
 my $temp_directory;
-my $java_bin = 'java';
 my $min_length;
 
 my $result = GetOptions('version' => \$version,
