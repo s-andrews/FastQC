@@ -38,6 +38,12 @@ public class OfflineRunner implements AnalysisListener {
 	private AtomicInteger filesRemaining;
 	private boolean showUpdates = true;
 	
+	// We'll set a flag which will tell us if any of the sequences failed
+	// so we can exit with an error state so the calling process can tell
+	// that something went wrong.
+	
+	private boolean somethingFailed = false;
+	
 	public OfflineRunner (String [] filenames) {	
 		
 		// See if we need to show updates
@@ -112,9 +118,7 @@ public class OfflineRunner implements AnalysisListener {
 		
 		
 		filesRemaining = new AtomicInteger(fileGroups.length);
-		
-		boolean somethingFailed = false;
-		
+				
 		for (int i=0;i<fileGroups.length;i++) {
 
 			try {
@@ -209,6 +213,7 @@ public class OfflineRunner implements AnalysisListener {
 
 	public void analysisExceptionReceived(SequenceFile file, Exception e) {
 		System.err.println("Failed to process file "+file.name());
+		somethingFailed = true;
 		e.printStackTrace();
 		filesRemaining.decrementAndGet();
 	}
