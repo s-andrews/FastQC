@@ -77,10 +77,10 @@ public class SequenceFactory {
 		if (config.sequence_format != null) {
 			// We're not autodetecting the format, but taking whatever they said
 			
-			if (config.sequence_format.equals("bam") || config.sequence_format.equals("sam")) {
+			if (config.sequence_format.equals("bam") || config.sequence_format.equals("sam") || config.sequence_format.equals("cram")) {
 				return new BAMFile(file,false);				
 			}
-			else if (config.sequence_format.equals("bam_mapped") || config.sequence_format.equals("sam_mapped")) {
+			else if (config.sequence_format.equals("bam_mapped") || config.sequence_format.equals("sam_mapped") || config.sequence_format.equals("cram_mapped")) {
 				return new BAMFile(file,true);				
 			}
 			else if (config.sequence_format.equals("fastq")) {
@@ -95,7 +95,7 @@ public class SequenceFactory {
 		
 		// Otherwise we just use the extension on the end of the file name to try to determine
 		// the type
-		if (file.getName().toLowerCase().endsWith(".bam") || file.getName().toLowerCase().endsWith(".sam")) {
+		if (file.getName().toLowerCase().endsWith(".bam") || file.getName().toLowerCase().endsWith(".sam") || file.getName().toLowerCase().endsWith(".cram")) {
 			// We default to using all reads
 			return new BAMFile(file,false);
 		}

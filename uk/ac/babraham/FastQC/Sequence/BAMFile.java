@@ -25,11 +25,15 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sf.samtools.CigarElement;
-import net.sf.samtools.CigarOperator;
-import net.sf.samtools.SAMFileReader;
-import net.sf.samtools.SAMFormatException;
-import net.sf.samtools.SAMRecord;
+import htsjdk.samtools.CigarElement;
+import htsjdk.samtools.CigarOperator;
+import htsjdk.samtools.SAMFormatException;
+import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.SamInputResource;
+import htsjdk.samtools.SamReader;
+import htsjdk.samtools.SamReaderFactory;
+import htsjdk.samtools.ValidationStringency;
+
 
 public class BAMFile implements SequenceFile {
 
@@ -43,7 +47,7 @@ public class BAMFile implements SequenceFile {
 	// only way to access the file pointer.
 	private FileInputStream fis;
 
-	private SAMFileReader br;
+	private SamReader br;
 	private String name;
 	private Sequence nextSequence = null;
 	Iterator<SAMRecord> it;
@@ -55,11 +59,11 @@ public class BAMFile implements SequenceFile {
 		name = file.getName();
 		this.onlyMapped = onlyMapped;
 
-		SAMFileReader.setDefaultValidationStringency(SAMFileReader.ValidationStringency.SILENT);
-
 		fis = new FileInputStream(file);
 		
-		br = new SAMFileReader(fis);
+		SamInputResource sir = SamInputResource.of(fis);
+		
+		br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).referenceSequence(new File("c:/Users/andrewss/Desktop/phix-illumina.fa")).open(sir);
 		
 		it = br.iterator();
 		readNext();
@@ -134,7 +138,10 @@ public class BAMFile implements SequenceFile {
 		// through the file.
 		if (recordSize == 0) {
 			recordSize = (record.getReadLength()*2)+150;
-			if (br.isBinary()) {
+			
+			// TODO: Work out if this is actually needed or if we can pull
+			// what we need from the fis
+			if (true) {
 				recordSize /= 4;
 			}
 		}

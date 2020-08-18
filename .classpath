@@ -3,7 +3,8 @@
 	<classpathentry kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="jbzip2-0.9.jar"/>
-	<classpathentry kind="lib" path="sam-1.103.jar"/>
 	<classpathentry kind="lib" path="cisd-jhdf5.jar"/>
+	<classpathentry kind="lib" path="htsjdk.jar"/>
+	<classpathentry kind="lib" path="commons-compress.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
