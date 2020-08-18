@@ -88,6 +88,7 @@ if ($^O =~/darwin/) {
 my $version;
 my $help;
 my $outdir;
+my $reference;
 my $unzip;
 my $format;
 my $contaminant;
@@ -110,6 +111,7 @@ my $result = GetOptions('version' => \$version,
 						'nogroup' => \$nogroup,
 						'expgroup' => \$expgroup,
 						'outdir=s' => \$outdir,
+						'reference=s' -> \$reference,
 						'extract!' => \$unzip,
 						'format=s' => \$format,
 						'threads=i' => \$threads,
@@ -144,6 +146,14 @@ if ($outdir) {
 	}
 	
 	push @java_args ,"-Dfastqc.output_dir=$outdir";
+}
+
+if ($reference) {
+	unless(-e $reference and -f $reference) {
+		die "Specified reference file '$reference' does not exist\n";
+	}
+	
+	push @java_args ,"-Dfastqc.reference=$reference";
 }
 
 if ($contaminant)  {
@@ -387,7 +397,12 @@ DESCRIPTION
                     
     -f --format     Bypasses the normal sequence file format detection and
                     forces the program to use the specified format.  Valid
-                    formats are bam,sam,bam_mapped,sam_mapped and fastq
+                    formats are bam,sam,cram,bam_mapped,sam_mapped,cram_mapped
+                    and fastq
+                    
+    -r --reference  Only relevant when parsing CRAM files.  Specifies a fasta format
+                    file of reference sequences which can be used to decode the 
+                    CRAM entries.
                     
     -t --threads    Specifies the number of files which can be processed
                     simultaneously.  Each thread will be allocated 250MB of
@@ -427,6 +442,6 @@ DESCRIPTION
 BUGS
 
     Any bugs in fastqc should be reported either to simon.andrews@babraham.ac.uk
-    or in www.bioinformatics.babraham.ac.uk/bugzilla/
+    or in https://github.com/s-andrews/fastqc/issues
                    
     

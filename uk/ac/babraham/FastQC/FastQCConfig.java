@@ -32,6 +32,7 @@ public class FastQCConfig {
 	public Integer threads = null;
 	public boolean showUpdates = true;
 	public File output_dir = null;
+	public File reference = null;
 	public boolean casava = false;
 	public boolean nano = false;
 	public boolean nofilter = false;
@@ -52,7 +53,15 @@ public class FastQCConfig {
 				throw new IllegalArgumentException("Output dir "+output_dir+" doesn't exist or isn't writeable");
 			}
 		}
-		
+
+		// CRAM Reference
+		if (System.getProperty("fastqc.reference") != null) {
+			reference = new File(System.getProperty("fastqc.reference"));
+			if (!(reference.exists() && reference.canRead())) {
+				throw new IllegalArgumentException("Reference file "+reference+" doesn't exist or can't be read");
+			}
+		}
+
 		// Contaminant file
 		if (System.getProperty("fastqc.contaminant_file") != null) {
 			contaminant_file = new File(System.getProperty("fastqc.contaminant_file"));

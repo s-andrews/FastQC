@@ -33,6 +33,7 @@ import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import uk.ac.babraham.FastQC.FastQCConfig;
 
 
 public class BAMFile implements SequenceFile {
@@ -63,7 +64,12 @@ public class BAMFile implements SequenceFile {
 		
 		SamInputResource sir = SamInputResource.of(fis);
 		
-		br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).referenceSequence(new File("c:/Users/andrewss/Desktop/phix-illumina.fa")).open(sir);
+		if (FastQCConfig.getInstance().reference != null) {
+			br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).referenceSequence(FastQCConfig.getInstance().reference).open(sir);
+		}
+		else {
+			br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).open(sir);
+		}
 		
 		it = br.iterator();
 		readNext();
