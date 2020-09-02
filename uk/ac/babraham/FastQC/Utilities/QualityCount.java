@@ -25,7 +25,7 @@ public class QualityCount {
 	/*
 	 * So I'm on my third go at writing this.  I've now tried an all
 	 * primitive version of this class so that we don't have to do 
-	 * hash lookps which require a conversion from chr to Character.
+	 * hash lookups which require a conversion from chr to Character.
 	 * We should also be safe with 150 slots which will give us up to
 	 * Phred 86 with a 64 offset, which should be plenty.
 	 */

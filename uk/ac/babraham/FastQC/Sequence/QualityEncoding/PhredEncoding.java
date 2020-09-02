@@ -45,7 +45,7 @@ public class PhredEncoding {
 		else if (lowestChar <= 126) {
 			return new PhredEncoding("Illumina 1.5", ILLUMINA_1_3_ENCODING_OFFSET);
 		}
-		throw new IllegalArgumentException("No known encodings with chars > 126 (Yours was "+lowestChar+")");
+		throw new IllegalArgumentException("No known encodings with chars > 126 (Yours was "+lowestChar+" with value "+(int)lowestChar+")");
 	}
 	
 	public static double convertSangerPhredToProbability (int phred) {
