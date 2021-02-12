@@ -1,0 +1,24 @@
+dist: xenial
+sudo: false
+git:
+  quiet: true
+language: java
+addons:
+  apt:
+    config:
+      retries: true
+    update: true
+    packages:
+      - ant
+jdk:
+  - openjdk11
+  - openjdk10
+  - openjdk9
+  - openjdk8
+matrix:
+  allow_failures:
+    - jdk: openjdk11
+    - jdk: openjdk10
+    - jdk: openjdk9
+  fast_finish: true
+script: ant
