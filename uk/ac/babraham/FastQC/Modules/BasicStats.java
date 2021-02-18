@@ -46,6 +46,8 @@ public class BasicStats extends AbstractQCModule {
 	private long cCount = 0;
 	private long aCount = 0;
 	private long tCount = 0;
+	private long q20_count = 0;
+	private long q30_count = 0;
 	@SuppressWarnings("unused")
 	private long nCount = 0;
 	private char lowestChar = 126;
@@ -139,6 +141,14 @@ public class BasicStats extends AbstractQCModule {
 			if (chars[c] < lowestChar) {
 				lowestChar = chars[c];
 			}
+            // Q20 stat
+			if (chars[c] >= 53 ) {
+				q20_count++ ;
+				//Q30 stat
+                if (chars[c] >= 63) {
+					q30_count++;
+			    }
+			}
 		}
 	}
 	
@@ -221,6 +231,8 @@ public class BasicStats extends AbstractQCModule {
 				"Sequences flagged as poor quality",
 				"Sequence length",
 				"%GC",
+				"%Q20",
+				"%Q30",
 		};		
 		
 		// Sequence - Count - Percentage
@@ -254,12 +266,24 @@ public class BasicStats extends AbstractQCModule {
 						
 					case 7 : 
 						if (aCount+tCount+gCount+cCount > 0) {
-							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
+							return String.format("%.2f", (float)((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}
 						else {
 							return 0;
 						}
-					
+					case 7 :
+						if (aCount+tCount+gCount+cCount+nCount > 0) {
+							return String.format("%.2f", (float)(q20_count*100)/(aCount+tCount+gCount+cCount+nCount));
+							
+						} else {
+							return 0;
+						}
+					case 8 :
+						if (aCount+tCount+gCount+cCount+nCount > 0) {
+							return String.format("%.2f", (float)(q30_count*100)/(aCount+tCount+gCount+cCount+nCount));
+						} else {
+							return 0;
+						}
 					}
 			}
 			return null;
