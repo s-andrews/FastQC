@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Per Base Sequence Quality</title>
+<title>3.2 - Per Base Sequence Quality</title>
 <style type="text/css">
 	body {
 		font-family: sans-serif;
@@ -9,7 +9,7 @@
 </style>
 </head>
 <body>
-<h1>Per Base Sequence Quality</h1>
+<h1>3.2 - Per Base Sequence Quality</h1>
 <h2>Summary</h2>
 <p>
 This view shows an overview of the range of quality values across all bases
@@ -28,7 +28,7 @@ plot are as follows:
 </ul>
 <p>
 The y-axis on the graph shows the quality scores.  The higher the score
-the better the base call.  The background of the graph divides the 
+the better the base call.  The background of the graph divides the
 y axis into very good quality calls (green), calls of reasonable quality
 (orange), and calls of poor quality (red).  The quality of calls on most
 platforms will degrade as the run progresses, so it is common to see
@@ -62,7 +62,7 @@ less than 5 or if the median for any base is less than 20.
 
 <h2>Common reasons for warnings</h2>
 <p>
-The most common reason for warnings and failures in this module is a general 
+The most common reason for warnings and failures in this module is a general
 degradation of quality over the duration of long runs.  In general sequencing
 chemistry degrades with increasing read length and for long runs you may find
 that the general quality of the run falls to a level where a warning or error
@@ -71,25 +71,55 @@ is triggered.
 <p>
 If the quality of the library falls to a low level then the most common remedy
 is to perform quality trimming where reads are truncated based on their average
-quality.  For most libraries where this type of degradation has occurred you 
+quality.  For most libraries where this type of degradation has occurred you
 will often be simultaneously running into the issue of adapter read-through so
 a combined adapter and quality trimming step is often employed.
 </p>
 <p>
 Another possibility is that a warn / error is triggered because of a short loss
-of quality earlier in the run, which then recovers to produce later good 
+of quality earlier in the run, which then recovers to produce later good
 quality sequence.  This can happen if there is a transient problem with the run
 (bubbles passing through a flowcell for example).   You can normally see this
-type of error by looking at the per-tile quality plot (if available for your 
+type of error by looking at the per-tile quality plot (if available for your
 platform).  In these cases trimming is not advisable as it will remove later
 good sequence, but you might want to consider masking bases during subsequent
 mapping or assembly.
 </p>
 <p>
 If your library has reads of varying length then you can find a warning or error
-is triggered from this module because of very low coverage for a given base range. 
+is triggered from this module because of very low coverage for a given base range.
 Before committing to any action, check how many sequences were responsible for
 triggering an error by looking at the sequence length distribution module results.
 </p>
+<hr />
+<ul>
+	<li><a href="../">FastQC Help Top</a>
+	<ul>
+		<li><a href="../1%20Introduction/1.1%20What%20is%20FastQC.html">1.1 What is FastQC.html</a></li>
+		<li><a href="../2%20Basic%20Operations/">2 Basic Operations</a>
+			<ul>
+				<li><a href="../2%20Basic%20Operations/2.1%20Opening%20a%20sequence%20file.html">2.1 Opening a sequence file</a></li>
+				<li><a href="../2%20Basic%20Operations/2.2%20Evaluating%20Results.html">2.2 Evaluating Results</a></li>
+				<li><a href="../2%20Basic%20Operations/2.3%20Saving%20a%20Report.html">2.3 Saving a Report</a></li>
+			</ul>
+		</li>
+		<li><a href="../3%20Analysis%20Modules/">3 Analysis Modules</a>
+			<ul>
+				<li><a href="../3%20Analysis%20Modules/1%20Basic%20Statistics.html">3.1 Basic Statistics</a></li>
+				<li><a href="../3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html">3.2 Per Base Sequence Quality</a></li>
+				<li><a href="../3%20Analysis%20Modules/3%20Per%20Sequence%20Quality%20Scores.html">3.3 Per Sequence Quality Scores</a></li>
+				<li><a href="../3%20Analysis%20Modules/4%20Per%20Base%20Sequence%20Content.html">3.4 Per Base Sequence Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html">3.5 Per Sequence GC Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/6%20Per%20Base%20N%20Content.html">3.6 Per Base N Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/7%20Sequence%20Length%20Distribution.html">3.7 Sequence Length Distribution</a></li>
+				<li><a href="../3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">3.8 Duplicate Sequences</a></li>
+				<li><a href="../3%20Analysis%20Modules/9%20Overrepresented%20Sequences.html">3.9 Overrepresented Sequences</a></li>
+				<li><a href="../3%20Analysis%20Modules/10%20Adapter%20Content.html">3.10 Adapter Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/11%20Kmer%20Content.html">3.11 Kmer Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/12%20Per%20Tile%20Sequence%20Quality.html">3.12 Per Tile Sequence Quality</a></li>
+			</ul>
+		</li>
+	</ul>
+</ul>
 </body>
 </html>

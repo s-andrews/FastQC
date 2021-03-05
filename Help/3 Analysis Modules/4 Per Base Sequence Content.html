@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Per Base Sequence Content</title>
+<title>3.4 - Per Base Sequence Content</title>
 <style type="text/css">
 	body {
 		font-family: sans-serif;
@@ -9,7 +9,7 @@
 </style>
 </head>
 <body>
-<h1>Per Base Sequence Content</h1>
+<h1>3.4 - Per Base Sequence Content</h1>
 <h2>Summary</h2>
 <p>
 Per Base Sequence Content plots out the proportion of each base
@@ -27,11 +27,11 @@ hugely imbalanced from each other.
 </p>
 <p>
 It's worth noting that some types of library will always produce biased
-sequence composition, normally at the start of the read.  Libraries 
+sequence composition, normally at the start of the read.  Libraries
 produced by priming using random hexamers (including nearly all RNA-Seq libraries)
 and those which were fragmented using transposases inherit an intrinsic
-bias in the positions at which reads start. This bias does not concern 
-an absolute sequence, but instead provides enrichement of a number of 
+bias in the positions at which reads start. This bias does not concern
+an absolute sequence, but instead provides enrichement of a number of
 different K-mers at the 5' end of the reads.  Whilst this is a true
 technical bias, it isn't something which can be corrected by trimming
 and in most cases doesn't seem to adversely affect the downstream analysis.
@@ -52,34 +52,64 @@ is greater than 20% in any position.
 
 <h2>Common reasons for warnings</h2>
 <p>
-There are a number of common scenarios which would ellicit a warning 
+There are a number of common scenarios which would ellicit a warning
 or error from this module.
 </p>
 
 <ol>
 <li>Overrepresented sequences: If there is any evidence of overrepresented
-sequences such as adapter dimers or rRNA in a sample then these sequences 
+sequences such as adapter dimers or rRNA in a sample then these sequences
 may bias the overall composition and their sequence will emerge from this plot.
 <li>Biased fragmentation: Any library which is generated based on the ligation
 of random hexamers or through tagmentation should theoretically have good
-diversity through the sequence, but experience has shown that these libraries 
+diversity through the sequence, but experience has shown that these libraries
 always have a selection bias in around the first 12bp of each run.  This is
 due to a biased selection of random primers, but doesn't represent any individually
 biased sequences.  Nearly all RNA-Seq libraries will fail this module because of
-this bias, but this is not a problem which can be fixed by processing, and it 
+this bias, but this is not a problem which can be fixed by processing, and it
 doesn't seem to adversely affect the ablity to measure expression.
 <li>Biased composition libraries: Some libraries are inherently biased in their
-sequence composition.  The most obvious example would be a library which has been 
+sequence composition.  The most obvious example would be a library which has been
 treated with sodium bisulphite which will then have converted most of the cytosines
-to thymines, meaning that the base composition will be almost devoid of cytosines 
+to thymines, meaning that the base composition will be almost devoid of cytosines
 and will thus trigger an error, despite this being entirely normal for that type of
 library</li>
-<li>If you are analysing a library which has been aggressivley adapter trimmed 
-then you will naturally introduce a composition bias at the end of the reads as 
-sequences which happen to match short stretches of adapter are removed, leaving 
+<li>If you are analysing a library which has been aggressivley adapter trimmed
+then you will naturally introduce a composition bias at the end of the reads as
+sequences which happen to match short stretches of adapter are removed, leaving
 only sequences which do not match.  Sudden deviations in composition at the end
 of libraries which have undergone aggressive trimming are therefore likely to be
 spurious.</li>
-
+</ol>
+<hr />
+<ul>
+	<li><a href="../">FastQC Help Top</a>
+	<ul>
+		<li><a href="../1%20Introduction/1.1%20What%20is%20FastQC.html">1.1 What is FastQC.html</a></li>
+		<li><a href="../2%20Basic%20Operations/">2 Basic Operations</a>
+			<ul>
+				<li><a href="../2%20Basic%20Operations/2.1%20Opening%20a%20sequence%20file.html">2.1 Opening a sequence file</a></li>
+				<li><a href="../2%20Basic%20Operations/2.2%20Evaluating%20Results.html">2.2 Evaluating Results</a></li>
+				<li><a href="../2%20Basic%20Operations/2.3%20Saving%20a%20Report.html">2.3 Saving a Report</a></li>
+			</ul>
+		</li>
+		<li><a href="../3%20Analysis%20Modules/">3 Analysis Modules</a>
+			<ul>
+				<li><a href="../3%20Analysis%20Modules/1%20Basic%20Statistics.html">3.1 Basic Statistics</a></li>
+				<li><a href="../3%20Analysis%20Modules/2%20Per%20Base%20Sequence%20Quality.html">3.2 Per Base Sequence Quality</a></li>
+				<li><a href="../3%20Analysis%20Modules/3%20Per%20Sequence%20Quality%20Scores.html">3.3 Per Sequence Quality Scores</a></li>
+				<li><a href="../3%20Analysis%20Modules/4%20Per%20Base%20Sequence%20Content.html">3.4 Per Base Sequence Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/5%20Per%20Sequence%20GC%20Content.html">3.5 Per Sequence GC Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/6%20Per%20Base%20N%20Content.html">3.6 Per Base N Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/7%20Sequence%20Length%20Distribution.html">3.7 Sequence Length Distribution</a></li>
+				<li><a href="../3%20Analysis%20Modules/8%20Duplicate%20Sequences.html">3.8 Duplicate Sequences</a></li>
+				<li><a href="../3%20Analysis%20Modules/9%20Overrepresented%20Sequences.html">3.9 Overrepresented Sequences</a></li>
+				<li><a href="../3%20Analysis%20Modules/10%20Adapter%20Content.html">3.10 Adapter Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/11%20Kmer%20Content.html">3.11 Kmer Content</a></li>
+				<li><a href="../3%20Analysis%20Modules/12%20Per%20Tile%20Sequence%20Quality.html">3.12 Per Tile Sequence Quality</a></li>
+			</ul>
+		</li>
+	</ul>
+</ul>
 </body>
 </html>
