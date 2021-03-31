@@ -94,6 +94,7 @@ my $contaminant;
 my $adapter;
 my $limits;
 my $threads;
+my $memory;
 my $quiet;
 my $nogroup;
 my $expgroup;
@@ -113,6 +114,7 @@ my $result = GetOptions('version' => \$version,
 						'extract!' => \$unzip,
 						'format=s' => \$format,
 						'threads=i' => \$threads,
+						'memory=i' => \$memory,
 						'kmers=i' => \$kmer_size,
 						'casava' => \$casava,
 						'nano' => \$nano,
@@ -185,7 +187,13 @@ if ($threads) {
 	}
 	
 	push @java_args ,"-Dfastqc.threads=$threads";
-	my $memory = 250 * $threads;
+}
+
+if ($memory) {
+	if ($memory < 1) {
+		die "Memory (MB) must be a positive integer";
+	}
+	
 	unshift @java_args,"-Xmx${memory}m";
 }
 else {
@@ -390,11 +398,11 @@ DESCRIPTION
                     formats are bam,sam,bam_mapped,sam_mapped and fastq
                     
     -t --threads    Specifies the number of files which can be processed
-                    simultaneously.  Each thread will be allocated 250MB of
-                    memory so you shouldn't run more threads than your
-                    available memory will cope with, and not more than
-                    6 threads on a 32 bit machine
-                  
+                    simultaneously.
+                    
+    -m --memory     Specifies the amount of memory (in MB) to be allocated.
+                    By default, this is 250 MB.
+		    
     -c              Specifies a non-default file which contains the list of
     --contaminants  contaminants to screen overrepresented sequences against.
                     The file must contain sets of named contaminants in the
