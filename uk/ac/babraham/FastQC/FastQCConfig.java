@@ -42,6 +42,7 @@ public class FastQCConfig {
 	public File adapter_file = null;
 	public File limits_file = null;
 	public int minLength = 0;
+	public int dupLength = 0;
 
 	private FastQCConfig () {
 		
@@ -94,6 +95,11 @@ public class FastQCConfig {
 		// Min length
 		if (System.getProperty("fastqc.min_length") != null) {
 			minLength = Integer.parseInt(System.getProperty("fastqc.min_length"));
+		}
+
+		// Dup length
+		if (System.getProperty("fastqc.dup_length") != null) {
+			dupLength = Integer.parseInt(System.getProperty("fastqc.dup_length"));
 		}
 
 		
