@@ -45,6 +45,11 @@ public class QualityBoxPlot extends JPanel {
 	private static final Color GOOD_DARK = new Color(175,230,175);
 	private static final Color BAD_DARK = new Color(230,215,175);
 	private static final Color UGLY_DARK = new Color(230,175,175);
+
+	//CB-friendly colours from https://personal.sron.nl/~pault/#sec:qualitative
+	private static final Color CB_GOOD = new Color(204,221,170);
+	private static final Color CB_BAD = new Color(238,238,187);
+	private static final Color CB_UGLY = new Color(255,204,204);
 		
 	public QualityBoxPlot (double [] means, double [] medians, double [] lowest, double [] highest, double [] lowerQuartile, double [] upperQuartile, double minY, double maxY, double yInterval, String [] xLabels, String graphTitle) {
 
@@ -114,45 +119,71 @@ public class QualityBoxPlot extends JPanel {
 		// First draw faint boxes over alternating bases so you can see which is which
 		
 		int lastXLabelEnd = 0;
-		
-		for (int i=0;i<means.length;i++) {		// Now draw some background colours which show good / bad quality
-			if (i%2 != 0) {
-				g.setColor(UGLY);
-			}
-			else {
-				g.setColor(UGLY_DARK);
-			}
 
-			g.fillRect(xOffset+(baseWidth*i), getY(20), baseWidth, getY(yStart)-getY(20));
+		if (System.getProperty("fastqc.colourblind")!=null && System.getProperty("fastqc.colourblind").equals("true")) { 
+			// Colourblind friendly background colours
+			for (int i=0;i<means.length;i++) {		// Now draw some background colours which show good / bad quality
 
-			if (i%2 != 0) {
-				g.setColor(BAD);
+				g.setColor(CB_UGLY);
+				g.fillRect(xOffset+(baseWidth*i), getY(20), baseWidth, getY(yStart)-getY(20));
+
+				g.setColor(CB_BAD);
+				g.fillRect(xOffset+(baseWidth*i), getY(28), baseWidth, getY(20)-getY(28));
+
+				g.setColor(CB_GOOD);
+				g.fillRect(xOffset+(baseWidth*i), getY(maxY), baseWidth, getY(28)-getY(maxY));
+
+				g.setColor(Color.LIGHT_GRAY);
+				g.drawLine(xOffset+(baseWidth*i),getY(0), xOffset+(baseWidth*i),getY(maxY));
+
+				g.setColor(Color.BLACK);
+				int baseNumberWidth = g.getFontMetrics().stringWidth(xLabels[i]);
+				int labelStart = ((baseWidth/2)+xOffset+(baseWidth*i))-(baseNumberWidth/2);
+				
+				if (labelStart > lastXLabelEnd) {
+					g.drawString(xLabels[i], labelStart, getHeight()-25);
+					lastXLabelEnd = labelStart+g.getFontMetrics().stringWidth(xLabels[i])+5;
+				}
 			}
-			else {
-				g.setColor(BAD_DARK);
-			}
+		} else {
+			for (int i=0;i<means.length;i++) {		// Now draw some background colours which show good / bad quality
+				if (i%2 != 0) {
+					g.setColor(UGLY);
+				}
+				else {
+					g.setColor(UGLY_DARK);
+				}
 
-			g.fillRect(xOffset+(baseWidth*i), getY(28), baseWidth, getY(20)-getY(28));
+				g.fillRect(xOffset+(baseWidth*i), getY(20), baseWidth, getY(yStart)-getY(20));
 
-			if (i%2 != 0) {
-				g.setColor(GOOD);
-			}
-			else {
-				g.setColor(GOOD_DARK);
-			}
+				if (i%2 != 0) {
+					g.setColor(BAD);
+				}
+				else {
+					g.setColor(BAD_DARK);
+				}
 
-			g.fillRect(xOffset+(baseWidth*i), getY(maxY), baseWidth, getY(28)-getY(maxY));
+				g.fillRect(xOffset+(baseWidth*i), getY(28), baseWidth, getY(20)-getY(28));
 
-			g.setColor(Color.BLACK);
-			int baseNumberWidth = g.getFontMetrics().stringWidth(xLabels[i]);
-			int labelStart = ((baseWidth/2)+xOffset+(baseWidth*i))-(baseNumberWidth/2);
-			
-			if (labelStart > lastXLabelEnd) {
-				g.drawString(xLabels[i], labelStart, getHeight()-25);
-				lastXLabelEnd = labelStart+g.getFontMetrics().stringWidth(xLabels[i])+5;
+				if (i%2 != 0) {
+					g.setColor(GOOD);
+				}
+				else {
+					g.setColor(GOOD_DARK);
+				}
+
+				g.fillRect(xOffset+(baseWidth*i), getY(maxY), baseWidth, getY(28)-getY(maxY));
+
+				g.setColor(Color.BLACK);
+				int baseNumberWidth = g.getFontMetrics().stringWidth(xLabels[i]);
+				int labelStart = ((baseWidth/2)+xOffset+(baseWidth*i))-(baseNumberWidth/2);
+				
+				if (labelStart > lastXLabelEnd) {
+					g.drawString(xLabels[i], labelStart, getHeight()-25);
+					lastXLabelEnd = labelStart+g.getFontMetrics().stringWidth(xLabels[i])+5;
+				}
 			}
 		}
-		
 		// Now draw the axes
 		g.drawLine(xOffset, getHeight()-40, getWidth()-10,getHeight()-40);
 		g.drawLine(xOffset, getHeight()-40, xOffset, 40);
@@ -172,7 +203,11 @@ public class QualityBoxPlot extends JPanel {
 //			System.out.println("For base "+i+" Yvalues are BoxBottom="+boxBottomY+" boxTop="+boxTopY+" whiskerBottom="+lowerWhiskerY+" whiskerTop="+upperWhiskerY+" median="+medianY);
 			
 			// Draw the main box
-			g.setColor(new Color(240,240,0));
+			if (System.getProperty("fastqc.colourblind")!=null && System.getProperty("fastqc.colourblind").equals("true")) { 
+				g.setColor(new Color(187,204,238));
+			} else {
+				g.setColor(new Color(240,240,0));
+			}
 			g.fillRect(xOffset+(baseWidth*i)+2, boxTopY, baseWidth-4, boxBottomY-boxTopY);
 			g.setColor(Color.BLACK);
 			g.drawRect(xOffset+(baseWidth*i)+2, boxTopY, baseWidth-4, boxBottomY-boxTopY);
@@ -186,14 +221,22 @@ public class QualityBoxPlot extends JPanel {
 			g.drawLine(xOffset+(baseWidth*i)+2, lowerWhiskerY, xOffset+(baseWidth*(i+1))-2, lowerWhiskerY);
 
 			// Draw the median line
-			g.setColor(new Color(200,0,0));
+			if (System.getProperty("fastqc.colourblind")!=null && System.getProperty("fastqc.colourblind").equals("true")) { 
+				g.setColor(new Color(34,85,34));
+			} else {
+				g.setColor(new Color(200,0,0));
+			}
 			g.drawLine(xOffset+(baseWidth*i)+2, medianY, (xOffset+(baseWidth*(i+1)))-2,medianY);
 
 			
 		}
 
 		// Now overlay the means
-		g.setColor(new Color(0,0,200));
+		if (System.getProperty("fastqc.colourblind")!=null && System.getProperty("fastqc.colourblind").equals("true")) { 
+			g.setColor(new Color(34,34,85));
+		} else {
+			g.setColor(new Color(0,0,200));
+		}
 		lastY = getY(means[0]);
 		for (int i=1;i<means.length;i++) {
 			int thisY = getY(means[i]);

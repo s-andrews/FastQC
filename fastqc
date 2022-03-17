@@ -104,6 +104,7 @@ my $kmer_size;
 my $temp_directory;
 my $min_length;
 my $dup_length;
+my $colourblind;
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
@@ -125,6 +126,7 @@ my $result = GetOptions('version' => \$version,
 						'java=s' => \$java_bin,
 						'min_length=i' => \$min_length,
 						'dup_length=i' => \$dup_length,
+						'colourblind' => \$colourblind,
 						 );
 
 # Check the simple stuff first
@@ -186,6 +188,9 @@ if ($dup_length) {
 	push @java_args ,"-Dfastqc.dup_length=$dup_length";
 }
 
+if ($colourblind) {
+	push @java_args ,"-Dfastqc.colourblind=true";
+}
 
 if ($threads) {
 	if ($threads < 1) {
@@ -439,6 +444,7 @@ DESCRIPTION
                     generating report images. Defaults to system temp directory if
                     not specified.
                     
+   --colourblind    Uses colourblind-friendly palette when plotting graphs
 BUGS
 
     Any bugs in fastqc should be reported either to simon.andrews@babraham.ac.uk

@@ -40,6 +40,7 @@ public class LineGraph extends JPanel {
 	private double yInterval;
 	
 	private static final Color [] COLOURS = new Color[] {new Color(220,0,0), new Color(0,0,220), new Color(0,220,0), Color.DARK_GRAY, Color.MAGENTA, Color.ORANGE,Color.YELLOW,Color.CYAN,Color.PINK,Color.LIGHT_GRAY};
+	private static final Color [] CBCOLOURS = new Color[] {new Color(238,136,102),new Color(170,170,0), new Color(68,187,153), new Color(119,170,221), new Color(238,221,136),new Color(187,204,51),new Color(153,221,255),new Color(221,221,221), new Color(85,85,85), Color.BLACK};
 	
 	public LineGraph (double [] [] data, double minY, double maxY, String xLabel, String [] xTitles, int [] xCategories, String graphTitle) {
 		this(data,minY,maxY,xLabel,xTitles,new String[0],graphTitle);
@@ -93,6 +94,14 @@ public class LineGraph extends JPanel {
 	
 	public void paint (Graphics g) {
 		super.paint(g);
+
+		Color [] PALETTE;
+
+		if (System.getProperty("fastqc.colourblind")!=null && System.getProperty("fastqc.colourblind").equals("true")) {
+			PALETTE = CBCOLOURS;
+		} else {
+			PALETTE = COLOURS;
+		}
 		
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());
@@ -182,7 +191,7 @@ public class LineGraph extends JPanel {
 		}
 		
 		for (int d=0;d<data.length;d++) {
-			g.setColor(COLOURS[d % COLOURS.length]);
+			g.setColor(PALETTE[d % PALETTE.length]);
 			
 			if (data[d].length > 0)
 				lastY = getY(data[d][0]);
@@ -220,7 +229,7 @@ public class LineGraph extends JPanel {
 
 		// Now draw the actual labels
 		for (int t=0;t<xTitles.length;t++) {
-			g.setColor(COLOURS[t % COLOURS.length]);
+			g.setColor(PALETTE[t % PALETTE.length]);
 			g.drawString(xTitles[t], ((getWidth()-10)-widestLabel)+3, 40+(20*(t+1)));
 		}
 		
