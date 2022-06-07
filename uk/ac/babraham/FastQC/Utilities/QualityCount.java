@@ -1,9 +1,9 @@
 /**
  * Copyright Copyright 2013-17 Simon Andrews
  *
- *    This file is part of SeqMonk.
+ *    This file is part of FastQC.
  *
- *    SeqMonk is free software; you can redistribute it and/or modify
+ *    Conclave is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 3 of the License, or
  *    (at your option) any later version.
@@ -14,7 +14,7 @@
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with SeqMonk; if not, write to the Free Software
+ *    along with Conclave; if not, write to the Free Software
  *    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
@@ -25,7 +25,7 @@ public class QualityCount {
 	/*
 	 * So I'm on my third go at writing this.  I've now tried an all
 	 * primitive version of this class so that we don't have to do 
-	 * hash lookps which require a conversion from chr to Character.
+	 * hash lookups which require a conversion from chr to Character.
 	 * We should also be safe with 150 slots which will give us up to
 	 * Phred 86 with a 64 offset, which should be plenty.
 	 */

@@ -103,6 +103,7 @@ my $nofilter;
 my $kmer_size;
 my $temp_directory;
 my $min_length;
+my $dup_length;
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
@@ -123,6 +124,7 @@ my $result = GetOptions('version' => \$version,
 						'dir=s' => \$temp_directory,
 						'java=s' => \$java_bin,
 						'min_length=i' => \$min_length,
+						'dup_length=i' => \$dup_length,
 						 );
 
 # Check the simple stuff first
@@ -178,6 +180,12 @@ if ($temp_directory) {
 if ($min_length) {
 	push @java_args ,"-Dfastqc.min_length=$min_length";
 }
+
+
+if ($dup_length) {
+	push @java_args ,"-Dfastqc.dup_length=$dup_length";
+}
+
 
 if ($threads) {
 	if ($threads < 1) {
@@ -384,6 +392,13 @@ DESCRIPTION
                     the sequence length used to create your read groups.  This can
                     be useful for making directly comaparable statistics from 
                     datasets with somewhat variable read lengths.
+
+    --dup_length    Sets a length to which the sequences will be truncated when 
+    				defining them to be duplicates, affecting the duplication and
+    				overrepresented sequences plot.  This can be useful if you have
+    				long reads with higher levels of miscalls, or contamination with
+    				adapter dimers containing UMI sequences.
+
                     
     -f --format     Bypasses the normal sequence file format detection and
                     forces the program to use the specified format.  Valid

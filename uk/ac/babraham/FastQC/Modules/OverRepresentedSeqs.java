@@ -36,6 +36,7 @@ import javax.swing.table.TableModel;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
 import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminantHit;
@@ -151,7 +152,16 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// Since we rely on identity to match sequences we can't trust really long
 		// sequences, so anything over 75bp gets truncated to 50bp.
 		String seq = sequence.getSequence();
-		if (seq.length() > 75) {
+
+		// For long sequences (above 75bp) we truncate to 50bp so that random
+		// base miscalls don't mess things up.  We also allow the user to 
+		// specify a shorter truncation length on the command line in the 
+		// dup_length option.
+		
+		if (FastQCConfig.getInstance().dupLength != 0) {
+			seq = new String(seq.substring(0, FastQCConfig.getInstance().dupLength));			
+		}
+		else if (seq.length() > 75) {
 			seq = new String(seq.substring(0, 50));
 		}
 				
