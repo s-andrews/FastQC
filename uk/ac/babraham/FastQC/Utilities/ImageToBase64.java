@@ -45,6 +45,28 @@ public class ImageToBase64 {
 		}
 		
 	}
+
+	public static String svgImageToBase64 (String svgdata) {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		OutputStream b64 = new Base64.OutputStream(os);
+		
+		try {
+			b64.write(svgdata.getBytes());
+			
+			String data = "data:image/svg+xml;base64,"+os.toString("UTF-8");
+			
+			b64.close();
+			
+			return(data);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			return "Failed";
+		}
+		
+	}
+
+	
 	
 	
 }

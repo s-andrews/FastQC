@@ -22,8 +22,6 @@ package uk.ac.babraham.FastQC.Modules;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -40,18 +38,18 @@ import uk.ac.babraham.FastQC.Utilities.ImageSaver.SVGImageSaver;
 
 public abstract class AbstractQCModule implements QCModule {
 
-	protected 	void simpleXhtmlReport(HTMLReportArchive report,BufferedImage img,String alt) throws XMLStreamException {
+	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData,String alt) throws XMLStreamException {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
 		xhtml.writeEmptyElement("img");
 		xhtml.writeAttribute("class", "indented");
-		xhtml.writeAttribute("src", ImageToBase64.imageToBase64(img));
+		xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
 		xhtml.writeAttribute("alt", alt);
 		
-		if(img!=null){
-			xhtml.writeAttribute("width",String.valueOf(img.getWidth()));
-			xhtml.writeAttribute("height",String.valueOf(img.getHeight()));
-		}
+//		if(svgData!=null){
+//			xhtml.writeAttribute("width",String.valueOf(img.getWidth()));
+//			xhtml.writeAttribute("height",String.valueOf(img.getHeight()));
+//		}
 		
 		xhtml.writeEndElement();//p
 	}
@@ -68,7 +66,7 @@ public abstract class AbstractQCModule implements QCModule {
 		String svgFilename = fileName.replaceAll("\\.png$", ".svg");
 		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+svgFilename));
 				
-		SVGImageSaver.saveImage(resultsPanel, zip);
+		String svgData = SVGImageSaver.saveImage(resultsPanel, zip);
 		zip.closeEntry();
 
 		// Write out the png version of the image
@@ -88,19 +86,30 @@ public abstract class AbstractQCModule implements QCModule {
 		zip.closeEntry();
 
 		
-		
-		simpleXhtmlReport(report, b, imageTitle);
+		simpleXhtmlReport(report, svgData, imageTitle);
 
 	}
 
 	protected void writeSpecificImage (HTMLReportArchive report, JPanel resultsPanel, String fileName, String imageTitle, int width, int height) throws IOException, XMLStreamException {
 		ZipOutputStream zip = report.zipFile();
+		
+		// Write out the svg version of the image		
+		resultsPanel.setSize(width,height);
+		resultsPanel.validate();
+
+		
+		String svgFilename = fileName.replaceAll("\\.png$", ".svg");
+		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+svgFilename));
+				
+		String svgData = SVGImageSaver.saveImage(resultsPanel, zip);
+		zip.closeEntry();
+
+		// Write out the png version of the image
 		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+fileName));
 		BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics g = b.createGraphics();
-		
+
 		resultsPanel.setDoubleBuffered(false);
-		resultsPanel.setSize(width,height);
 		resultsPanel.addNotify();
 		resultsPanel.validate();
 		
@@ -110,9 +119,9 @@ public abstract class AbstractQCModule implements QCModule {
 		
 		ImageIO.write(b, "PNG", zip);
 		zip.closeEntry();
-		
-		simpleXhtmlReport(report, b, imageTitle);
 
+		
+		simpleXhtmlReport(report, svgData, imageTitle);
 	}
 
 

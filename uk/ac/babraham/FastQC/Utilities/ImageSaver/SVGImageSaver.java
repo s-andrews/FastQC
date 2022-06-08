@@ -31,10 +31,12 @@ import java.io.PrintWriter;
  */
 public class SVGImageSaver {
 
-	public static void saveImage (Component c, OutputStream os) {
+	public static String saveImage (Component c, OutputStream os) {
 		PrintWriter pr = new PrintWriter(os);
-		SVGGenerator.writeSVG(pr,c);
+		String svgData = SVGGenerator.writeSVG(c);
+		pr.write(svgData);
 		pr.flush();
+		return(svgData);
 	}
 	
 	

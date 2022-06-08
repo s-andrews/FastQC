@@ -29,7 +29,6 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
-import java.io.PrintWriter;
 import java.text.AttributedCharacterIterator;
 
 import javax.swing.RepaintManager;
@@ -57,7 +56,7 @@ public class SVGGenerator {
 	 * bits we actually use.	
 	 */
 		
-	private PrintWriter pr;
+	private StringBuffer sb;
 	
 	private Graphics g;
 	private int cWidth = 0;
@@ -75,7 +74,9 @@ public class SVGGenerator {
 	 * @param c The component to convert
 	 * @return An SVG representation of the component
 	 */
-	public static void writeSVG (PrintWriter pr, Component c) {
+	public static String writeSVG (Component c) {
+		
+		StringBuffer sb = new StringBuffer();
 		
 		/*
 		 * Before using our Graphics class we need to disable double
@@ -94,11 +95,13 @@ public class SVGGenerator {
 			RepaintManager.currentManager(c).setDoubleBufferingEnabled(false);
 		}
 		
-		new SVGGenerator(pr,c);
+		new SVGGenerator(sb,c);
 		
 		if (doubleBuffered) {
 			RepaintManager.currentManager(c).setDoubleBufferingEnabled(true);
 		}
+		
+		return(sb.toString());
 
 	}
 	
@@ -108,9 +111,9 @@ public class SVGGenerator {
 	 * 
 	 * @param c The component to convert
 	 */
-	private SVGGenerator (PrintWriter pr, Component c) {
+	private SVGGenerator (StringBuffer sb, Component c) {
 			
-		this.pr = pr;
+		this.sb = sb;
 		
 		cWidth = c.getWidth();
 		cHeight = c.getHeight();
@@ -124,22 +127,25 @@ public class SVGGenerator {
 		g = b.getGraphics();			
 
 		
-		pr.print("<?xml version=\"1.0\" standalone=\"no\"?>\n");
-		pr.print("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
-		pr.print("<svg width=\"");
-		pr.print(c.getWidth());
-		pr.print("\" height=\"");
-		pr.print(c.getHeight());
-		pr.print("\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+		sb.append("<?xml version=\"1.0\" standalone=\"no\"?>\n");
+		sb.append("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
+		sb.append("<svg width=\"");
+		sb.append(c.getWidth());
+		sb.append("\" height=\"");
+		sb.append(c.getHeight());
+		sb.append("\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n");
 
 		c.paint(new SVGGraphics());
 
-		pr.print("</svg>\n");
+		sb.append("</svg>\n");
 		
 	}
+	
+	
+	
 		
 	/**
-	 * The Acutal SVG implementation of Graphics
+	 * The Actual SVG implementation of Graphics
 	 */
 	private class SVGGraphics extends Graphics {
 		
@@ -221,17 +227,17 @@ public class SVGGenerator {
 			x2 = correctX(x2);
 			y2 = correctY(y2);
 			
-			pr.print("<line x1=\"");
-			pr.print(x1);
-			pr.print("\" y1=\"");
-			pr.print(y1);
-			pr.print("\" x2=\"");
-			pr.print(x2);
-			pr.print("\" y2=\"");
-			pr.print(y2);
-			pr.print("\" stroke=\"rgb(");
+			sb.append("<line x1=\"");
+			sb.append(x1);
+			sb.append("\" y1=\"");
+			sb.append(y1);
+			sb.append("\" x2=\"");
+			sb.append(x2);
+			sb.append("\" y2=\"");
+			sb.append(y2);
+			sb.append("\" stroke=\"rgb(");
 			appendColor();
-			pr.print(")\" stroke-width=\"1\"/>\n");
+			sb.append(")\" stroke-width=\"1\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -259,17 +265,17 @@ public class SVGGenerator {
 			width/=2;
 			height/=2;
 			
-			pr.print("<ellipse cx=\"");
-			pr.print(x);
-			pr.print("\" cy=\"");
-			pr.print(y);
-			pr.print("\" rx=\"");
-			pr.print(width);
-			pr.print("\" ry=\"");
-			pr.print(height);
-			pr.print("\" style=\"fill:none;stroke:rgb(");
+			sb.append("<ellipse cx=\"");
+			sb.append(x);
+			sb.append("\" cy=\"");
+			sb.append(y);
+			sb.append("\" rx=\"");
+			sb.append(width);
+			sb.append("\" ry=\"");
+			sb.append(height);
+			sb.append("\" style=\"fill:none;stroke:rgb(");
 			appendColor();
-			pr.print(");stroke-width:1\"/>\n");
+			sb.append(");stroke-width:1\"/>\n");
 		}
 		
 		/* (non-Javadoc)
@@ -297,17 +303,17 @@ public class SVGGenerator {
 			width/=2;
 			height/=2;
 			
-			pr.print("<ellipse cx=\"");
-			pr.print(x);
-			pr.print("\" cy=\"");
-			pr.print(y);
-			pr.print("\" rx=\"");
-			pr.print(width);
-			pr.print("\" ry=\"");
-			pr.print(height);
-			pr.print("\" style=\"fill:rgb(");
+			sb.append("<ellipse cx=\"");
+			sb.append(x);
+			sb.append("\" cy=\"");
+			sb.append(y);
+			sb.append("\" rx=\"");
+			sb.append(width);
+			sb.append("\" ry=\"");
+			sb.append(height);
+			sb.append("\" style=\"fill:rgb(");
 			appendColor();
-			pr.print(");stroke:none\"/>\n");
+			sb.append(");stroke:none\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -332,17 +338,17 @@ public class SVGGenerator {
 			// java names and SVG names.  Will look at this again
 			// later.
 			
-			pr.print("<text x=\"");
-			pr.print(x);
-			pr.print("\" y=\"");
-			pr.print(y);
-			pr.print("\" fill=\"rgb(");
+			sb.append("<text x=\"");
+			sb.append(x);
+			sb.append("\" y=\"");
+			sb.append(y);
+			sb.append("\" fill=\"rgb(");
 			appendColor();
-			pr.print(")\" font-family=\"Arial\" font-size=\"");
-			pr.print(font.getSize());
-			pr.print("\">");
-			pr.print(string);
-			pr.print("</text>\n");
+			sb.append(")\" font-family=\"Arial\" font-size=\"");
+			sb.append(font.getSize());
+			sb.append("\">");
+			sb.append(string);
+			sb.append("</text>\n");
 		}
 		
 		/* (non-Javadoc)
@@ -382,25 +388,25 @@ public class SVGGenerator {
 				height = cHeight-y;
 			}
 			
-			pr.print("<rect width=\"");
-			pr.print(width);
-			pr.print("\" height=\"");
-			pr.print(height);
-			pr.print("\"");
-			pr.print(" x=\"");
-			pr.print(x);
-			pr.print("\" y=\"");
-			pr.print(y);
-			pr.print("\" rx=\"");
-			pr.print(arcWidth);
-			pr.print("\" ry=\"");
-			pr.print(arcHeight);
-			pr.print("\" style=\"fill:none");
-			pr.print(";stroke-width:1;stroke:rgb(");
+			sb.append("<rect width=\"");
+			sb.append(width);
+			sb.append("\" height=\"");
+			sb.append(height);
+			sb.append("\"");
+			sb.append(" x=\"");
+			sb.append(x);
+			sb.append("\" y=\"");
+			sb.append(y);
+			sb.append("\" rx=\"");
+			sb.append(arcWidth);
+			sb.append("\" ry=\"");
+			sb.append(arcHeight);
+			sb.append("\" style=\"fill:none");
+			sb.append(";stroke-width:1;stroke:rgb(");
 					
 			appendColor();
 					
-			pr.print(")\"/>\n");
+			sb.append(")\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -426,26 +432,26 @@ public class SVGGenerator {
 				height = cHeight-y;
 			}
 			
-			pr.print("<rect width=\"");
-			pr.print(width);
-			pr.print("\" height=\"");
-			pr.print(height);
-			pr.print("\"");
-			pr.print(" x=\"");
-			pr.print(x);
-			pr.print("\" y=\"");
-			pr.print(y);
+			sb.append("<rect width=\"");
+			sb.append(width);
+			sb.append("\" height=\"");
+			sb.append(height);
+			sb.append("\"");
+			sb.append(" x=\"");
+			sb.append(x);
+			sb.append("\" y=\"");
+			sb.append(y);
 			if (arcWidth > 0 || arcHeight > 0) {
-				pr.print("\" rx=\"");
-				pr.print(arcWidth);
-				pr.print("\" ry=\"");
-				pr.print(arcHeight);
+				sb.append("\" rx=\"");
+				sb.append(arcWidth);
+				sb.append("\" ry=\"");
+				sb.append(arcHeight);
 			}
-			pr.print("\" style=\"fill:rgb(");
+			sb.append("\" style=\"fill:rgb(");
 			
 			appendColor();
 	
-			pr.print(");stroke:none\"/>\n");
+			sb.append(");stroke:none\"/>\n");
 		}
 		
 		/* (non-Javadoc)
@@ -488,11 +494,11 @@ public class SVGGenerator {
 		 * Append color.
 		 */
 		private void appendColor () {
-			pr.print(color.getRed());
-			pr.print(",");
-			pr.print(color.getGreen());
-			pr.print(",");
-			pr.print(color.getBlue());
+			sb.append(color.getRed());
+			sb.append(",");
+			sb.append(color.getGreen());
+			sb.append(",");
+			sb.append(color.getBlue());
 		}
 	
 		/*
@@ -587,22 +593,22 @@ public class SVGGenerator {
 				correctedYPoints[i] = correctY(yPoints[i]);
 			}
 						
-			pr.print("<polygon points=\"");
+			sb.append("<polygon points=\"");
 
 			for (int i=0;i<pointsToUse;i++) {
 				if (i != 0) {
-					pr.print(",");
+					sb.append(",");
 				}
-				pr.print(correctedXPoints[i]);
-				pr.print(",");
-				pr.print(correctedYPoints[i]);
+				sb.append(correctedXPoints[i]);
+				sb.append(",");
+				sb.append(correctedYPoints[i]);
 			}
 			
-			pr.print("\" style=\"stroke-width:1;stroke:rgb(");
+			sb.append("\" style=\"stroke-width:1;stroke:rgb(");
 			
 			appendColor();
 	
-			pr.print(");fill:none\"/>\n");
+			sb.append(");fill:none\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -641,22 +647,22 @@ public class SVGGenerator {
 				correctedYPoints[i] = correctY(yPoints[i]);
 			}
 						
-			pr.print("<polygon points=\"");
+			sb.append("<polygon points=\"");
 
 			for (int i=0;i<pointsToUse;i++) {
 				if (i != 0) {
-					pr.print(",");
+					sb.append(",");
 				}
-				pr.print(correctedXPoints[i]);
-				pr.print(",");
-				pr.print(correctedYPoints[i]);
+				sb.append(correctedXPoints[i]);
+				sb.append(",");
+				sb.append(correctedYPoints[i]);
 			}
 			
-			pr.print("\" style=\"fill:rgb(");
+			sb.append("\" style=\"fill:rgb(");
 			
 			appendColor();
 	
-			pr.print(");stroke:none\"/>\n");
+			sb.append(");stroke:none\"/>\n");
 
 		}
 	
