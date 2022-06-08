@@ -39,14 +39,43 @@ if ($^O =~ /Win/) {
 }
 
 if ($ENV{CLASSPATH}) {
-	$ENV{CLASSPATH} .= "$delimiter$RealBin$delimiter$RealBin/sam-1.103.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+	$ENV{CLASSPATH} .= "$delimiter$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
 }
 else {
-	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/sam-1.103.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
 }
+
+
+# We need to find the java interpreter.  We'll start from the assumption that this
+# is included in the path.
+
+my $java_bin = "java";
+
+# We might have bundled a jre with the installation.  If that's the case then we'll
+# use the interpreter which is bundled in preference to the system one.
+
+# Windows first
+if (-e "$RealBin/jre/bin/java.exe") {
+	$java_bin = "$RealBin/jre/bin/java.exe";
+}
+# Linux
+elsif (-e "$RealBin/jre/bin/java") {
+	$java_bin = "$RealBin/jre/bin/java";
+}
+# OSX
+elsif (-e "$RealBin/jre/Contents/Home/bin/java") {
+	$java_bin = "$RealBin/jre/Contents/Home/bin/java";
+}
+
 
 my @java_args;
 my @files;
+
+# Add an option to make the JVM exit cleanly if it hits an out of memory error rather than
+# hanging.
+
+push @java_args, '-XX:+ExitOnOutOfMemoryError';
+
 
 if ($^O =~/darwin/) {
 		
@@ -70,6 +99,7 @@ my $format;
 my $contaminant;
 my $adapter;
 my $limits;
+my $memory;
 my $threads;
 my $quiet;
 my $nogroup;
@@ -79,8 +109,8 @@ my $nano;
 my $nofilter;
 my $kmer_size;
 my $temp_directory;
-my $java_bin = 'java';
 my $min_length;
+my $dup_length;
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
@@ -90,6 +120,7 @@ my $result = GetOptions('version' => \$version,
 						'outdir=s' => \$outdir,
 						'extract!' => \$unzip,
 						'format=s' => \$format,
+						'memory=i' => \$memory,
 						'threads=i' => \$threads,
 						'kmers=i' => \$kmer_size,
 						'casava' => \$casava,
@@ -101,6 +132,7 @@ my $result = GetOptions('version' => \$version,
 						'dir=s' => \$temp_directory,
 						'java=s' => \$java_bin,
 						'min_length=i' => \$min_length,
+						'dup_length=i' => \$dup_length,
 						 );
 
 # Check the simple stuff first
@@ -157,17 +189,32 @@ if ($min_length) {
 	push @java_args ,"-Dfastqc.min_length=$min_length";
 }
 
+
+if ($dup_length) {
+	push @java_args ,"-Dfastqc.dup_length=$dup_length";
+}
+
+if ($memory) {
+	if ($memory < 100 || $memory > 10000) {
+		die "Memory value $memory MB was outside the allowed range (100 - 10000)";
+	}
+}
+else {
+	$memory = 512;
+}
+
+
 if ($threads) {
 	if ($threads < 1) {
 		die "Number of threads must be a positive integer";
 	}
 	
 	push @java_args ,"-Dfastqc.threads=$threads";
-	my $memory = 250 * $threads;
-	unshift @java_args,"-Xmx${memory}m";
+	my $used_memory = $memory * $threads;
+	unshift @java_args,"-Xmx${used_memory}m";
 }
 else {
-	unshift @java_args,'-Xmx250m';
+	unshift @java_args,'-Xmx${memory}m';
 }
 
 if ($kmer_size) {
@@ -234,6 +281,8 @@ if ($format) {
 }
 
 if ($java_bin ne 'java') {
+
+	warn "Java is $java_bin\n";
 #	$java_bin =~ s/\\/\//g;
 	
 	unless (-e $java_bin) {
@@ -327,7 +376,7 @@ DESCRIPTION
                     (including being gzipped and ending with .gz) otherwise they
                     won't be grouped together correctly.
                     
-    --nano          Files come from naopore sequences and are in fast5 format. In
+    --nano          Files come from nanopore sequences and are in fast5 format. In
                     this mode you can pass in directories to process and the program
                     will take in all fast5 files within those directories and produce
                     a single output file from the sequences found in all files.                    
@@ -360,11 +409,23 @@ DESCRIPTION
                     the sequence length used to create your read groups.  This can
                     be useful for making directly comaparable statistics from 
                     datasets with somewhat variable read lengths.
+
+    --dup_length    Sets a length to which the sequences will be truncated when 
+    				defining them to be duplicates, affecting the duplication and
+    				overrepresented sequences plot.  This can be useful if you have
+    				long reads with higher levels of miscalls, or contamination with
+    				adapter dimers containing UMI sequences.
+
                     
     -f --format     Bypasses the normal sequence file format detection and
                     forces the program to use the specified format.  Valid
                     formats are bam,sam,bam_mapped,sam_mapped and fastq
                     
+
+    --memory        Sets the base amount of memory, in Megabytes, used to process 
+                    each file.  Defaults to 512MB.  You may need to increase this if
+                    you have a file with very long sequences in it.
+
     -t --threads    Specifies the number of files which can be processed
                     simultaneously.  Each thread will be allocated 250MB of
                     memory so you shouldn't run more threads than your

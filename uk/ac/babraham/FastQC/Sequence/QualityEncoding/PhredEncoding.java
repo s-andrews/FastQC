@@ -29,7 +29,7 @@ public class PhredEncoding {
 	
 	public static PhredEncoding getFastQEncodingOffset (char lowestChar) {
 		if (lowestChar < 33) {
-			throw new IllegalArgumentException("No known encodings with chars < 33 (Yours was "+lowestChar+")");
+			throw new IllegalArgumentException("No known encodings with chars < 33 (Yours was '"+lowestChar+"' with value "+(int)lowestChar+")");
 		}
 		else if (lowestChar < 64) {
 			return new PhredEncoding("Sanger / Illumina 1.9", SANGER_ENCODING_OFFSET);
@@ -45,7 +45,7 @@ public class PhredEncoding {
 		else if (lowestChar <= 126) {
 			return new PhredEncoding("Illumina 1.5", ILLUMINA_1_3_ENCODING_OFFSET);
 		}
-		throw new IllegalArgumentException("No known encodings with chars > 126 (Yours was "+lowestChar+")");
+		throw new IllegalArgumentException("No known encodings with chars > 126 (Yours was "+lowestChar+" with value "+(int)lowestChar+")");
 	}
 	
 	public static double convertSangerPhredToProbability (int phred) {

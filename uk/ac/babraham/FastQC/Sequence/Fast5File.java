@@ -21,6 +21,8 @@ package uk.ac.babraham.FastQC.Sequence;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5SimpleReader;
@@ -29,45 +31,58 @@ public class Fast5File implements SequenceFile {
 
 	private Sequence nextSequence = null;
 	private File file;
-
 	private String name;
+	private IHDF5SimpleReader reader;
+	private String [] readPaths = new String[] {""};
+	
+	private int readPathsIndexPosition = 0;
+	
+	private String [] rdfPaths = new String [] {
+			"Analyses/Basecall_2D_000/BaseCalled_template/Fastq",
+			"Analyses/Basecall_2D_000/BaseCalled_2D/Fastq",
+			"Analyses/Basecall_1D_000/BaseCalled_template/Fastq",
+			"Analyses/Basecall_1D_000/BaseCalled_1D/Fastq"
+	};
+
+
 
 	protected Fast5File(File file) throws SequenceFormatException, IOException {
 		this.file = file;
 		name = file.getName();
 
-		IHDF5SimpleReader reader = HDF5Factory.openForReading(file);
+		reader = HDF5Factory.openForReading(file);
 		
-		String [] rdfPaths = new String [] {
-				"Analyses/Basecall_2D_000/BaseCalled_template/Fastq",
-				"Analyses/Basecall_2D_000/BaseCalled_2D/Fastq",
-				"Analyses/Basecall_1D_000/BaseCalled_template/Fastq",
-				"Analyses/Basecall_1D_000/BaseCalled_1D/Fastq"
-		};
+		// These files have changed structure over time.  Originally they contained
+		// a single read per file where the base of the heirarchy was the read 
+		// itself.
+		//
+		// Later the files moved to having multiple reads per file.  Now there is
+		// an additional top level folder per read with the sub-structure being the
+		// same as it used to be for the individual reads.
+		//
+		// We need to account for both of these structures.
 		
-		boolean foundPath = false;
-		for (int r=0;r<rdfPaths.length;r++) {
 		
-				if (reader.exists(rdfPaths[r])) {
+		// See if we can see a bunch of paths starting with "read_" at the top of the
+		// heirarchy.  If we can then we substitute the read paths for these.
 		
-					foundPath = true;
-					String fastq = reader.readString(rdfPaths[r]);
+		List<String> topLevelFolders = reader.getGroupMembers("/");
 		
-					String [] sections = fastq.split("\\n");
+		List<String> readFolders = new ArrayList<String>();
+		
+		for (String folder : topLevelFolders) {
+			System.err.println("Looking at "+folder);
 			
-					if (sections.length != 4) {
-						throw new SequenceFormatException("Didn't get 4 sections from "+fastq);
-					}
-			
-					nextSequence = new Sequence(this, sections[1].toUpperCase(),sections[3], sections[0]);
-					break;
-				}
+			if (folder.startsWith("read_")) {
+				readFolders.add(folder+"/");
+			}
 		}
-
-		reader.close();
-
-		if (!foundPath) {
-			throw new SequenceFormatException("No valid fastq paths found in "+file);
+		
+		if (readFolders.size() > 0) {
+			// We have read folders so we'll replace the default readPaths with
+			// the list we made
+			
+			readPaths = readFolders.toArray(new String[0]);
 		}
 		
 	}
@@ -77,9 +92,7 @@ public class Fast5File implements SequenceFile {
 	}
 
 	public int getPercentComplete() {
-		if (! hasNext()) return 100;
-
-		return 0;		
+		return (readPathsIndexPosition*100) / readPaths.length;		
 	}
 
 	public boolean isColorspace() {
@@ -87,13 +100,35 @@ public class Fast5File implements SequenceFile {
 	}
 
 	public boolean hasNext() {
-		return nextSequence != null;
+		return readPathsIndexPosition < readPaths.length;
 	}
 
 	public Sequence next() throws SequenceFormatException {
-		Sequence seq = nextSequence;
-		nextSequence = null;
-		return seq;
+		
+		for (int r=0;r<rdfPaths.length;r++) {
+			
+				if (reader.exists(readPaths[readPathsIndexPosition]+rdfPaths[r])) {
+		
+					String fastq = reader.readString(readPaths[readPathsIndexPosition]+rdfPaths[r]);
+		
+					String [] sections = fastq.split("\\n");
+			
+					if (sections.length != 4) {
+						throw new SequenceFormatException("Didn't get 4 sections from "+fastq);
+					}
+			
+					Sequence seq = new Sequence(this, sections[1].toUpperCase(),sections[3], sections[0]);
+					++readPathsIndexPosition;
+					
+					if(readPathsIndexPosition >= readPaths.length) {
+						reader.close();
+					}
+					
+					return(seq);
+				}
+		}
+		
+		throw new SequenceFormatException("No valid fastq paths found in "+file);
 	}
 
 	public void remove() {

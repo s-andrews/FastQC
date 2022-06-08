@@ -1,42 +1,49 @@
 Installing FastQC
 -------------------
+
+OSX
+---
+FastQC is distributed as a DMG image file.  Download the image from the project page
+and double click it to open it.  You should see the FastQC application appear in a
+Finder window.  Drag the application from there to wherever you want to install it 
+on your machine.  Once you've copied the application double click it to open it.
+
+FastQC is not a signed application therefore it may initially be blocked by the
+Gatekeeper application.  To avoid this open FastQC by right clicking on the app 
+and selecting open.  This may prompt you to allow it to open.  If it is still 
+blocked go to System Preferences > Security and Privacy and you should see an option
+to allow the application to open.  You only need to do this once and the preference
+should be remembered by OSX.
+
+Windows and Linux
+-----------------
 FastQC is a java application.  In order to run it needs your system to have a suitable
-Java Runtime Environment (JRE) installed.  Before you try to run FastQC you should therefore
-ensure that you have a suitable JRE.  There are a number of different JREs available
-however the ones we have tested are the v1.6-v1.8 JREs from Oracle.  These are available
-for a number of different platforms.
+Java Runtime Environment (JRE) installed.  Before you try to run FastQC you should 
+therefore ensure that you have a suitable JRE.  There are a number of different JREs 
+available however the ones we have tested are the latest Oracle runtime environments 
+and those from the adoptOpenJDK project (https://adoptopenjdk.net/).  You need to 
+download and install a suitable 64-bit JRE and make sure that the java application 
+is in your path (most installers will take care of this for you).
 
-Windows/Linux: Go to java.com - click on Free Java Download - DON'T click the large red button
-but choose the smaller link to "See all java downloads".  Find your operating system and select
-the appropriate offline installer.  If you are using a 64bit operating system (and nearly 
-everyone is these days), then make sure you select the 64bit version of the the installer.
+On linux most distributions will have java installed already so you might not need to
+do anything.  If java isn't installed then you can add it by doing:
 
-OSX: On newer versions of OSX you need to install the Java Development Kit.  The normal Java
-runtime environment IS NOT enough.  To get this go to java.com, click "Free java download",
-then IGNORE the big red button, and select "See all java downloads", on the next screen select
-"Looking for the JDK?" from the left hand menu and select the link to "JDK downloads" in the
-first paragraph.  You can then click the "Download" button underneath JDK in the page you are
-taken to.  Sorry this is such a pain!
+Ubuntu / Mint: sudo apt install default-jre
 
+CentOS / Redhat: sudo yum install java-1.8.0-openjdk
 
-If you're not sure whether you have java installed then you can test this from a command
-prompt.  To get a command prompt try:
+You can check whether java is installed by opening the 'cmd' program on windows, or
+any shell on linux and typing:
 
-Windows: Select Start > Run, and type 'cmd' (no quotes) in the box which appears, press OK
+java -version
 
-MaxOSX: Run Applications > Utilities > Terminal
+You should see something like:
 
-Linux: From your applications menu look for an application called 'Terminal' or 'Konsole'.
-Either of these will give you a usable shell.
+>java -version
+openjdk version "11.0.2" 2019-01-15
+OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.2+9)
+OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.2+9, mixed mode)
 
-At the command prompt type 'java -version' and press enter.  You should see something like:
-
-java version "1.8.0_60"
-Java(TM) SE Runtime Environment (build 1.8.0_60-b27)
-Java HotSpot(TM) 64-Bit Server VM (build 25.60-b23, mixed mode)
-
-If you get an error then you don't have java installed.  If the version listed on the first
-line is less than 1.6 then you might have problems running FastQC.
 
 Actually installing FastQC is as simple as unzipping the zip file it comes in into a
 suitable location.  That's it.  Once unzipped it's ready to go.
@@ -59,9 +66,7 @@ Windows: Simply double click on the run_fastqc bat file.  If you want to make a 
 shortcut then we've included an icon file in the top level directory so you don't have
 to use the generic bat file icon.
 
-MacOSX: There is an application bundle for MacOSX which you can use to install and run
-FastQC.  Just drag the application from the disk image to your Applications folder (or
-wherever you want to install the program).
+MacOSX: Double click on the FastQC application icon.
 
 Linux:  We have included a wrapper script, called 'fastqc' which is the easiest way to 
 start the program.  The wrapper is in the top level of the FastQC installation.  You 

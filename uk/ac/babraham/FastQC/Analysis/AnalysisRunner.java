@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import uk.ac.babraham.FastQC.Modules.BasicStats;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
@@ -102,6 +103,18 @@ public class AnalysisRunner implements Runnable {
 					} 
 					catch (InterruptedException e) {}
 			}
+			}
+		}
+		
+		// We need to account for their potentially being no sequences
+		// in the file.  In this case the BasicStats module never gets 
+		// the file name so we need to explicitly pass it.
+		
+		if (seqCount == 0) {
+			for (int m=0; m<modules.length; m++) {
+				if (modules[m] instanceof BasicStats) {
+					((BasicStats)modules[m]).setFileName(file.name());
+				}
 			}
 		}
 		

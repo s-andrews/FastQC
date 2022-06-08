@@ -1,3 +1,30 @@
+RELEASE NOTES FOR FastQC v0.11.9
+--------------------------------
+
+This is a bugfix release which resolves some issues with the program;
+
+- We removed the native look and feel from the linux application since
+  it's horribly broken
+  
+- Fixed a hang if a run terminated from an out-of-memory error
+
+- Fixed a corner case where adapters could occasionally be double-counted
+
+- Updated the fast5 parser to account for the newer format multi-read
+  oxford nanopore fast5 files
+  
+- Fixed problems if analysing a completely blank file
+
+
+
+RELEASE NOTES FOR FastQC v0.11.8
+--------------------------------
+
+This release works around some edge cases in unusual sequence libraries
+and changes the behaviour of the read length module when run with the
+--nogroup option. Other minor fixes are also present.
+
+
 RELEASE NOTES FOR FastQC v0.11.7
 --------------------------------
 

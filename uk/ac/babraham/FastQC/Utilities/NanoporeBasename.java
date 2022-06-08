@@ -44,9 +44,12 @@ public class NanoporeBasename {
 		// Files from nanopores look like: Computer_Samplename_number_chXXX_fileXXX_strand.fast5
 		// We need to reduce this to Computer_Samplename_number
 		
-		String [] subNames = originalName.split("_");
+		// Some more recent files have names which are just: Computer_Samplename_number.fast5 so 
+		// we need to account for those too.
+				
+		String [] subNames = originalName.replaceAll(".fast5$", "").split("_");
 		
-		if (subNames.length < 5) {
+		if (subNames.length < 3) {
 			throw new NameFormatException();
 		}
 

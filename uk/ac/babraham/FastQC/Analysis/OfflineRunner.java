@@ -38,6 +38,12 @@ public class OfflineRunner implements AnalysisListener {
 	private AtomicInteger filesRemaining;
 	private boolean showUpdates = true;
 	
+	// We'll set a flag which will tell us if any of the sequences failed
+	// so we can exit with an error state so the calling process can tell
+	// that something went wrong.
+	
+	private boolean somethingFailed = false;
+	
 	public OfflineRunner (String [] filenames) {	
 		
 		// See if we need to show updates
@@ -77,7 +83,7 @@ public class OfflineRunner implements AnalysisListener {
 						if (fast5files[i].isDirectory()) {
 							File [] subFast5files = fast5files[i].listFiles();
 							
-							for (int j=0;j<subFast5files.length;i++) {
+							for (int j=0;j<subFast5files.length;j++) {
 								if (subFast5files[j].getName().endsWith(".fast5")) {
 									files.add(subFast5files[j]);
 								}
@@ -112,13 +118,16 @@ public class OfflineRunner implements AnalysisListener {
 		
 		
 		filesRemaining = new AtomicInteger(fileGroups.length);
-		
-		boolean somethingFailed = false;
-		
+				
 		for (int i=0;i<fileGroups.length;i++) {
 
 			try {
 				processFile(fileGroups[i]);
+			}
+			catch (OutOfMemoryError e) {
+				System.err.println("Ran out of memory for "+fileGroups[i][0]);
+				e.printStackTrace();
+				System.exit(2);
 			}
 			catch (Exception e) {
 				System.err.println("Failed to process "+fileGroups[i][0]);
@@ -126,6 +135,8 @@ public class OfflineRunner implements AnalysisListener {
 				filesRemaining.decrementAndGet();
 				somethingFailed = true;
 			}
+			
+
 		}
 		
 		// We need to hold this class open as otherwise the main method
@@ -202,6 +213,7 @@ public class OfflineRunner implements AnalysisListener {
 
 	public void analysisExceptionReceived(SequenceFile file, Exception e) {
 		System.err.println("Failed to process file "+file.name());
+		somethingFailed = true;
 		e.printStackTrace();
 		filesRemaining.decrementAndGet();
 	}

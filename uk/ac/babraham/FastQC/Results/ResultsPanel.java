@@ -124,7 +124,7 @@ public class ResultsPanel extends JPanel implements ListSelectionListener, Analy
 		panels = new JPanel[modules.length];
 		
 		for (int m=0;m<modules.length;m++) {
-			System.err.println("Getting panel for "+modules[m].name()+" with "+modules[m].description());
+//			System.err.println("Getting panel for "+modules[m].name()+" with "+modules[m].description());
 			panels[m] = modules[m].getResultsPanel();
 		}
 		

@@ -209,9 +209,9 @@ public class FastQFile implements SequenceFile {
 
 
 		} 
+		// We could have other errors like zip format exceptions which we need to catch
 		catch (IOException ioe) {
-			nextSequence = null;
-			ioe.printStackTrace();
+			throw new SequenceFormatException(ioe.getLocalizedMessage());
 		}
 	}
 

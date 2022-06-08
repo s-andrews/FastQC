@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -67,7 +68,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 				}
 				maxLen = i;
 			}
-		}		
+		}
+		
+		// We can get a -1 value for min if there aren't any valid sequences
+		// at all.
+		
+		if (minLen < 0) minLen = 0;
 		
 		// We put one extra category either side of the actual size
 		if (minLen>0) minLen--;
@@ -130,6 +136,11 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	
 	private int [] getSizeDistribution (int min, int max) {
 		
+		// We won't group if they've asked us not to
+		if (FastQCConfig.getInstance().nogroup) {
+			return(new int [] {min,1});
+		}
+		
 		int base = 1;
 		
 		while (base > (max-min)) {
@@ -188,9 +199,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			return false;
 		}
 
-
-		if (lengthCounts[0] > 0) {
-			return true;
+		// We might not have any sequences so only check if we do
+		if (lengthCounts.length > 0) {
+			// Empty sequences get us an error
+			if (lengthCounts[0] > 0) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -221,7 +235,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {
 		if (!calculated) calculateDistribution();
 
-		writeDefaultImage(report, "sequence_length_distribution.png", "Sequence length distribution", 800, 600);
+		writeDefaultImage(report, "sequence_length_distribution.png", "Sequence length distribution",  Math.max(800, graphCounts.length*15), 600);
 		
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Length\tCount\n");

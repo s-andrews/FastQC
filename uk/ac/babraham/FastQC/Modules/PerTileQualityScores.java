@@ -146,20 +146,26 @@ public class PerTileQualityScores extends AbstractQCModule {
 		char minChar = 0;
 		char maxChar = 0;
 
-		// Use the data from the first tile
-		QualityCount [] qualityCounts = perTileQualityCounts.get(perTileQualityCounts.keySet().toArray()[0]);
-
-		for (int q=0;q<qualityCounts.length;q++) {
-			if (q == 0) {
-				minChar = qualityCounts[q].getMinChar();
-				maxChar = qualityCounts[q].getMaxChar();
-			}
-			else {
-				if (qualityCounts[q].getMinChar() < minChar) {
+		// Iterate through the tiles to check them all in case
+		// we're dealing with unrepresentative data in the first one.
+		Iterator<QualityCount[]> qit = perTileQualityCounts.values().iterator();
+		
+		while (qit.hasNext()) { 
+			
+			QualityCount [] qualityCounts = qit.next();
+	
+			for (int q=0;q<qualityCounts.length;q++) {
+				if (minChar == 0) {
 					minChar = qualityCounts[q].getMinChar();
-				}
-				if (qualityCounts[q].getMaxChar() > maxChar) {
 					maxChar = qualityCounts[q].getMaxChar();
+				}
+				else {
+					if (qualityCounts[q].getMinChar() < minChar) {
+						minChar = qualityCounts[q].getMinChar();
+					}
+					if (qualityCounts[q].getMaxChar() > maxChar) {
+						maxChar = qualityCounts[q].getMaxChar();
+					}
 				}
 			}
 		}
@@ -179,6 +185,12 @@ public class PerTileQualityScores extends AbstractQCModule {
 		
 		// Don't waste time calculating this if we're not going to use it anyway
 		if (ignoreInReport) return;
+		
+		// Don't bother with sequences with zero length as they don't have any 
+		// quality information anyway.
+		if (sequence.getQualityString().length() == 0) {
+			return;
+		}
 				
 		calculated = false;
 
@@ -192,10 +204,12 @@ public class PerTileQualityScores extends AbstractQCModule {
 
 		// This module does quite a lot of work and ends up being the limiting
 		// step when calculating.  We'll therefore take only a sample of the 
-		// sequences to try to get a representative selection.
+		// sequences to try to get a representative selection.  We'll use the 
+		// first 10k sequences in case we're dealing with a very small file
+		// and then take 10% of the rest.
 		
 		++totalCount;
-		if (totalCount % 10 != 0) return;
+		if (totalCount > 10000 && totalCount % 10 != 0) return;
 		
 		// First try to split the id by :
 		int tile = 0;
@@ -322,7 +336,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {
 		if (!calculated) getPercentages();
 		
-		writeDefaultImage(report, "per_tile_quality.png", "Per base quality graph", Math.max(800, xLabels.length*15), 600);
+		writeDefaultImage(report, "per_tile_quality.png", "Per tile quality graph", Math.max(800, xLabels.length*15), 600);
 
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Tile\tBase\tMean\n");
