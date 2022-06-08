@@ -71,6 +71,12 @@ elsif (-e "$RealBin/jre/Contents/Home/bin/java") {
 my @java_args;
 my @files;
 
+# Add an option to make the JVM exit cleanly if it hits an out of memory error rather than
+# hanging.
+
+push @java_args, '-XX:+ExitOnOutOfMemoryError';
+
+
 if ($^O =~/darwin/) {
 		
 	# Add the OSX specific options to use a standard OSX menu bar
@@ -93,6 +99,7 @@ my $format;
 my $contaminant;
 my $adapter;
 my $limits;
+my $memory;
 my $threads;
 my $quiet;
 my $nogroup;
@@ -113,6 +120,7 @@ my $result = GetOptions('version' => \$version,
 						'outdir=s' => \$outdir,
 						'extract!' => \$unzip,
 						'format=s' => \$format,
+						'memory=i' => \$memory,
 						'threads=i' => \$threads,
 						'kmers=i' => \$kmer_size,
 						'casava' => \$casava,
@@ -186,6 +194,15 @@ if ($dup_length) {
 	push @java_args ,"-Dfastqc.dup_length=$dup_length";
 }
 
+if ($memory) {
+	if ($memory < 100 || $memory > 10000) {
+		die "Memory value $memory MB was outside the allowed range (100 - 10000)";
+	}
+}
+else {
+	$memory = 512;
+}
+
 
 if ($threads) {
 	if ($threads < 1) {
@@ -193,11 +210,11 @@ if ($threads) {
 	}
 	
 	push @java_args ,"-Dfastqc.threads=$threads";
-	my $memory = 250 * $threads;
-	unshift @java_args,"-Xmx${memory}m";
+	my $used_memory = $memory * $threads;
+	unshift @java_args,"-Xmx${used_memory}m";
 }
 else {
-	unshift @java_args,'-Xmx250m';
+	unshift @java_args,'-Xmx${memory}m';
 }
 
 if ($kmer_size) {
@@ -404,6 +421,11 @@ DESCRIPTION
                     forces the program to use the specified format.  Valid
                     formats are bam,sam,bam_mapped,sam_mapped and fastq
                     
+
+    --memory        Sets the base amount of memory, in Megabytes, used to process 
+                    each file.  Defaults to 512MB.  You may need to increase this if
+                    you have a file with very long sequences in it.
+
     -t --threads    Specifies the number of files which can be processed
                     simultaneously.  Each thread will be allocated 250MB of
                     memory so you shouldn't run more threads than your
