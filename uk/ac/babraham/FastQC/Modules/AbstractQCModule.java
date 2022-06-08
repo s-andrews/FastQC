@@ -22,6 +22,8 @@ package uk.ac.babraham.FastQC.Modules;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -34,6 +36,7 @@ import javax.swing.table.TableModel;
 
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Utilities.ImageToBase64;
+import uk.ac.babraham.FastQC.Utilities.ImageSaver.SVGImageSaver;
 
 public abstract class AbstractQCModule implements QCModule {
 
@@ -55,13 +58,25 @@ public abstract class AbstractQCModule implements QCModule {
 	
 	protected void writeDefaultImage (HTMLReportArchive report, String fileName, String imageTitle, int width, int height) throws IOException, XMLStreamException {
 		ZipOutputStream zip = report.zipFile();
+		
+		// Write out the svg version of the image		
+		JPanel resultsPanel = getResultsPanel();
+		resultsPanel.setSize(width,height);
+		resultsPanel.validate();
+
+		
+		String svgFilename = fileName.replaceAll("\\.png$", ".svg");
+		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+svgFilename));
+				
+		SVGImageSaver.saveImage(resultsPanel, zip);
+		zip.closeEntry();
+
+		// Write out the png version of the image
 		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+fileName));
 		BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics g = b.createGraphics();
-		
-		JPanel resultsPanel = getResultsPanel();
+
 		resultsPanel.setDoubleBuffered(false);
-		resultsPanel.setSize(width,height);
 		resultsPanel.addNotify();
 		resultsPanel.validate();
 		
@@ -71,6 +86,8 @@ public abstract class AbstractQCModule implements QCModule {
 		
 		ImageIO.write(b, "PNG", zip);
 		zip.closeEntry();
+
+		
 		
 		simpleXhtmlReport(report, b, imageTitle);
 
