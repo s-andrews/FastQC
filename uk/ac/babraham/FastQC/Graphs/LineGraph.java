@@ -39,7 +39,7 @@ public class LineGraph extends JPanel {
 	private double maxY;
 	private double yInterval;
 	
-	private static final Color [] COLOURS = new Color[] {new Color(220,0,0), new Color(0,0,220), new Color(0,220,0), Color.DARK_GRAY, Color.MAGENTA, Color.ORANGE,Color.YELLOW,Color.CYAN,Color.PINK,Color.LIGHT_GRAY};
+	private static final Color [] COLOURS = new Color[] {new Color(216,27,96), new Color(30,136,229), new Color(0,77,64), new Color(255,193,7), Color.MAGENTA, Color.ORANGE,Color.YELLOW,Color.CYAN,Color.PINK,Color.LIGHT_GRAY};
 	
 	public LineGraph (double [] [] data, double minY, double maxY, String xLabel, String [] xTitles, int [] xCategories, String graphTitle) {
 		this(data,minY,maxY,xLabel,xTitles,new String[0],graphTitle);
