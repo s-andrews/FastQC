@@ -26,7 +26,10 @@ import javax.swing.filechooser.FileFilter;
 public class BAMFileFilter extends FileFilter {
 
 	public boolean accept(File f) {
-		return true;
+		
+		if (f.isDirectory()) return true;
+
+		return f.getName().toLowerCase().endsWith("bam");
 	}
 
 	public String getDescription() {
