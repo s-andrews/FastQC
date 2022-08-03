@@ -183,6 +183,9 @@ public class HTMLReportArchive {
 		
 		if (FastQCConfig.getInstance().do_unzip) {
 			unzipZipFile(zipFile);
+			if (FastQCConfig.getInstance().delete_after_unzip) {
+				zipFile.delete();
+			}
 		}
 	}
 	

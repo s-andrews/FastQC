@@ -36,6 +36,7 @@ public class FastQCConfig {
 	public boolean nano = false;
 	public boolean nofilter = false;
 	public Boolean do_unzip = null;
+	public boolean delete_after_unzip = false;
 	public String lineSeparator = System.getProperty("line.separator");
 	public String sequence_format = null;
 	public File contaminant_file = null;
