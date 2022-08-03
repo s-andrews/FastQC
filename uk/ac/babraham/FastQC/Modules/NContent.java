@@ -150,7 +150,7 @@ public class NContent extends AbstractQCModule {
 	public void makeReport(HTMLReportArchive report) throws XMLStreamException,IOException {
 		if (!calculated) getPercentages();
 		
-		writeDefaultImage(report, "per_base_n_content.png", "N content graph", Math.max(800, percentages.length*15), 600);		
+		writeDefaultImage(report, "per_base_n_content.png", "N content graph", Math.max(800, percentages.length*15), 600);
 		
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Base\tN-Count\n");
