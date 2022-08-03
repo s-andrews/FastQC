@@ -272,7 +272,13 @@ if (defined $unzip) {
 	}
 	
 	push @java_args,"-Dfastqc.unzip=$unzip";	
+
+	if ($delete) {
+		push @java_args, "-Dfastqc.delete=true";
+	}	
 }
+
+
 
 if ($format) {
 	

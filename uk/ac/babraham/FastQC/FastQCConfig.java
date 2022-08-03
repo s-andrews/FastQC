@@ -145,7 +145,12 @@ public class FastQCConfig {
 		// Unzip
 		if (System.getProperty("fastqc.unzip") != null && System.getProperty("fastqc.unzip").equals("true")) {
 			do_unzip = true;
+			
+			if (System.getProperty("fastqc.delete") != null && System.getProperty("fastqc.delete").equals("true")) {
+				delete_after_unzip = true;
+			}
 		}
+			
 		
 		// Sequence Format
 		if (System.getProperty("fastqc.sequence_format") != null) {
