@@ -26,6 +26,8 @@ import javax.swing.filechooser.FileFilter;
 public class FastQFileFilter extends FileFilter {
 
 	public boolean accept(File f) {
+	
+		if (f.isDirectory()) return true;
 		
 		String [] endings = new String [] {"fastq","fq","fastq.gz","fq.gz"};
 
