@@ -115,7 +115,11 @@ public class DuplicationLevel extends AbstractQCModule {
 
 			int dupSlot = dupLevel - 1;
 			
-			if (dupSlot > 9999) dupSlot = 15;
+			// The dupSlot < 0 is a kludge to fix a problem we see if we have 
+			// a duplication level > 2^31.  It it gets bigger than 2^64 then 
+			// we're really stuffed but I think this will work for all practical
+			// purposes and this is a really corner case anyway.
+			if (dupSlot > 9999 || dupSlot < 0) dupSlot = 15;
 			else if (dupSlot > 4999) dupSlot = 14;
 			else if (dupSlot > 999) dupSlot = 13;
 			else if (dupSlot > 499) dupSlot = 12;
