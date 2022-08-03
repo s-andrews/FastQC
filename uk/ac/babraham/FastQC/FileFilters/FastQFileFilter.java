@@ -29,7 +29,7 @@ public class FastQFileFilter extends FileFilter {
 	
 		if (f.isDirectory()) return true;
 		
-		String [] endings = new String [] {"fastq","fq","fastq.gz","fq.gz"};
+		String [] endings = new String [] {"fastq","fq","fastq.gz","fq.gz","fastq.bz","fastq.bz2"};
 
 		for (int i=0;i<endings.length;i++) {
 			if (f.getName().toLowerCase().endsWith(endings[i])) {
