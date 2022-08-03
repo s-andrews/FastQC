@@ -26,7 +26,7 @@ import javax.swing.filechooser.FileFilter;
 public class MappedBAMFileFilter extends FileFilter {
 
 	public boolean accept(File f) {
-		return true;
+		return f.getName().toLowerCase().endsWith("bam");
 	}
 
 	public String getDescription() {

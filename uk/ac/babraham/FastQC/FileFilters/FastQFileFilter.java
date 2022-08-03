@@ -26,7 +26,15 @@ import javax.swing.filechooser.FileFilter;
 public class FastQFileFilter extends FileFilter {
 
 	public boolean accept(File f) {
-		return true;
+		
+		String [] endings = new String [] {"fastq","fq","fastq.gz","fq.gz"};
+
+		for (int i=0;i<endings.length;i++) {
+			if (f.getName().toLowerCase().endsWith(endings[i])) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public String getDescription() {
