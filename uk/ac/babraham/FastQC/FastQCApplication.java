@@ -235,7 +235,7 @@ public class FastQCApplication extends JFrame {
 			JOptionPane.showMessageDialog(this, "No FastQ files are open yet", "Can't save report", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		chooser.setSelectedFile(new File(((ResultsPanel)fileTabs.getSelectedComponent()).sequenceFile().getFile().getName().replaceAll("stdin:","").replaceAll(".gz$","").replaceAll(".bz2$","").replaceAll(".txt$","").replaceAll(".fastq$", "").replaceAll(".fq$", "").replaceAll(".sam$", "").replaceAll(".bam$", "")+"_fastqc.html"));
+		chooser.setSelectedFile(new File(((ResultsPanel)fileTabs.getSelectedComponent()).sequenceFile().getFile().getName().replaceAll("stdin:","").replaceAll(".gz$","").replaceAll(".bz2$","").replaceAll(".txt$","").replaceAll(".fastq$", "").replaceAll(".fq$", "").replaceAll(".sam$", "").replaceAll(".bam$", "").replaceAll(".ubam$", "")+"_fastqc.html"));
 		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileFilter(new FileFilter() {
 		
