@@ -43,6 +43,7 @@ public class FastQCConfig {
 	public File limits_file = null;
 	public int minLength = 0;
 	public int dupLength = 0;
+	public boolean svg_output = false;
 
 	private FastQCConfig () {
 		
@@ -113,11 +114,17 @@ public class FastQCConfig {
 			casava = true;
 		}
 
-		// Casava
+		// Nanopore
 		if (System.getProperty("fastqc.nano") != null && System.getProperty("fastqc.nano").equals("true")) {
 			nano = true;
 		}
 
+		// SVG
+		if (System.getProperty("fastqc.svg") != null && System.getProperty("fastqc.svg").equals("true")) {
+			svg_output = true;
+		}
+
+		
 		// Nofilter
 		if (System.getProperty("fastqc.nofilter") != null && System.getProperty("fastqc.nofilter").equals("true")) {
 			nofilter = true;

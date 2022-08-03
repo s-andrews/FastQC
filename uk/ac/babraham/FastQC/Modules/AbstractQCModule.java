@@ -32,18 +32,24 @@ import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 import javax.swing.table.TableModel;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Utilities.ImageToBase64;
 import uk.ac.babraham.FastQC.Utilities.ImageSaver.SVGImageSaver;
 
 public abstract class AbstractQCModule implements QCModule {
 
-	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData,String alt) throws XMLStreamException {
+	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData, BufferedImage image, String alt) throws XMLStreamException {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
 		xhtml.writeEmptyElement("img");
 		xhtml.writeAttribute("class", "indented");
-		xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
+		if (FastQCConfig.getInstance().svg_output) {
+			xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
+		}
+		else {
+			xhtml.writeAttribute("src", ImageToBase64.imageToBase64(image));
+		}
 		xhtml.writeAttribute("alt", alt);
 		
 //		if(svgData!=null){
@@ -86,7 +92,7 @@ public abstract class AbstractQCModule implements QCModule {
 		zip.closeEntry();
 
 		
-		simpleXhtmlReport(report, svgData, imageTitle);
+		simpleXhtmlReport(report, svgData, b, imageTitle);
 
 	}
 
@@ -121,7 +127,7 @@ public abstract class AbstractQCModule implements QCModule {
 		zip.closeEntry();
 
 		
-		simpleXhtmlReport(report, svgData, imageTitle);
+		simpleXhtmlReport(report, svgData, b, imageTitle);
 	}
 
 

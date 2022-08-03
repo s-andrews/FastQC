@@ -111,10 +111,12 @@ my $kmer_size;
 my $temp_directory;
 my $min_length;
 my $dup_length;
+my $svg;
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
 						'quiet' => \$quiet,
+						'svg' => \$svg,
 						'nogroup' => \$nogroup,
 						'expgroup' => \$expgroup,
 						'outdir=s' => \$outdir,
@@ -280,6 +282,18 @@ if ($format) {
 	
 }
 
+
+if ($svg) {
+	
+	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped') {
+		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,bam_mapped,sam_mapped and fastq\n";
+	}
+	
+	push @java_args,"-Dfastqc.svg=1";	
+	
+}
+
+
 if ($java_bin ne 'java') {
 
 	warn "Java is $java_bin\n";
@@ -425,6 +439,8 @@ DESCRIPTION
     --memory        Sets the base amount of memory, in Megabytes, used to process 
                     each file.  Defaults to 512MB.  You may need to increase this if
                     you have a file with very long sequences in it.
+                
+    --svg           Save the graphs in the report in SVG format.
 
     -t --threads    Specifies the number of files which can be processed
                     simultaneously.  Each thread will be allocated 250MB of
