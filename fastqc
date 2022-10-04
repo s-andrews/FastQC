@@ -346,13 +346,8 @@ if (@files or $version or $help) {
 
 #warn "Running 'exec $java_bin,@java_args, \"uk.ac.babraham.FastQC.FastQCApplication\", @files, CLASSPATH is $ENV{CLASSPATH}";
 
-
-if ($java_bin ne 'java') {
-	system $java_bin,@java_args, "uk.ac.babraham.FastQC.FastQCApplication", @files;
-}
-else {
-	exec $java_bin,@java_args, "uk.ac.babraham.FastQC.FastQCApplication", @files;
-}
+system $java_bin,@java_args, "uk.ac.babraham.FastQC.FastQCApplication", @files;
+exit $? >> 8;
 
 __DATA__
 
