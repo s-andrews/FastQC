@@ -218,7 +218,7 @@ if ($threads) {
 	unshift @java_args,"-Xmx${used_memory}m";
 }
 else {
-	unshift @java_args,'-Xmx${memory}m';
+	unshift @java_args,"-Xmx${memory}m";
 }
 
 if ($kmer_size) {
