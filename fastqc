@@ -292,11 +292,7 @@ if ($format) {
 
 
 if ($svg) {
-	
-	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped') {
-		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,bam_mapped,sam_mapped and fastq\n";
-	}
-	
+		
 	push @java_args,"-Dfastqc.svg=1";	
 	
 }
