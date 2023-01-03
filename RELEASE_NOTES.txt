@@ -1,3 +1,43 @@
+RELEASE NOTES FOR FastQC v0.12.0
+--------------------------------
+
+This release introduces new functionality as well as resolving some 
+existing problems.
+
+- Fix bugs in the per tile plot if zero length sequences are present
+
+- Add a count of total bases to the Basic Stats output
+
+- Use better sorting of the best contaminant finding
+
+- Add a "dup_length" option to specify the length of sequence used 
+  for detecting duplicates
+  
+- Fix a bug in iterating through fast5 files in multiple directories
+
+- Fixed a documentation bug in the Duplicate plot
+
+- Improved memory handling - default allocation is now 512MB and there
+  is a --memory option which can increase the allocated memory without
+  having to play with --threads
+  
+- Colours in the per base sequence composition plot have been changed 
+  to be more colourblind friendly
+  
+- BAM parsing now uses htsjdk on the back end
+
+- Add a --svg option to make the report use SVG graphics instead of 
+  PNG.  The zip file will always contain both PNG and SVG versions of
+  all figures
+  
+- Add line numbers to error messages where parsing errors occur
+
+- Add an option to delete the zip file if it is uncompressed during 
+  processing (add --delete on top of --extract)
+
+
+
+
 RELEASE NOTES FOR FastQC v0.11.9
 --------------------------------
 
