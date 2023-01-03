@@ -36,6 +36,10 @@ public class QualityCount {
 
 	public void addValue(char c) {
 		totalCounts++;
+		
+		if ((int)c >= actualCounts.length) {
+			throw new IllegalArgumentException("Got character "+c+" as a quality value which has ASCII"+((int)c)+" which is higher than we can cope with");
+		}
 		actualCounts[(int)c]++;
 	}
 	
