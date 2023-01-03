@@ -39,7 +39,18 @@ public class LineGraph extends JPanel {
 	private double maxY;
 	private double yInterval;
 	
-	private static final Color [] COLOURS = new Color[] {new Color(216,27,96), new Color(30,136,229), new Color(0,77,64), new Color(255,193,7), Color.MAGENTA, Color.ORANGE,Color.YELLOW,Color.CYAN,Color.PINK,Color.LIGHT_GRAY};
+	//	Colours taken from the Tol scheme at https://davidmathlogic.com/colorblind/
+	private static final Color [] COLOURS = new Color[] {
+			new Color(136,34,85), 
+			new Color(51,34,136),
+			new Color(17,119,51), 
+			new Color(221,204,119),
+			new Color(68,170,153),
+			new Color(170,68,153),
+			new Color(204,102,119),			
+			new Color(136,204,238)
+			};
+
 	
 	public LineGraph (double [] [] data, double minY, double maxY, String xLabel, String [] xTitles, int [] xCategories, String graphTitle) {
 		this(data,minY,maxY,xLabel,xTitles,new String[0],graphTitle);
