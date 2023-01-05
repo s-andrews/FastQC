@@ -346,6 +346,9 @@ public class SVGGenerator {
 			appendColor();
 			sb.append(")\" font-family=\"Arial\" font-size=\"");
 			sb.append(font.getSize());
+			if (font.isBold()) {
+				sb.append("\" font-weight=\"bold");
+			}
 			sb.append("\">");
 			sb.append(string);
 			sb.append("</text>\n");
