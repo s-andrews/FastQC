@@ -293,7 +293,7 @@ if ($format) {
 
 if ($svg) {
 		
-	push @java_args,"-Dfastqc.svg=1";	
+	push @java_args,"-Dfastqc.svg=true";	
 	
 }
 
