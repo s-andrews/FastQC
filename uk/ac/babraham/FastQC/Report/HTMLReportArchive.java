@@ -268,6 +268,7 @@ public class HTMLReportArchive {
 
 		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
 		
+		xhtml.writeDTD("<!DOCTYPE html>");
 		xhtml.writeStartElement("html");
 		xhtml.writeStartElement("head");
 		
