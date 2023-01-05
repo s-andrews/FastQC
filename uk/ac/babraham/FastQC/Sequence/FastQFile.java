@@ -75,10 +75,7 @@ public class FastQFile implements SequenceFile {
 		if (!file.getName().startsWith("stdin")) {
 			fis = new FileInputStream(file);
 		}
-		
-		System.out.println(file.toPath());
-		System.out.println(Files.probeContentType(file.toPath()));
-				
+						
 		if (file.getName().startsWith("stdin")) {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
