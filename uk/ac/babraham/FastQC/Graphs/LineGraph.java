@@ -22,6 +22,7 @@ package uk.ac.babraham.FastQC.Graphs;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -206,6 +207,9 @@ public class LineGraph extends JPanel {
 		}
 		
 		// Now draw the data legend
+		
+		// Make the letters thicker for this so we can see the colours better
+		g.setFont(g.getFont().deriveFont(Font.BOLD));
 
 		if (g instanceof Graphics2D) {
 			((Graphics2D)g).setStroke(new BasicStroke(1));
@@ -232,11 +236,13 @@ public class LineGraph extends JPanel {
 		// Now draw the actual labels
 		for (int t=0;t<xTitles.length;t++) {
 			g.setColor(COLOURS[t % COLOURS.length]);
-			g.drawString(xTitles[t], ((getWidth()-10)-widestLabel)+3, 40+(20*(t+1)));
+			g.drawString(xTitles[t], ((getWidth()-10)-widestLabel)+3, 35+(20*(t+1)));
 		}
 		
 
-		
+		// Put the font back how we found it
+		g.setFont(g.getFont().deriveFont(Font.PLAIN));
+
 		
 	}
 
