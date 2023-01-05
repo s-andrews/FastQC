@@ -34,6 +34,9 @@ existing problems.
 
 - Add an option to delete the zip file if it is uncompressed during 
   processing (add --delete on top of --extract)
+  
+- The default adapters removed the SOLID adapter, but added polyA
+  and polyG since these can both provide useful information 
 
 
 
