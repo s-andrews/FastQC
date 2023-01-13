@@ -429,10 +429,10 @@ DESCRIPTION
                     datasets with somewhat variable read lengths.
 
     --dup_length    Sets a length to which the sequences will be truncated when 
-    				defining them to be duplicates, affecting the duplication and
-    				overrepresented sequences plot.  This can be useful if you have
-    				long reads with higher levels of miscalls, or contamination with
-    				adapter dimers containing UMI sequences.
+                    defining them to be duplicates, affecting the duplication and
+                    overrepresented sequences plot.  This can be useful if you have
+                    long reads with higher levels of miscalls, or contamination with
+                    adapter dimers containing UMI sequences.
 
                     
     -f --format     Bypasses the normal sequence file format detection and
@@ -475,7 +475,7 @@ DESCRIPTION
                     module. Specified Kmer length must be between 2 and 10. Default
                     length is 7 if not specified.
                     
-   -q --quiet       Supress all progress messages on stdout and only report errors.
+   -q --quiet       Suppress all progress messages on stdout and only report errors.
    
    -d --dir         Selects a directory to be used for temporary files written when
                     generating report images. Defaults to system temp directory if
