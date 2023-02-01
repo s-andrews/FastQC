@@ -281,10 +281,10 @@ public class PerTileQualityScores extends AbstractQCModule {
 
 		if (! perTileQualityCounts.containsKey(tile)) {
 			
-			if (perTileQualityCounts.size() > 1000) {
+			if (perTileQualityCounts.size() > 2500) {
 				// There are too many tiles, so we're probably parsing this wrong.
 				// Let's give up
-				System.err.println("Too many tiles (>1000) so giving up trying to do per-tile qualities since we're probably parsing the file wrongly");
+				System.err.println("Too many tiles (>2500) so giving up trying to do per-tile qualities since we're probably parsing the file wrongly");
 				ignoreInReport = true;
 				perTileQualityCounts.clear();
 				return;
