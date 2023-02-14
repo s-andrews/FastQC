@@ -75,11 +75,13 @@ public class FastQFile implements SequenceFile {
 		if (!file.getName().startsWith("stdin")) {
 			fis = new FileInputStream(file);
 		}
-						
+		
+		System.out.println(Files.probeContentType(file.toPath()));
+		
 		if (file.getName().startsWith("stdin")) {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
-		else if (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")) {
+		else if (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip"))) {
 			br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis)));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
