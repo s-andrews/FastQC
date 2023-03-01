@@ -153,7 +153,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// sequences, so anything over 75bp gets truncated to 50bp.
 		String seq = sequence.getSequence();
 
-		// For long sequences (above 75bp) we truncate to 50bp so that random
+		// For long sequences (above 50bp) we truncate to 50bp so that random
 		// base miscalls don't mess things up.  We also allow the user to 
 		// specify a shorter truncation length on the command line in the 
 		// dup_length option.
@@ -161,7 +161,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		if (FastQCConfig.getInstance().dupLength != 0) {
 			seq = new String(seq.substring(0, FastQCConfig.getInstance().dupLength));			
 		}
-		else if (seq.length() > 75) {
+		else if (seq.length() > 50) {
 			seq = new String(seq.substring(0, 50));
 		}
 				

@@ -27,9 +27,10 @@ with different degrees of duplication.
 <p>
 To cut down on the memory requirements for this module only sequences
 which first appear in the first 100,000 sequences in each file are analysed,
-but this should be enough to get a good impression for the duplication
-levels in the whole file.  Each sequence is tracked to the end of the 
-file to give a representative count of the overall duplication level.  
+and these are then tracked through the entire dataset.  This should be enough 
+to get a good impression for the duplication levels in the whole file.  
+Each sequence is tracked to the end of the file to give a representative 
+count of the overall duplication level.  
 To cut down  on the amount of information in the final plot any sequences 
 with more than 10 duplicates are placed into grouped bins to give a clear
 impression of the overall duplication level without having to show each
@@ -38,7 +39,7 @@ individual duplication value.
 
 <p>
 Because the duplication detection requires an exact sequence match over
-the whole length of the sequence, any reads over 75bp in length are truncated
+the whole length of the sequence, any reads over 50bp in length are truncated
 to 50bp for the purposes of this analysis.  Even so, longer reads are more
 likely to contain sequencing errors which will artificially increase the
 observed diversity and will tend to underrepresent highly duplicated sequences.
@@ -46,25 +47,18 @@ observed diversity and will tend to underrepresent highly duplicated sequences.
 
 <p>
 The plot shows the proportion of the library which is made up of sequences in
-each of the different duplication level bins.  There are two lines on the plot. The
-blue line takes the full sequence set and shows how its duplication levels are
-distributed.  In the red plot the sequences are de-duplicated and the proportions
-shown are the proportions of the deduplicated set which come from different duplication
-levels in the original data. 
+each of the different duplication level bins.  The x axis is the degree of 
+duplication, and the y axis shows the proportion of the library which is made
+up of reads with that level of duplication.
 </p>
 
 <p>
 In a properly diverse library most sequences should fall into the far left of the
-plot in both the red and blue lines.  A general level of enrichment, indicating broad
-oversequencing in the library will tend to flatten the lines, lowering the low end and 
+plot .  A general level of enrichment, indicating broad
+oversequencing in the library will tend to flatten the line, lowering the low end and 
 generally raising other categories.  More specific enrichments of subsets, or the 
 presence of low complexity contaminants will tend to produce spikes towards the right
-of the plot.  These high duplication peaks will most often appear in the blue trace as
-they make up a high proportion of the original library, but usually disappear in the
-red trace as they make up an insignificant proportion of the deduplicated set.  If peaks
-persist in the red trace then this suggests that there are a large number of different
-highly duplicated sequences which might indicate either a contaminant set or a very
-severe technical duplication.
+of the plot.
 </p>
 
 <p>

@@ -34,7 +34,6 @@ import uk.ac.babraham.FastQC.Sequence.Sequence;
 public class DuplicationLevel extends AbstractQCModule {
 
 	private OverRepresentedSeqs overrepresentedModule;
-	private double [] deduplicatedPercentages = null;
 	private double [] totalPercentages = null;
 	private double maxCount = 100;
 	private double percentDifferentSeqs = 0;
@@ -65,9 +64,8 @@ public class DuplicationLevel extends AbstractQCModule {
 	
 	protected synchronized void calculateLevels () {
 		
-		if (deduplicatedPercentages != null) return;
+		if (totalPercentages != null) return;
 		
-		deduplicatedPercentages = new double[16];
 		totalPercentages = new double[16];
 		
 		HashMap<Integer, Integer> collatedCounts = new HashMap<Integer, Integer>();
@@ -128,7 +126,6 @@ public class DuplicationLevel extends AbstractQCModule {
 			else if (dupSlot > 9) dupSlot = 9;
 
 			
-			deduplicatedPercentages[dupSlot] += count;
 			totalPercentages[dupSlot] += count * dupLevel;
 			
 		}
@@ -136,7 +133,7 @@ public class DuplicationLevel extends AbstractQCModule {
 //		System.err.println("True total = "+overrepresentedModule.count+" inferred total is "+rawTotal+" dedup total is "+dedupTotal);
 		
 		labels = new String [16];
-		for (int i=0;i<deduplicatedPercentages.length;i++) {
+		for (int i=0;i<totalPercentages.length;i++) {
 			if (i<9) labels[i] = ""+(i+1);
 			else if (i==9) labels[i]=">10";
 			else if (i==10) labels[i]=">50";
@@ -147,9 +144,7 @@ public class DuplicationLevel extends AbstractQCModule {
 			else if (i==15) labels[i]=">10k";
 			
 			
-			deduplicatedPercentages[i] /= dedupTotal;
 			totalPercentages[i] /= rawTotal;
-			deduplicatedPercentages[i] *= 100;
 			totalPercentages[i] *= 100;
 		}
 		
@@ -209,13 +204,13 @@ public class DuplicationLevel extends AbstractQCModule {
 	
 
 	public JPanel getResultsPanel() {
-		if (deduplicatedPercentages == null) calculateLevels();
+		if (totalPercentages == null) calculateLevels();
 
-		return new LineGraph(new double [][] {deduplicatedPercentages,totalPercentages}, 0d, maxCount, "Sequence Duplication Level",new String [] {"% Deduplicated sequences","% Total sequences"}, labels, "Percent of seqs remaining if deduplicated "+df.format(percentDifferentSeqs)+"%");
+		return new LineGraph(new double [][] {totalPercentages}, 0d, maxCount, "Sequence Duplication Level",new String [] {"% Total sequences"}, labels, "Percent of seqs remaining if deduplicated "+df.format(percentDifferentSeqs)+"%");
 	}
 	
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {
-		if (deduplicatedPercentages == null) calculateLevels();
+		if (totalPercentages == null) calculateLevels();
 
 		writeDefaultImage(report, "duplication_levels.png", "Duplication level graph", 800, 600);
 				
@@ -225,14 +220,12 @@ public class DuplicationLevel extends AbstractQCModule {
 		sb.append(percentDifferentSeqs);
 		sb.append("\n");
 		
-		sb.append("#Duplication Level\tPercentage of deduplicated\tPercentage of total\n");
+		sb.append("#Duplication Level\tPercentage of total\n");
 		for (int i=0;i<labels.length;i++) {
 			sb.append(labels[i]);
 			if (i == labels.length-1) {
 				sb.append("+");
 			}
-			sb.append("\t");
-			sb.append(deduplicatedPercentages[i]);
 			sb.append("\t");
 			sb.append(totalPercentages[i]);
 			sb.append("\n");
@@ -251,7 +244,7 @@ public class DuplicationLevel extends AbstractQCModule {
 	}
 
 	public boolean raisesError() {
-		if (deduplicatedPercentages == null) calculateLevels();
+		if (totalPercentages == null) calculateLevels();
 		
 		// Anything over 50% duplicate gets us a error
 		if (percentDifferentSeqs < ModuleConfig.getParam("duplication", "error")) {
@@ -262,7 +255,7 @@ public class DuplicationLevel extends AbstractQCModule {
 	}
 
 	public boolean raisesWarning() {
-		if (deduplicatedPercentages == null) calculateLevels();
+		if (totalPercentages == null) calculateLevels();
 
 		// Anything over 20% duplicate gets us a warning
 		if (percentDifferentSeqs < ModuleConfig.getParam("duplication", "warn")) {
@@ -273,7 +266,7 @@ public class DuplicationLevel extends AbstractQCModule {
 	}
 
 	public void reset() {
-		deduplicatedPercentages = null;
+		totalPercentages = null;
 	}
 	
 }
