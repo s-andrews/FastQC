@@ -13,7 +13,15 @@ existing problems.
 - Add a "dup_length" option to specify the length of sequence used 
   for detecting duplicates
   
-- Fix a bug in iterating through fast5 files in multiple directories
+ - Made the default duplicate detection length 50bp, regardless of
+   the length of the library.  Previously only sequences over 75bp
+   were truncated, now the limit applies to everything
+ 
+ - Removed the plot of deduplicated duplication levels from the 
+   duplication plot since it just confused people and everyone ignored 
+   it.
+  
+- Fixed a bug in iterating through fast5 files in multiple directories
 
 - Fixed a documentation bug in the Duplicate plot
 
@@ -36,7 +44,8 @@ existing problems.
   processing (add --delete on top of --extract)
   
 - The default adapters removed the SOLID adapter, but added polyA
-  and polyG since these can both provide useful information 
+  and polyG since these can both provide useful information and are
+  often trimmed from sequences in a similar manner to adapters.
 
 
 
