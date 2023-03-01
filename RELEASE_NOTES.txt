@@ -1,3 +1,11 @@
+RELEASE NOTES FOR FastQC v0.12.1
+--------------------------------
+
+This is a minor bugfix release.  It fixes a problem with gzip 
+file detection on OSX where the java probeContentType can't 
+tell that a gzipped file isn't just a binary stream.
+
+
 RELEASE NOTES FOR FastQC v0.12.0
 --------------------------------
 
