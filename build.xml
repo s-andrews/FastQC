@@ -14,6 +14,7 @@
         <pathelement location="jbzip2-0.9.jar"/>
         <pathelement location="sam-1.103.jar"/>
         <pathelement location="cisd-jhdf5.jar"/>
+        <pathelement location="htsjdk.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
