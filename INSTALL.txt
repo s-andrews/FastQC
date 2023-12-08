@@ -82,6 +82,10 @@ chmod 755 fastqc
 
 sudo ln -s /path/to/FastQC/fastqc /usr/local/bin/fastqc
 
+If you can't run the fastqc due to a missing FinBin Perl module, you can install the FinBin module using the command below:
+For Fedora and similar distros (uses dnf or rpm): sudo dnf install perl-FindBin
+For Ubuntu and similar distros (uses apt): sudo apt-get install libfindbin-libs-perl
+For other distros, please refer to guides on how to install FinBin Perl module.
 
 Running FastQC as part of a pipeline
 ------------------------------------
