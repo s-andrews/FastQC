@@ -44,6 +44,11 @@ openjdk version "11.0.2" 2019-01-15
 OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.2+9)
 OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.2+9, mixed mode)
 
+On linux FastQC uses a small Perl script to start the program so you will need to have 
+an installation of Perl along with its standard core modules (including the FindBin 
+module which should be there by default).  Most linx systems will have this by default. 
+If you don't you can install it with your system's package manager (eg apt install perl
+or dnf install perl).
 
 Actually installing FastQC is as simple as unzipping the zip file it comes in into a
 suitable location.  That's it.  Once unzipped it's ready to go.
