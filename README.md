@@ -1,4 +1,7 @@
 # FastQC
+
+[![Travis Build Status](https://travis-ci.org/s-andrews/FastQC.svg?branch=master)](https://travis-ci.org/s-andrews/FastQC)
+
 FastQC is a program designed to spot potential problems in high througput sequencing datasets.  It runs a set of analyses on one or more raw sequence files in fastq or bam format and produces a report which summarises the results.
 
 ![FastQC Screenshot](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc.png)
