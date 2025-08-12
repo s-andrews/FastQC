@@ -27,9 +27,6 @@ jobs:
           distribution: temurin
           java-version: '11'
 
-      - name: Install Ant
-        run: sudo apt-get update && sudo apt-get install -y ant
-
       - name: Build with Ant
         run: ant clean build
 
@@ -83,9 +80,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '11'
-
-      - name: Install Ant
-        run: brew update && brew install ant
 
       - name: Build with Ant
         run: ant clean build
