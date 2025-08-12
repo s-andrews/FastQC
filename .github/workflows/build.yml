@@ -1,6 +1,9 @@
 name: Build and publish FastQC release
 
 on:
+  push:
+    branches: [master]
+  pull_request:
   release:
     types: [published]
   workflow_dispatch:
@@ -45,6 +48,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "version=PR-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           else
             echo "version=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
           fi
@@ -99,6 +106,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "version=PR-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           else
             echo "version=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
           fi
