@@ -93,24 +93,29 @@ public class HTMLReportArchive {
 			
 			
 			// Add an icon before the module name
+			xhtml.writeStartElement("svg");
+			xhtml.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
+			xhtml.writeAttribute("width", "24");
+			xhtml.writeAttribute("height", "24");
+			xhtml.writeAttribute("viewBox", "0 0 24 24");
+			xhtml.writeStartElement("path");
 			if (modules[m].raisesError())
 				{
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/error.png"));
-				xhtml.writeAttribute("alt","[FAIL]");
+				xhtml.writeAttribute("fill", "#d65d3e");
+				xhtml.writeAttribute("d", "M12 2c5.53 0 10 4.47 10 10s-4.47 10-10 10S2 17.53 2 12S6.47 2 12 2m3.59 5L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41z");
 				}
-			
+
 			else if (modules[m].raisesWarning())
 				{
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/warning.png"));
-				xhtml.writeAttribute("alt","[WARN]");
+				xhtml.writeAttribute("fill", "#eab30d");
+				xhtml.writeAttribute("d", "M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z");
 				}
 			else {
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/tick.png"));
-				xhtml.writeAttribute("alt","[OK]");
+				xhtml.writeAttribute("fill", "#4ba359");
+				xhtml.writeAttribute("d", "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z");
 				}
+			xhtml.writeEndElement(); // path
+			xhtml.writeEndElement(); // svg
 
 			
 			xhtml.writeCharacters(modules[m].name());
@@ -248,10 +253,7 @@ public class HTMLReportArchive {
 		
 		// Add in the icon files for pass/fail/warn
 		for(String icnName:new String[]{
-				"fastqc_icon.png",
-				"warning.png",
-				"error.png",
-				"tick.png"})
+				"fastqc_icon.png"})
 			{
 			InputStream in =getClass().getResourceAsStream("/Templates/Icons/"+icnName);
 			if(in==null) continue;
@@ -336,22 +338,29 @@ public class HTMLReportArchive {
 				continue;
 			}
 			xhtml.writeStartElement("li");
-			xhtml.writeEmptyElement("img");
+			xhtml.writeStartElement("svg");
+			xhtml.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
+			xhtml.writeAttribute("width", "24");
+			xhtml.writeAttribute("height", "24");
+			xhtml.writeAttribute("viewBox", "0 0 24 24");
+			xhtml.writeStartElement("path");
 			if (modules[m].raisesError()) {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/error.png"));
-				xhtml.writeAttribute("alt", "[FAIL]");
+				xhtml.writeAttribute("fill", "#d65d3e");
+				xhtml.writeAttribute("d", "M12 2c5.53 0 10 4.47 10 10s-4.47 10-10 10S2 17.53 2 12S6.47 2 12 2m3.59 5L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41z");
 				summaryText.append("FAIL");
 				}
 			else if (modules[m].raisesWarning()) {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/warning.png"));
-				xhtml.writeAttribute("alt", "[WARNING]");
+				xhtml.writeAttribute("fill", "#eab30d");
+				xhtml.writeAttribute("d", "M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z");
 				summaryText.append("WARN");
 			}
 			else {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/tick.png"));
-				xhtml.writeAttribute("alt", "[PASS]");
+				xhtml.writeAttribute("fill", "#4ba359");
+				xhtml.writeAttribute("d", "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z");
 				summaryText.append("PASS");
 			}
+			xhtml.writeEndElement(); // path
+			xhtml.writeEndElement(); // svg
 			summaryText.append("\t");
 			summaryText.append(modules[m].name());
 			summaryText.append("\t");
