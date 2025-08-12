@@ -96,9 +96,41 @@ jobs:
 
       - name: Stage distribution folder
         run: |
-          rm -rf FastQC
-          mkdir -p FastQC
-          cp -a bin/. FastQC/
+          mkdir -p FastQC.app/Contents/MacOS
+          mkdir -p FastQC.app/Contents/Resources
+          cp -a bin/. FastQC.app/Contents/MacOS/
+          cp -a bin/uk/ac/babraham/FastQC/Resources/fastqc_icons.icns FastQC.app/Contents/Resources/fastqc_icons.icns
+          echo "APPL????" > FastQC.app/Contents/PkgInfo
+          chmod 777 FastQC.app/Contents/PkgInfo
+          cat > FastQC.app/Contents/Info.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          	<key>CFBundleAllowMixedLocalizations</key>
+          	<string>true</string>
+          	<key>CFBundleDevelopmentRegion</key>
+          	<string>English</string>
+          	<key>CFBundleExecutable</key>
+          	<string>fastqc</string>
+          	<key>CFBundleIconFile</key>
+          	<string>fastqc_icons.icns</string>
+          	<key>CFBundleInfoDictionaryVersion</key>
+          	<string>6.0</string>
+          	<key>CFBundleName</key>
+          	<string>FastQC</string>
+          	<key>CFBundlePackageType</key>
+          	<string>APPL</string>
+          	<key>CFBundleSignature</key>
+          	<string>????</string>
+          	<key>CFBundleVersion</key>
+          	<string>0.12.0</string>
+          </dict>
+          </plist>
+          EOF
+          chmod 777 FastQC.app/Contents/Info.plist
+
+
 
       - name: Determine version
         id: vars
@@ -116,7 +148,7 @@ jobs:
 
       - name: Create DMG image
         run: |
-          hdiutil create -volname "FastQC" -srcfolder FastQC -ov -format UDZO "fastqc_${{ steps.vars.outputs.version }}.dmg"
+          hdiutil create -volname "FastQC" -srcfolder FastQC.app -ov -format UDZO "fastqc_${{ steps.vars.outputs.version }}.dmg"
 
       - name: Upload asset to GitHub Release
         if: github.event_name == 'release'
