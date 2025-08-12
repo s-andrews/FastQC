@@ -259,9 +259,9 @@ public class HTMLReportArchive {
 			if(in==null) continue;
 			zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"+icnName));
 			int len;
-			while ((len = in.read(buffer)) > 0) { 
-				zip.write(buffer, 0, len); 
-			} 
+			while ((len = in.read(buffer)) > 0) {
+				zip.write(buffer, 0, len);
+			}
 			in.close();
 			zip.closeEntry();
 			}
@@ -299,7 +299,7 @@ public class HTMLReportArchive {
 		
 		xhtml.writeStartElement("body");
 		
-		xhtml.writeStartElement("div");
+		xhtml.wrxiteStartElement("div");
 		xhtml.writeAttribute("class", "header");
 		
 		xhtml.writeStartElement("div");
@@ -313,9 +313,14 @@ public class HTMLReportArchive {
 		
 		xhtml.writeStartElement("div");
 		xhtml.writeAttribute("id", "header_filename");
+		xhtml.writeStartElement("p");
 		xhtml.writeCharacters(df.format(new Date()));
-		xhtml.writeEmptyElement("br");
+		xhtml.writeEndElement();//p
+		xhtml.writeStartElement("p");
+		xhtml.writeStartElement("strong");
 		xhtml.writeCharacters(sequenceFile.name());
+		xhtml.writeEndElement();//strong
+		xhtml.writeEndElement();//p
 		xhtml.writeEndElement();//div
 		xhtml.writeEndElement();//div
 		
@@ -338,42 +343,38 @@ public class HTMLReportArchive {
 				continue;
 			}
 			xhtml.writeStartElement("li");
-			xhtml.writeStartElement("svg");
-			xhtml.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
-			xhtml.writeAttribute("width", "24");
-			xhtml.writeAttribute("height", "24");
-			xhtml.writeAttribute("viewBox", "0 0 24 24");
-			xhtml.writeStartElement("path");
+			xhtml.writeStartElement("a");
+			xhtml.writeAttribute("href", "#M"+m);
+
+			xhtml.writeStartElement("span");
 			if (modules[m].raisesError()) {
-				xhtml.writeAttribute("fill", "#d65d3e");
-				xhtml.writeAttribute("d", "M12 2c5.53 0 10 4.47 10 10s-4.47 10-10 10S2 17.53 2 12S6.47 2 12 2m3.59 5L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41z");
+				xhtml.writeAttribute("class", "sidebar-error");
+				xhtml.writeCharacters("Error");
 				summaryText.append("FAIL");
 				}
 			else if (modules[m].raisesWarning()) {
-				xhtml.writeAttribute("fill", "#eab30d");
-				xhtml.writeAttribute("d", "M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z");
+				xhtml.writeAttribute("class", "sidebar-warning");
+				xhtml.writeCharacters("Warn");
 				summaryText.append("WARN");
 			}
 			else {
-				xhtml.writeAttribute("fill", "#4ba359");
-				xhtml.writeAttribute("d", "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z");
+				xhtml.writeAttribute("class", "sidebar-pass");
+				xhtml.writeCharacters("Pass");
 				summaryText.append("PASS");
 			}
-			xhtml.writeEndElement(); // path
-			xhtml.writeEndElement(); // svg
+			xhtml.writeEndElement(); // span
+
+			xhtml.writeCharacters(modules[m].name());
+			xhtml.writeEndElement();//a
+			xhtml.writeEndElement();//li
+
 			summaryText.append("\t");
 			summaryText.append(modules[m].name());
 			summaryText.append("\t");
 			summaryText.append(sequenceFile.name());
 			summaryText.append(FastQCConfig.getInstance().lineSeparator);
-			
-			xhtml.writeStartElement("a");
-			xhtml.writeAttribute("href", "#M"+m);
-			xhtml.writeCharacters(modules[m].name());
-			xhtml.writeEndElement();//a
-			xhtml.writeEndElement();//li
-			
-			
+
+
 		}
 		xhtml.writeEndElement();//ul
 		xhtml.writeEndElement();//div

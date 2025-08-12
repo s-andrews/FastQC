@@ -1,10 +1,10 @@
 
  @media screen {
   div.summary {
-    width: 18em;
     position:fixed;
     top: 3em;
-    margin:1em 0 0 1em;
+    margin-top:1em;
+    width: 18em;
   }
   
   div.main {
@@ -29,7 +29,6 @@
     margin:0;
     padding: 0.5em;
     font-size: 200%;
-    font-weight: bold;
     position:fixed;
     width:100%;
     top:0;
@@ -85,7 +84,6 @@
   margin:0;
   padding: 0.5em;
   font-size: 200%;
-  font-weight: bold;
   width:100%;
   }    
   
@@ -93,6 +91,7 @@
   display:inline-block;
   float:left;
   clear:left;
+  font-weight: bold;
   }
   #header_filename {
   display:inline-block;
@@ -102,22 +101,23 @@
   margin-right:2em;
   text-align: right;
   }
+  #header_filename p {
+    margin: 0;
+  }
 
   div.header h3 {
   font-size: 50%;
   margin-bottom: 0;
   }
-  
+
+  div.summary h2 {
+    margin-left: 1rem;
+  }
   div.summary ul {
   padding-left:0;
   list-style-type:none;
   }
-  
-  div.summary ul li img {
-  margin-bottom:-0.5em;
-  margin-top:0.5em;
-  }
-	  
+
   div.main {
   background-color: white;
   }
@@ -183,4 +183,48 @@
   p {
   padding-top: 0;
   margin-top: 0;
+  }
+
+  .summary li {
+    padding: 0.2rem 1rem;
+    border-bottom: 1px solid #CCC;
+  }
+  .summary li:last-child {
+    border-bottom: none;
+  }
+  .summary li a {
+    text-decoration: none;
+    color: #000;
+    font-size: 0.9rem;
+  }
+  .summary li span {
+    display: inline-block;
+    border: 2px solid;
+    border-radius: 0.2rem;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.2rem;
+    margin-right: 0.4rem;
+    text-align: center;
+    width: 3rem;
+    text-transform: uppercase;
+  }
+  .sidebar-error {
+    background-color: #f0c6bc;
+    color: #862a13;
+    border-color: #862a13;
+  }
+  .sidebar-warning {
+    background-color: #e8d28f;
+    color: #8d6c08;
+    border-color: #8d6c08;
+  }
+  .sidebar-pass {
+    background-color: #afe0b7;
+    color: #2f6638;
+    border-color: #2f6638;
+  }
+
+  h2 svg {
+    vertical-align: -0.1rem;
+    margin-right: 0.2rem;
   }
