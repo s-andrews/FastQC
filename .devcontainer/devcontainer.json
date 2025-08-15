@@ -1,0 +1,14 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/java
+{
+	"name": "fastqc",
+	"image": "mcr.microsoft.com/devcontainers/java:1-11-bullseye",
+	"features": {
+		"ghcr.io/devcontainers/features/java:1": {
+			"version": "11",
+			"distribution": "temurin",
+			"installAnt": "true"
+		}
+	},
+	"postCreateCommand": "java -version && ant -version"
+}
