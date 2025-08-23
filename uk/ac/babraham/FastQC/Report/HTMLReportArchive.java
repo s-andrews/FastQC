@@ -97,68 +97,15 @@ public class HTMLReportArchive {
 		// Add icon files to zip
 		addIconsToZip();
 
-		// Generate module content
-		for (int m=0;m<modules.length;m++) {
+		// Generate module content using template-based approach
+		String moduleContent = generateModuleContent();
 
-			if (modules[m].ignoreInReport()) continue;
-
-			xhtml.writeStartElement("div");
-			xhtml.writeAttribute("class", "module");
-			xhtml.writeStartElement("h2");
-			xhtml.writeAttribute("id", "M"+m);
-
-			// Add an icon before the module name
-			xhtml.writeStartElement("svg");
-			xhtml.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
-			xhtml.writeAttribute("width", "24");
-			xhtml.writeAttribute("height", "24");
-			xhtml.writeAttribute("viewBox", "0 0 24 24");
-			xhtml.writeStartElement("path");
-			if (modules[m].raisesError())
-				{
-				xhtml.writeAttribute("fill", "#d65d3e");
-				xhtml.writeAttribute("d", "M12 2c5.53 0 10 4.47 10 10s-4.47 10-10 10S2 17.53 2 12S6.47 2 12 2m3.59 5L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41z");
-				}
-
-			else if (modules[m].raisesWarning())
-				{
-				xhtml.writeAttribute("fill", "#eab30d");
-				xhtml.writeAttribute("d", "M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2z");
-				}
-			else {
-				xhtml.writeAttribute("fill", "#4ba359");
-				xhtml.writeAttribute("d", "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10s10-4.5 10-10S17.5 2 12 2m-2 15l-5-5l1.41-1.41L10 14.17l7.59-7.59L19 8z");
-				}
-			xhtml.writeEndElement(); // path
-			xhtml.writeEndElement(); // svg
-
-			xhtml.writeCharacters(modules[m].name());
-			data.append(">>");
-			data.append(modules[m].name());
-			data.append("\t");
-			if (modules[m].raisesError()) {
-				data.append("fail");
-			}
-			else if (modules[m].raisesWarning()) {
-				data.append("warn");
-			}
-			else {
-				data.append("pass");
-			}
-			data.append("\n");
-			xhtml.writeEndElement();
-			modules[m].makeReport(this);
-			data.append(">>END_MODULE\n");
-
-			xhtml.writeEndElement();
-		}
-
-		// Close XMLStreamWriter and generate final HTML
+		// Close XMLStreamWriter (no longer needed for main content)
 		xhtml.flush();
 		xhtml.close();
 
 		// Generate final HTML from template
-		String finalHtml = generateHtmlFromTemplate();
+		String finalHtml = generateHtmlFromTemplate(moduleContent);
 
 		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
 		zip.write(finalHtml.getBytes());
@@ -300,34 +247,35 @@ public class HTMLReportArchive {
 		return templateWriter.toString();
 	}
 
-	private String loadCss() throws IOException {
+		private String loadCss() throws IOException {
 		return loadTemplate("/Templates/fastqc.css");
 	}
 
-	private String generateSummaryItems() {
+	private String generateSummaryItems() throws IOException {
 		StringBuffer summaryItems = new StringBuffer();
+		String sidebarItemTemplate = loadTemplate("/Templates/sidebar_item.html");
 
 		for (int m=0;m<modules.length;m++) {
 			if (modules[m].ignoreInReport()) {
 				continue;
 			}
 
-			summaryItems.append("            <li>\n");
-			summaryItems.append("                <a href=\"#M").append(m).append("\">\n");
-			summaryItems.append("                    <span class=\"");
+			String item = sidebarItemTemplate;
+			item = item.replace("{{MODULE_INDEX}}", String.valueOf(m));
+			item = item.replace("{{MODULE_NAME}}", modules[m].name());
 
 			if (modules[m].raisesError()) {
-				summaryItems.append("sidebar-error\">Error");
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-error");
+				item = item.replace("{{STATUS_TEXT}}", "Error");
 			} else if (modules[m].raisesWarning()) {
-				summaryItems.append("sidebar-warning\">Warn");
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-warning");
+				item = item.replace("{{STATUS_TEXT}}", "Warn");
 			} else {
-				summaryItems.append("sidebar-pass\">Pass");
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-pass");
+				item = item.replace("{{STATUS_TEXT}}", "Pass");
 			}
 
-			summaryItems.append("</span>");
-			summaryItems.append(modules[m].name());
-			summaryItems.append("\n                </a>\n");
-			summaryItems.append("            </li>\n");
+			summaryItems.append(item).append("\n");
 		}
 
 		return summaryItems.toString();
@@ -359,7 +307,71 @@ public class HTMLReportArchive {
 		return summaryText.toString();
 	}
 
-	private String generateHtmlFromTemplate() throws IOException {
+		private String getStatusIcon(QCModule module) throws IOException {
+		if (module.raisesError()) {
+			return loadTemplate("/Templates/Icons/error.svg");
+		} else if (module.raisesWarning()) {
+			return loadTemplate("/Templates/Icons/warning.svg");
+		} else {
+			return loadTemplate("/Templates/Icons/pass.svg");
+		}
+	}
+
+		private String generateModuleContent() throws IOException, XMLStreamException {
+		StringBuffer allModulesContent = new StringBuffer();
+		String moduleWrapperTemplate = loadTemplate("/Templates/module_wrapper.html");
+
+		// Generate content for each module
+		for (int m=0;m<modules.length;m++) {
+			if (modules[m].ignoreInReport()) continue;
+
+			// Create a separate XMLStreamWriter for this module's content
+			StringWriter moduleBodyWriter = new StringWriter();
+			XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
+			XMLStreamWriter moduleXhtml = xmlfactory.createXMLStreamWriter(moduleBodyWriter);
+
+			// Temporarily switch the xhtml writer for this module
+			XMLStreamWriter originalXhtml = this.xhtml;
+			this.xhtml = moduleXhtml;
+
+			// Add data for this module
+			data.append(">>");
+			data.append(modules[m].name());
+			data.append("\t");
+			if (modules[m].raisesError()) {
+				data.append("fail");
+			} else if (modules[m].raisesWarning()) {
+				data.append("warn");
+			} else {
+				data.append("pass");
+			}
+			data.append("\n");
+
+			// Let the module generate its content
+			modules[m].makeReport(this);
+			data.append(">>END_MODULE\n");
+
+			// Close the module's XMLStreamWriter
+			moduleXhtml.flush();
+			moduleXhtml.close();
+
+			// Restore the original XMLStreamWriter
+			this.xhtml = originalXhtml;
+
+			// Apply the module wrapper template
+			String moduleWrapper = moduleWrapperTemplate;
+			moduleWrapper = moduleWrapper.replace("{{MODULE_INDEX}}", String.valueOf(m));
+			moduleWrapper = moduleWrapper.replace("{{MODULE_NAME}}", modules[m].name());
+			moduleWrapper = moduleWrapper.replace("{{STATUS_ICON}}", getStatusIcon(modules[m]));
+			moduleWrapper = moduleWrapper.replace("{{MODULE_CONTENT}}", moduleBodyWriter.toString());
+
+			allModulesContent.append(moduleWrapper).append("\n");
+		}
+
+		return allModulesContent.toString();
+	}
+
+	private String generateHtmlFromTemplate(String moduleContent) throws IOException {
 		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
 
 		String html = htmlTemplate;
@@ -369,7 +381,7 @@ public class HTMLReportArchive {
 		html = html.replace("{{FILENAME}}", sequenceFile.name());
 		html = html.replace("{{FASTQC_ICON_BASE64}}", base64ForIcon("Icons/fastqc_icon.png"));
 		html = html.replace("{{SUMMARY_ITEMS}}", generateSummaryItems());
-		html = html.replace("{{MODULE_CONTENT}}", moduleContentWriter.toString());
+		html = html.replace("{{MODULE_CONTENT}}", moduleContent);
 		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
 
 		return html;
