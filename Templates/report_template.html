@@ -2,34 +2,58 @@
 <html>
 <head>
     <title>{{TITLE}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style type="text/css">
 {{CSS_CONTENT}}
     </style>
 </head>
 <body>
-    <div class="header">
-        <div id="header_title">
-            <img src="{{FASTQC_ICON_BASE64}}" alt="FastQC"></img>FastQC Report
-        </div>
-        <div id="header_filename">
-            <p>{{DATE}}</p>
-            <p><strong>{{FILENAME}}</strong></p>
+    <!-- Hidden checkbox for mobile menu toggle -->
+    <input type="checkbox" id="menu-toggle" class="menu-toggle-input" />
+
+    <!-- Mobile navigation bar (hidden on desktop) -->
+    <div class="mobile-nav">
+        <label for="menu-toggle" class="menu-toggle">
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+        </label>
+        <div class="mobile-title">
+            <img src="{{FASTQC_ICON_BASE64}}" alt="FastQC" class="mobile-icon" />
+            <span class="mobile-title-app">FastQC:</span>
+            <span class="mobile-title-filename">{{FILENAME}}</span>
         </div>
     </div>
 
-    <div class="summary">
-        <h2>Summary</h2>
-        <ul>
+    <div class="container">
+        <!-- Sidebar with header and navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="#" alt="Back to top" class="header-title">
+                    <img src="{{FASTQC_ICON_BASE64}}" alt="FastQC" />FastQC Report
+                </a>
+                <div class="header-filename">
+                    <p><a href="#" alt="Back to top">{{DATE}}</a></p>
+                    <p><strong><a href="#" alt="Back to top">{{FILENAME}}</a></strong></p>
+                </div>
+            </div>
+
+            <nav class="navigation">
+                <h2>Summary</h2>
+                <ul>
 {{SUMMARY_ITEMS}}
-        </ul>
-    </div>
+                </ul>
+            </nav>
+        </aside>
 
-    <div class="main">
+        <!-- Main content area -->
+        <main class="main">
 {{MODULE_CONTENT}}
-    </div>
 
-    <div class="footer">
-        Produced by <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/">FastQC</a>  (version {{VERSION}})
+            <footer class="footer">
+                Produced by <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/">FastQC</a>  (version {{VERSION}})
+            </footer>
+        </main>
     </div>
 </body>
 </html>
