@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{TITLE}}</title>
+    <style type="text/css">
+{{CSS_CONTENT}}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div id="header_title">
+            <img src="{{FASTQC_ICON_BASE64}}" alt="FastQC">FastQC Report
+        </div>
+        <div id="header_filename">
+            <p>{{DATE}}</p>
+            <p><strong>{{FILENAME}}</strong></p>
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>Summary</h2>
+        <ul>
+{{SUMMARY_ITEMS}}
+        </ul>
+    </div>
+
+    <div class="main">
+{{MODULE_CONTENT}}
+    </div>
+
+    <div class="footer">
+        Produced by <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/">FastQC</a>  (version {{VERSION}})
+    </div>
+</body>
+</html>

@@ -66,32 +66,47 @@ public class HTMLReportArchive {
 	private byte [] buffer = new byte[1024];
 	private File htmlFile;
 	private File zipFile;
+	private StringWriter moduleContentWriter;
+	private String htmlTemplate;
 
 	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
 		this.modules = modules;
 		this.htmlFile = htmlFile;
 		this.zipFile = new File(htmlFile.getAbsoluteFile().toString().replaceAll("\\.html$", "")+".zip");
-		StringWriter htmlStr = new StringWriter();
+
+		// Load the HTML template
+		this.htmlTemplate = loadTemplate("/Templates/report_template.html");
+
+		// Create XMLStreamWriter for module content
+		this.moduleContentWriter = new StringWriter();
 		XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
-		this.xhtml= xmlfactory.createXMLStreamWriter(htmlStr);
-		
-		
+		this.xhtml= xmlfactory.createXMLStreamWriter(moduleContentWriter);
+
+
 		zip = new ZipOutputStream(new FileOutputStream(zipFile));
 		zip.putNextEntry(new ZipEntry(folderName()+"/"));
 		zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"));
 		zip.putNextEntry(new ZipEntry(folderName()+"/Images/"));
-		startDocument();
+
+		// Initialize data document
+		data.append("##FastQC\t");
+		data.append(FastQCApplication.VERSION);
+		data.append("\n");
+
+		// Add icon files to zip
+		addIconsToZip();
+
+		// Generate module content
 		for (int m=0;m<modules.length;m++) {
-			
+
 			if (modules[m].ignoreInReport()) continue;
-			
+
 			xhtml.writeStartElement("div");
 			xhtml.writeAttribute("class", "module");
 			xhtml.writeStartElement("h2");
 			xhtml.writeAttribute("id", "M"+m);
-			
-			
+
 			// Add an icon before the module name
 			xhtml.writeStartElement("svg");
 			xhtml.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -117,7 +132,6 @@ public class HTMLReportArchive {
 			xhtml.writeEndElement(); // path
 			xhtml.writeEndElement(); // svg
 
-			
 			xhtml.writeCharacters(modules[m].name());
 			data.append(">>");
 			data.append(modules[m].name());
@@ -135,26 +149,36 @@ public class HTMLReportArchive {
 			xhtml.writeEndElement();
 			modules[m].makeReport(this);
 			data.append(">>END_MODULE\n");
-			
+
 			xhtml.writeEndElement();
 		}
-		closeDocument();
-		
-		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
+
+		// Close XMLStreamWriter and generate final HTML
 		xhtml.flush();
 		xhtml.close();
-		zip.write(htmlStr.toString().getBytes());
+
+		// Generate final HTML from template
+		String finalHtml = generateHtmlFromTemplate();
+
+		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
+		zip.write(finalHtml.getBytes());
 		zip.closeEntry();
 		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_data.txt"));
 		zip.write(data.toString().getBytes());
 		zip.closeEntry();
-		
+
+		// Generate summary.txt
+		String summaryText = generateSummaryText();
+		zip.putNextEntry(new ZipEntry(folderName()+"/summary.txt"));
+		zip.write(summaryText.getBytes());
+		zip.closeEntry();
+
 		//XSL-FO
 		try {
 			DocumentBuilderFactory domFactory=DocumentBuilderFactory.newInstance();
 			domFactory.setNamespaceAware(false);
 			DocumentBuilder builder=domFactory.newDocumentBuilder();
-			Document src=builder.parse(new InputSource( new StringReader(htmlStr.toString())));
+			Document src=builder.parse(new InputSource( new StringReader(finalHtml)));
 			InputStream rsrc=getClass().getResourceAsStream("/Templates/fastqc2fo.xsl");
 			if(rsrc!=null)
 				{
@@ -162,7 +186,7 @@ public class HTMLReportArchive {
 				builder=domFactory.newDocumentBuilder();
 				Document html2fo=builder.parse(rsrc);
 				rsrc.close();
-				
+
 				TransformerFactory tf=TransformerFactory.newInstance();
 				Templates templates=tf.newTemplates(new DOMSource(html2fo));
 				zip.putNextEntry(new ZipEntry(folderName()+"/fastqc.fo"));
@@ -173,19 +197,19 @@ public class HTMLReportArchive {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		
+
+
 		zip.close();
-		
+
 		// Save the HTML file at the same level as the zip file
-		
+
 		PrintWriter pr = new PrintWriter(new FileWriter(htmlFile));
-		
-		pr.print(htmlStr.toString());
-		
+
+		pr.print(finalHtml);
+
 		pr.close();
 
-		
+
 		if (FastQCConfig.getInstance().do_unzip) {
 			unzipZipFile(zipFile);
 			if (FastQCConfig.getInstance().delete_after_unzip) {
@@ -193,18 +217,18 @@ public class HTMLReportArchive {
 			}
 		}
 	}
-	
+
 	private void unzipZipFile (File file) throws IOException {
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		int size;
 		byte [] buffer = new byte[1024];
-		
+
 		while (entries.hasMoreElements()) {
 			ZipEntry entry = entries.nextElement();
-			
+
 //			System.out.println("Going to extract '"+entry.getName()+"'");
-			
+
 			if (entry.isDirectory()) {
 				File dir = new File(file.getParent()+"/"+entry.getName());
 				if (dir.exists() && dir.isDirectory()) continue; // Don't need to do anything
@@ -222,7 +246,7 @@ public class HTMLReportArchive {
 			bos.close();
 			bis.close();
 		}
-		
+
 		zipFile.close();
 	}
 
@@ -230,27 +254,20 @@ public class HTMLReportArchive {
 		{
 		return this.xhtml;
 		}
-	
+
 	public StringBuffer dataDocument() {
 		return data;
 	}
-	
+
 	public String folderName () {
 		return htmlFile.getName().replaceAll("\\.html$", "");
 	}
-	
+
 	public ZipOutputStream zipFile () {
 		return zip;
 	}
-	
-	private void startDocument () throws IOException,XMLStreamException
-		{
-		
-		// Just put the fastQC version at the start of the text report
-		data.append("##FastQC\t");
-		data.append(FastQCApplication.VERSION);
-		data.append("\n");
-		
+
+	private void addIconsToZip() throws IOException {
 		// Add in the icon files for pass/fail/warn
 		for(String icnName:new String[]{
 				"fastqc_icon.png"})
@@ -265,129 +282,99 @@ public class HTMLReportArchive {
 			in.close();
 			zip.closeEntry();
 			}
-				
-		
+	}
 
-		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
-		
-		xhtml.writeDTD("<!DOCTYPE html>");
-		xhtml.writeStartElement("html");
-		xhtml.writeStartElement("head");
-		
-		xhtml.writeStartElement("title");
-		xhtml.writeCharacters(sequenceFile.name());
-		xhtml.writeCharacters(" FastQC Report");
-		xhtml.writeEndElement();//title
-		
-		InputStream rsrc=getClass().getResourceAsStream("/Templates/header_template.html");
-		if(rsrc!=null)
-			{
-			xhtml.writeStartElement("style");
-			xhtml.writeAttribute("type", "text/css");
+	private String loadTemplate(String templatePath) throws IOException {
+		InputStream templateStream = getClass().getResourceAsStream(templatePath);
+		if (templateStream == null) {
+			throw new IOException("Template not found: " + templatePath);
+		}
 
-			byte array[]=new byte[128];
-			int nRead;
-			while((nRead=rsrc.read(array))!=-1) { xhtml.writeCharacters(new String(array,0,nRead));}
-			rsrc.close();
-			xhtml.writeEndElement();//style
-			}		
+		StringWriter templateWriter = new StringWriter();
+		byte[] buffer = new byte[1024];
+		int nRead;
+		while ((nRead = templateStream.read(buffer)) != -1) {
+			templateWriter.write(new String(buffer, 0, nRead));
+		}
+		templateStream.close();
+		return templateWriter.toString();
+	}
 
-		
-		
-		
-		xhtml.writeEndElement();//head
-		
-		xhtml.writeStartElement("body");
-		
-		xhtml.wrxiteStartElement("div");
-		xhtml.writeAttribute("class", "header");
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("id", "header_title");
-		
-		xhtml.writeEmptyElement("img");
-		xhtml.writeAttribute("src", base64ForIcon("Icons/fastqc_icon.png"));
-		xhtml.writeAttribute("alt", "FastQC");
-		xhtml.writeCharacters("FastQC Report");
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("id", "header_filename");
-		xhtml.writeStartElement("p");
-		xhtml.writeCharacters(df.format(new Date()));
-		xhtml.writeEndElement();//p
-		xhtml.writeStartElement("p");
-		xhtml.writeStartElement("strong");
-		xhtml.writeCharacters(sequenceFile.name());
-		xhtml.writeEndElement();//strong
-		xhtml.writeEndElement();//p
-		xhtml.writeEndElement();//div
-		xhtml.writeEndElement();//div
-		
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "summary");
-		
-		xhtml.writeStartElement("h2");
-		xhtml.writeCharacters("Summary");
-		xhtml.writeEndElement();//h2
-		
-		
-		xhtml.writeStartElement("ul");
-		
-		StringBuffer summaryText = new StringBuffer();
-		
+	private String loadCss() throws IOException {
+		return loadTemplate("/Templates/fastqc.css");
+	}
+
+	private String generateSummaryItems() {
+		StringBuffer summaryItems = new StringBuffer();
+
 		for (int m=0;m<modules.length;m++) {
-			
 			if (modules[m].ignoreInReport()) {
 				continue;
 			}
-			xhtml.writeStartElement("li");
-			xhtml.writeStartElement("a");
-			xhtml.writeAttribute("href", "#M"+m);
 
-			xhtml.writeStartElement("span");
+			summaryItems.append("            <li>\n");
+			summaryItems.append("                <a href=\"#M").append(m).append("\">\n");
+			summaryItems.append("                    <span class=\"");
+
 			if (modules[m].raisesError()) {
-				xhtml.writeAttribute("class", "sidebar-error");
-				xhtml.writeCharacters("Error");
-				summaryText.append("FAIL");
-				}
-			else if (modules[m].raisesWarning()) {
-				xhtml.writeAttribute("class", "sidebar-warning");
-				xhtml.writeCharacters("Warn");
-				summaryText.append("WARN");
+				summaryItems.append("sidebar-error\">Error");
+			} else if (modules[m].raisesWarning()) {
+				summaryItems.append("sidebar-warning\">Warn");
+			} else {
+				summaryItems.append("sidebar-pass\">Pass");
 			}
-			else {
-				xhtml.writeAttribute("class", "sidebar-pass");
-				xhtml.writeCharacters("Pass");
+
+			summaryItems.append("</span>");
+			summaryItems.append(modules[m].name());
+			summaryItems.append("\n                </a>\n");
+			summaryItems.append("            </li>\n");
+		}
+
+		return summaryItems.toString();
+	}
+
+	private String generateSummaryText() {
+		StringBuffer summaryText = new StringBuffer();
+
+		for (int m=0;m<modules.length;m++) {
+			if (modules[m].ignoreInReport()) {
+				continue;
+			}
+
+			if (modules[m].raisesError()) {
+				summaryText.append("FAIL");
+			} else if (modules[m].raisesWarning()) {
+				summaryText.append("WARN");
+			} else {
 				summaryText.append("PASS");
 			}
-			xhtml.writeEndElement(); // span
-
-			xhtml.writeCharacters(modules[m].name());
-			xhtml.writeEndElement();//a
-			xhtml.writeEndElement();//li
 
 			summaryText.append("\t");
 			summaryText.append(modules[m].name());
 			summaryText.append("\t");
 			summaryText.append(sequenceFile.name());
 			summaryText.append(FastQCConfig.getInstance().lineSeparator);
-
-
 		}
-		xhtml.writeEndElement();//ul
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "main");
-		
 
-		zip.putNextEntry(new ZipEntry(folderName()+"/summary.txt"));
-		zip.write(summaryText.toString().getBytes());
-
+		return summaryText.toString();
 	}
-	
+
+	private String generateHtmlFromTemplate() throws IOException {
+		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
+
+		String html = htmlTemplate;
+		html = html.replace("{{TITLE}}", sequenceFile.name() + " FastQC Report");
+		html = html.replace("{{CSS_CONTENT}}", loadCss());
+		html = html.replace("{{DATE}}", df.format(new Date()));
+		html = html.replace("{{FILENAME}}", sequenceFile.name());
+		html = html.replace("{{FASTQC_ICON_BASE64}}", base64ForIcon("Icons/fastqc_icon.png"));
+		html = html.replace("{{SUMMARY_ITEMS}}", generateSummaryItems());
+		html = html.replace("{{MODULE_CONTENT}}", moduleContentWriter.toString());
+		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
+
+		return html;
+	}
+
 	private String base64ForIcon (String path) {
 		try {
 			BufferedImage b = ImageIO.read(ClassLoader.getSystemResource("Templates/"+path));
@@ -398,25 +385,10 @@ public class HTMLReportArchive {
 			return "Failed";
 		}
 	}
-	
-	private void closeDocument () throws XMLStreamException
-		{
-		xhtml.writeEndElement();//div
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "footer");
-		xhtml.writeCharacters("Produced by ");
-		xhtml.writeStartElement("a");
-		xhtml.writeAttribute("href", "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/");
-		xhtml.writeCharacters("FastQC");
-		xhtml.writeEndElement();//a
-		xhtml.writeCharacters("  (version "+FastQCApplication.VERSION+")");
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeEndElement();//body
-		xhtml.writeEndElement();//html
-		}
-	
-	
-	
-	
+
+
+
+
+
+
 }
