@@ -43,7 +43,6 @@ public abstract class AbstractQCModule implements QCModule {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
 		xhtml.writeEmptyElement("img");
-		xhtml.writeAttribute("class", "indented");
 		if (FastQCConfig.getInstance().svg_output) {
 			xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
 		}
@@ -51,27 +50,27 @@ public abstract class AbstractQCModule implements QCModule {
 			xhtml.writeAttribute("src", ImageToBase64.imageToBase64(image));
 		}
 		xhtml.writeAttribute("alt", alt);
-		
+
 //		if(svgData!=null){
 //			xhtml.writeAttribute("width",String.valueOf(img.getWidth()));
 //			xhtml.writeAttribute("height",String.valueOf(img.getHeight()));
 //		}
-		
+
 		xhtml.writeEndElement();//p
 	}
-	
+
 	protected void writeDefaultImage (HTMLReportArchive report, String fileName, String imageTitle, int width, int height) throws IOException, XMLStreamException {
 		ZipOutputStream zip = report.zipFile();
-		
-		// Write out the svg version of the image		
+
+		// Write out the svg version of the image
 		JPanel resultsPanel = getResultsPanel();
 		resultsPanel.setSize(width,height);
 		resultsPanel.validate();
 
-		
+
 		String svgFilename = fileName.replaceAll("\\.png$", ".svg");
 		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+svgFilename));
-				
+
 		String svgData = SVGImageSaver.saveImage(resultsPanel, zip);
 		zip.closeEntry();
 
@@ -83,30 +82,30 @@ public abstract class AbstractQCModule implements QCModule {
 		resultsPanel.setDoubleBuffered(false);
 		resultsPanel.addNotify();
 		resultsPanel.validate();
-		
+
 		resultsPanel.print(g);
 
 		g.dispose();
-		
+
 		ImageIO.write(b, "PNG", zip);
 		zip.closeEntry();
 
-		
+
 		simpleXhtmlReport(report, svgData, b, imageTitle);
 
 	}
 
 	protected void writeSpecificImage (HTMLReportArchive report, JPanel resultsPanel, String fileName, String imageTitle, int width, int height) throws IOException, XMLStreamException {
 		ZipOutputStream zip = report.zipFile();
-		
-		// Write out the svg version of the image		
+
+		// Write out the svg version of the image
 		resultsPanel.setSize(width,height);
 		resultsPanel.validate();
 
-		
+
 		String svgFilename = fileName.replaceAll("\\.png$", ".svg");
 		zip.putNextEntry(new ZipEntry(report.folderName()+"/Images/"+svgFilename));
-				
+
 		String svgData = SVGImageSaver.saveImage(resultsPanel, zip);
 		zip.closeEntry();
 
@@ -118,22 +117,22 @@ public abstract class AbstractQCModule implements QCModule {
 		resultsPanel.setDoubleBuffered(false);
 		resultsPanel.addNotify();
 		resultsPanel.validate();
-		
+
 		resultsPanel.print(g);
 
 		g.dispose();
-		
+
 		ImageIO.write(b, "PNG", zip);
 		zip.closeEntry();
 
-		
+
 		simpleXhtmlReport(report, svgData, b, imageTitle);
 	}
 
 
 	protected void writeTable(HTMLReportArchive report, TableModel table) throws IOException,XMLStreamException {
 		writeXhtmlTable(report,table);
-		writeTextTable(report,table);	
+		writeTextTable(report,table);
 	}
 
 	protected void writeXhtmlTable(HTMLReportArchive report, TableModel table) throws IOException,XMLStreamException {
@@ -141,17 +140,17 @@ public abstract class AbstractQCModule implements QCModule {
 		w.writeStartElement("table");
 		w.writeStartElement("thead");
 		w.writeStartElement("tr");
-		
+
 		for (int c=0;c<table.getColumnCount();c++) {
 			w.writeStartElement("th");
 			w.writeCharacters(table.getColumnName(c));
 			w.writeEndElement();
 		}
-		
+
 		w.writeEndElement();//tr
 		w.writeEndElement();//thead
 		w.writeStartElement("tbody");
-		
+
 		for (int r=0;r<table.getRowCount();r++) {
 			w.writeStartElement("tr");
 			for (int c=0;c<table.getColumnCount();c++) {
@@ -174,7 +173,7 @@ public abstract class AbstractQCModule implements QCModule {
 			if (c!=0) d.append("\t");
 			d.append(table.getColumnName(c));
 		}
-		
+
 		d.append("\n");
 
 		// Do the rows
