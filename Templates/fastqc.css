@@ -9,7 +9,9 @@
 * {
   box-sizing: border-box;
 }
-
+html {
+  scroll-padding-top: 2rem;
+}
 body {
   font-family: sans-serif;
   color: #000;
@@ -335,38 +337,42 @@ a:hover {
    ========================================================================== */
 
 @media (max-width: 768px) {
+  html {
+    scroll-padding-top: 60px;
+  }
+
   /* Show mobile navigation bar */
   .mobile-nav {
     display: flex;
   }
 
-  /* Container remains horizontal flex, but we'll hide/show sidebar with flexbox */
+  /* Container no longer needs margin - sidebar will overlay */
   .container {
     margin-top: 45px; /* Account for fixed mobile nav */
   }
-
-  /* Hide sidebar by default on mobile using flexbox */
+  /* Hide sidebar by default on mobile - animate from top */
   .sidebar {
-    flex: 0 0 0; /* Collapse to zero width */
-    overflow: hidden;
-    transition: flex-basis 0.3s ease;
+    position: fixed;
+    top: 45px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: calc(100vh - 45px);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
     border-right: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
-  /* Show sidebar when menu is toggled */
+  /* Show sidebar when menu is toggled - slide down from top */
   .menu-toggle-input:checked ~ .container .sidebar {
-    flex: 0 0 100%; /* Full width when open */
+    transform: translateY(0);
   }
 
   /* Hide desktop sidebar header on mobile */
   .sidebar-header {
     display: none;
-  }
-
-  /* When sidebar is open, hide main content */
-  .menu-toggle-input:checked ~ .container .main {
-    flex: 0 0 0;
-    overflow: hidden;
   }
 
   /* Hamburger animation when menu is open */
@@ -384,7 +390,7 @@ a:hover {
 
   /* Main content adjustments for mobile */
   .main {
-    padding: 1rem;
+    padding: 0 1rem;
     overflow-x: hidden;
   }
 
