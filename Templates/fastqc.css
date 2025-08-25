@@ -100,7 +100,8 @@ body {
   min-width: 0; /* Allow shrinking */
 }
 
-.mobile-icon {
+.mobile-icon,
+.mobile-title svg {
   height: 20px;
   width: 20px;
   flex-shrink: 0;
@@ -146,7 +147,8 @@ body {
   gap: 0.5rem;
 }
 
-.header-title img {
+.header-title img,
+.header-title svg {
   height: 24px;
   width: auto;
   margin: 0;

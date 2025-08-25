@@ -19,7 +19,6 @@
  */
 package uk.ac.babraham.FastQC.Report;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -37,7 +36,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import javax.imageio.ImageIO;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -55,7 +53,6 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.FastQCApplication;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
-import uk.ac.babraham.FastQC.Utilities.ImageToBase64;
 
 public class HTMLReportArchive {
 	private XMLStreamWriter xhtml=null;
@@ -93,9 +90,6 @@ public class HTMLReportArchive {
 		data.append("##FastQC\t");
 		data.append(FastQCApplication.VERSION);
 		data.append("\n");
-
-		// Add icon files to zip
-		addIconsToZip();
 
 		// Generate module content using template-based approach
 		String moduleContent = generateModuleContent();
@@ -214,23 +208,6 @@ public class HTMLReportArchive {
 		return zip;
 	}
 
-	private void addIconsToZip() throws IOException {
-		// Add in the icon files for pass/fail/warn
-		for(String icnName:new String[]{
-				"fastqc_icon.png"})
-			{
-			InputStream in =getClass().getResourceAsStream("/Templates/Icons/"+icnName);
-			if(in==null) continue;
-			zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"+icnName));
-			int len;
-			while ((len = in.read(buffer)) > 0) {
-				zip.write(buffer, 0, len);
-			}
-			in.close();
-			zip.closeEntry();
-			}
-	}
-
 	private String loadTemplate(String templatePath) throws IOException {
 		InputStream templateStream = getClass().getResourceAsStream(templatePath);
 		if (templateStream == null) {
@@ -317,7 +294,15 @@ public class HTMLReportArchive {
 		}
 	}
 
-		private String generateModuleContent() throws IOException, XMLStreamException {
+	private String getFastQCIconWithUniqueIds(String suffix) throws IOException {
+		String svgContent = loadTemplate("/Templates/Icons/fastqc_icon.svg");
+
+		// Replace all IDs and their references with unique versions
+		return svgContent.replaceAll("id=\"([^\"]+)\"", "id=\"$1_" + suffix + "\"")
+				         .replaceAll("url\\(#([^)]+)\\)", "url(#$1_" + suffix + ")");
+	}
+
+	private String generateModuleContent() throws IOException, XMLStreamException {
 		StringBuffer allModulesContent = new StringBuffer();
 		String moduleWrapperTemplate = loadTemplate("/Templates/module_wrapper.html");
 
@@ -379,7 +364,8 @@ public class HTMLReportArchive {
 		html = html.replace("{{CSS_CONTENT}}", loadCss());
 		html = html.replace("{{DATE}}", df.format(new Date()));
 		html = html.replace("{{FILENAME}}", sequenceFile.name());
-		html = html.replace("{{FASTQC_ICON_BASE64}}", base64ForIcon("Icons/fastqc_icon.png"));
+		html = html.replace("{{FASTQC_ICON_SVG_MOBILE}}", getFastQCIconWithUniqueIds("mobile"));
+		html = html.replace("{{FASTQC_ICON_SVG_SIDEBAR}}", getFastQCIconWithUniqueIds("sidebar"));
 		html = html.replace("{{SUMMARY_ITEMS}}", generateSummaryItems());
 		html = html.replace("{{MODULE_CONTENT}}", moduleContent);
 		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
@@ -387,16 +373,7 @@ public class HTMLReportArchive {
 		return html;
 	}
 
-	private String base64ForIcon (String path) {
-		try {
-			BufferedImage b = ImageIO.read(ClassLoader.getSystemResource("Templates/"+path));
-			return (ImageToBase64.imageToBase64(b));
-		}
-		catch (IOException ioe) {
-			ioe.printStackTrace();
-			return "Failed";
-		}
-	}
+
 
 
 
