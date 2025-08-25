@@ -32,6 +32,10 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -65,6 +69,7 @@ public class HTMLReportArchive {
 	private File zipFile;
 	private StringWriter moduleContentWriter;
 	private String htmlTemplate;
+	private Map<String, String> helpFileMapping;
 
 	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
@@ -74,6 +79,9 @@ public class HTMLReportArchive {
 
 		// Load the HTML template
 		this.htmlTemplate = loadTemplate("/Templates/report_template.html");
+
+		// Initialize help file mapping
+		this.helpFileMapping = initializeHelpFileMapping();
 
 		// Create XMLStreamWriter for module content
 		this.moduleContentWriter = new StringWriter();
@@ -348,6 +356,7 @@ public class HTMLReportArchive {
 			moduleWrapper = moduleWrapper.replace("{{MODULE_INDEX}}", String.valueOf(m));
 			moduleWrapper = moduleWrapper.replace("{{MODULE_NAME}}", modules[m].name());
 			moduleWrapper = moduleWrapper.replace("{{STATUS_ICON}}", getStatusIcon(modules[m]));
+			moduleWrapper = moduleWrapper.replace("{{HELP_CONTENT}}", extractHelpText(modules[m].name()));
 			moduleWrapper = moduleWrapper.replace("{{MODULE_CONTENT}}", moduleBodyWriter.toString());
 
 			allModulesContent.append(moduleWrapper).append("\n");
@@ -378,6 +387,122 @@ public class HTMLReportArchive {
 
 
 
+	/**
+	 * Initialize mapping between module names and their corresponding help file paths
+	 */
+	private Map<String, String> initializeHelpFileMapping() {
+		Map<String, String> mapping = new HashMap<String, String>();
+		mapping.put("Basic Statistics", "/Help/3 Analysis Modules/1 Basic Statistics.html");
+		mapping.put("Per base sequence quality", "/Help/3 Analysis Modules/2 Per Base Sequence Quality.html");
+		mapping.put("Per sequence quality scores", "/Help/3 Analysis Modules/3 Per Sequence Quality Scores.html");
+		mapping.put("Per base sequence content", "/Help/3 Analysis Modules/4 Per Base Sequence Content.html");
+		mapping.put("Per sequence GC content", "/Help/3 Analysis Modules/5 Per Sequence GC Content.html");
+		mapping.put("Per base N content", "/Help/3 Analysis Modules/6 Per Base N Content.html");
+		mapping.put("Sequence Length Distribution", "/Help/3 Analysis Modules/7 Sequence Length Distribution.html");
+		mapping.put("Sequence Duplication Levels", "/Help/3 Analysis Modules/8 Duplicate Sequences.html");
+		mapping.put("Overrepresented sequences", "/Help/3 Analysis Modules/9 Overrepresented Sequences.html");
+		mapping.put("Adapter Content", "/Help/3 Analysis Modules/10 Adapter Content.html");
+		mapping.put("Kmer Content", "/Help/3 Analysis Modules/11 Kmer Content.html");
+		mapping.put("Per tile sequence quality", "/Help/3 Analysis Modules/12 Per Tile Sequence Quality.html");
+		return mapping;
+	}
 
+	/**
+	 * Extract text content from help HTML files, removing images and HTML tags
+	 */
+	private String extractHelpText(String moduleName) {
+		String helpFilePath = helpFileMapping.get(moduleName);
+		if (helpFilePath == null) {
+			return "<p>Help documentation not available for this module.</p>";
+		}
+
+		try {
+			String helpHtml = loadTemplate(helpFilePath);
+			return convertHelpHtmlToText(helpHtml);
+		} catch (IOException e) {
+			return "<p>Help documentation could not be loaded for this module.</p>";
+		}
+	}
+
+	/**
+	 * Convert help HTML to clean text content, removing images and preserving structure
+	 */
+	private String convertHelpHtmlToText(String htmlContent) {
+		// Remove the HTML document structure, head, and body tags
+		String content = htmlContent.replaceAll("(?s)<html.*?>", "");
+		content = content.replaceAll("(?s)<head.*?>.*?</head>", "");
+		content = content.replaceAll("(?s)<body[^>]*>", "");
+		content = content.replaceAll("(?s)</body>.*?</html>", "");
+
+		// Remove all img tags and p tags containing only images
+		content = content.replaceAll("(?s)<p>\\s*<img[^>]*>\\s*</p>", "");
+		content = content.replaceAll("(?s)<img[^>]*>", "");
+
+		// Remove empty p tags
+		content = content.replaceAll("(?s)<p>\\s*</p>", "");
+
+		// Remove h1 tags completely since they duplicate the module name
+		content = content.replaceAll("(?s)<h1[^>]*>.*?</h1>", "");
+
+		// Convert h2 tags to h4 for better integration
+		content = content.replaceAll("(?s)<h2([^>]*)>", "<h4$1>");
+		content = content.replaceAll("(?s)</h2>", "</h4>");
+
+		// Clean up extra whitespace and newlines
+		content = content.replaceAll("\\n\\s*\\n\\s*\\n", "\n\n");
+		content = content.replaceAll("(?m)^\\s+", "");
+		content = content.trim();
+
+		return content;
+	}
+
+	/**
+	 * Ensure proper HTML list structure by closing any unclosed li tags
+	 */
+	private String ensureProperListStructure(String content) {
+		// Split content into lines for processing
+		String[] lines = content.split("\n");
+		StringBuilder result = new StringBuilder();
+		boolean inListItem = false;
+
+		for (String line : lines) {
+			String trimmed = line.trim();
+
+			// Check if this line starts a new list item
+			if (trimmed.startsWith("<li>") || trimmed.matches("^<li[^>]*>.*")) {
+				// Close previous list item if open
+				if (inListItem) {
+					result.append("</li>\n");
+				}
+				result.append(line).append("\n");
+				inListItem = true;
+			}
+			// Check if this line closes a list item
+			else if (trimmed.equals("</li>")) {
+				result.append(line).append("\n");
+				inListItem = false;
+			}
+			// Check if this line ends a list
+			else if (trimmed.equals("</ol>") || trimmed.equals("</ul>")) {
+				// Close current list item if open
+				if (inListItem) {
+					result.append("</li>\n");
+					inListItem = false;
+				}
+				result.append(line).append("\n");
+			}
+			// Regular line
+			else {
+				result.append(line).append("\n");
+			}
+		}
+
+		// Close final list item if still open
+		if (inListItem) {
+			result.append("</li>\n");
+		}
+
+		return result.toString();
+	}
 
 }

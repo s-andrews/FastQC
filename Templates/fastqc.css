@@ -83,6 +83,7 @@ body {
 .main {
   padding: 0 2rem;
   overflow-x: auto;
+  width: 100%;
 }
 
 .module {
@@ -175,6 +176,12 @@ h2 {
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
   border-bottom: 2px solid #800000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.module-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -432,7 +439,109 @@ a:hover {
 }
 
 /* ==========================================================================
-   7. PRINT STYLES
+   7. HELP TOGGLE FUNCTIONALITY
+   ========================================================================== */
+
+/* Hide the checkbox */
+.help-checkbox {
+  display: none;
+}
+
+/* Style the label as a button */
+.help-toggle {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: normal;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+  margin-right: 5px;
+  user-select: none;
+}
+
+.help-toggle:hover {
+  background-color: #2980b9;
+}
+
+.help-toggle:focus {
+  outline: 2px solid #2980b9;
+  outline-offset: 2px;
+}
+
+/* Show/hide text logic */
+.help-hide {
+  display: none;
+}
+
+.help-checkbox:checked ~ h2 .help-toggle .help-show {
+  display: none;
+}
+
+.help-checkbox:checked ~ h2 .help-toggle .help-hide {
+  display: inline;
+}
+
+.help-box {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 10px 0 20px 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Show help box when checkbox is checked */
+.help-checkbox:checked ~ .help-box {
+  max-height: 1000px;
+  opacity: 1;
+  padding: 15px;
+  margin: 10px 0 20px 0;
+}
+
+.help-box h4 {
+  margin: 0.5rem 0 0;
+}
+.help-box h4:first-child {
+  margin-top: 0;
+}
+
+.help-box p {
+  margin: 0 0 10px;
+}
+
+.help-box ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+/* Mobile adjustments for help functionality */
+@media (max-width: 768px) {
+  .help-toggle {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .help-box {
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+}
+
+/* ==========================================================================
+   8. PRINT STYLES
    ========================================================================== */
 
 @media print {
