@@ -392,16 +392,16 @@ public class HTMLReportArchive {
 	 */
 	private Map<String, String> initializeHelpFileMapping() {
 		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("Basic Statistics", "/Help/3 Analysis Modules/1 Basic Statistics.html");
+		mapping.put("Basic statistics", "/Help/3 Analysis Modules/1 Basic statistics.html");
 		mapping.put("Per base sequence quality", "/Help/3 Analysis Modules/2 Per Base Sequence Quality.html");
 		mapping.put("Per sequence quality scores", "/Help/3 Analysis Modules/3 Per Sequence Quality Scores.html");
 		mapping.put("Per base sequence content", "/Help/3 Analysis Modules/4 Per Base Sequence Content.html");
 		mapping.put("Per sequence GC content", "/Help/3 Analysis Modules/5 Per Sequence GC Content.html");
 		mapping.put("Per base N content", "/Help/3 Analysis Modules/6 Per Base N Content.html");
-		mapping.put("Sequence Length Distribution", "/Help/3 Analysis Modules/7 Sequence Length Distribution.html");
-		mapping.put("Sequence Duplication Levels", "/Help/3 Analysis Modules/8 Duplicate Sequences.html");
+		mapping.put("Sequence length distribution", "/Help/3 Analysis Modules/7 Sequence length distribution.html");
+		mapping.put("Sequence duplication levels", "/Help/3 Analysis Modules/8 Duplicate Sequences.html");
 		mapping.put("Overrepresented sequences", "/Help/3 Analysis Modules/9 Overrepresented Sequences.html");
-		mapping.put("Adapter Content", "/Help/3 Analysis Modules/10 Adapter Content.html");
+		mapping.put("Adapter content", "/Help/3 Analysis Modules/10 Adapter content.html");
 		mapping.put("Kmer Content", "/Help/3 Analysis Modules/11 Kmer Content.html");
 		mapping.put("Per tile sequence quality", "/Help/3 Analysis Modules/12 Per Tile Sequence Quality.html");
 		return mapping;

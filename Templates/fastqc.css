@@ -217,7 +217,7 @@ tr:nth-child(even) td {
   background-color: #EEE;
 }
 
-/* Basic Statistics table styling (first module) */
+/* Basic statistics table styling (first module) */
 .module:first-of-type table thead {
   display: none;
 }
