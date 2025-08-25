@@ -62,16 +62,16 @@ a:hover {
 }
 
 .header-title {
-  font-weight: bold;
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+.header-title a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.mobile-title svg, .header-title svg {
-  height: 24px;
+.header-title svg {
+  height: 34px;
   width: auto;
 }
 
@@ -344,6 +344,10 @@ tr:nth-child(even) td {
   justify-content: flex-end;
   gap: 0.25rem;
   margin-right: 1rem;
+}
+.mobile-title svg {
+  height: 24px;
+  width: auto;
 }
 
 .mobile-title-app {
