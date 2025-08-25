@@ -1,10 +1,6 @@
-/* ==========================================================================
-   FastQC CSS Stylesheet
-   ========================================================================== */
+/* FastQC CSS Stylesheet */
 
-/* ==========================================================================
-   1. RESET AND BASE STYLES
-   ========================================================================== */
+/* RESET AND BASE STYLES */
 
 * {
   box-sizing: border-box;
@@ -21,18 +17,31 @@ body {
   padding: 0;
 }
 
-/* ==========================================================================
-   2. LAYOUT COMPONENTS
-   ========================================================================== */
+img {
+  max-width: 100%;
+}
 
-/* Main container */
+p {
+  margin: 1rem 0;
+}
+
+a {
+  color: #000080;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: #800000;
+}
+
+
+/* LAYOUT COMPONENTS */
+
 .container {
   display: flex;
 }
 
-/* Sidebar */
 .sidebar {
-  flex: 0 0 300px; /* Don't grow, don't shrink, 300px base */
+  flex: 0 0 300px;
   background-color: #F8F8F8;
   border-right: 1px solid #CCC;
   position: sticky;
@@ -61,8 +70,7 @@ body {
   gap: 0.5rem;
 }
 
-.header-title img,
-.header-title svg {
+.mobile-title svg, .header-title svg {
   height: 24px;
   width: auto;
 }
@@ -75,11 +83,6 @@ body {
   margin: 0.25rem 0;
 }
 
-.header-filename strong {
-  color: #000;
-}
-
-/* Main content area */
 .main {
   padding: 0 2rem;
   overflow-x: auto;
@@ -87,14 +90,19 @@ body {
 }
 
 .module {
-  padding-bottom: 2rem;
-  padding-top: 1rem;
+  padding: 1rem 0 2rem;
   overflow-x: auto;
 }
 
-/* ==========================================================================
-   3. NAVIGATION STYLES
-   ========================================================================== */
+.footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #EEE;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* NAVIGATION STYLES */
 
 .navigation {
   padding: 1rem 0;
@@ -110,18 +118,12 @@ body {
   margin: 0;
   list-style-type: none;
 }
-
 .navigation li {
   padding: 0;
   border-bottom: 1px solid #DDD;
 }
-
 .navigation li:last-child {
   border-bottom: none;
-}
-
-.navigation li a:hover {
-  background-color: #F0F0F0;
 }
 
 .navigation li a {
@@ -134,7 +136,9 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
-
+.navigation li a:hover {
+  background-color: #F0F0F0;
+}
 .navigation li span {
   display: inline-block;
   border: 2px solid;
@@ -166,33 +170,26 @@ body {
   border-color: #2f6638;
 }
 
-/* ==========================================================================
-   4. CONTENT STYLING
-   ========================================================================== */
-
-/* Headings */
+/* CONTENT STYLING */
 h2 {
-  color: #800000;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
+  color: #800000;
   border-bottom: 2px solid #800000;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .module-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Tables */
 table {
   margin: 1rem 0;
   border-collapse: collapse;
   width: 100%;
-  max-width: 100%;
   min-width: 600px;
 }
 
@@ -206,13 +203,11 @@ th {
 
 td {
   font-family: monospace;
-  text-align: left;
   background-color: #F5F5F5;
   color: #000;
   padding: 0.5rem;
   border-bottom: 1px solid #DDD;
 }
-
 tr:nth-child(even) td {
   background-color: #EEE;
 }
@@ -225,51 +220,90 @@ tr:nth-child(even) td {
   font-family: sans-serif;
   background-color: transparent;
 }
-
 .module:first-of-type table tbody td:first-child {
   font-weight: bold;
   color: #333;
   text-align: right;
   width: 12rem;
 }
-
 .module:first-of-type table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* Images and media */
-img {
-  max-width: 100%;
+/* HELP TOGGLE FUNCTIONALITY */
+
+/* Hide the checkbox */
+.help-checkbox {
+  display: none;
 }
 
-/* Text elements */
-p {
-  margin: 1rem 0;
+/* Style the label as a button */
+.help-toggle {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: normal;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-a {
-  color: #000080;
-  transition: color 0.2s ease;
+.help-toggle:hover {
+  background-color: #2980b9;
 }
 
-a:hover {
-  color: #800000;
+/* Show/hide text logic */
+.help-hide, .help-checkbox:checked ~ h2 .help-toggle .help-show {
+  display: none;
 }
 
-/* Footer */
-.footer {
-  margin-top: 3rem;
-  padding: 1.5rem 0;
-  border-top: 1px solid #EEE;
-  font-size: 0.9rem;
-  color: #666;
+.help-checkbox:checked ~ h2 .help-toggle .help-hide {
+  display: inline;
 }
 
-/* ==========================================================================
-   5. UNIFIED NAVIGATION SYSTEM
-   ========================================================================== */
+.help-box {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0 15px;
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+}
 
-/* Mobile navigation bar - hidden by default, shown on small screens */
+/* Show help box when checkbox is checked */
+.help-checkbox:checked ~ .help-box {
+  max-height: 1000px;
+  opacity: 1;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  margin: 10px 0 20px 0;
+}
+
+.help-box h4 {
+  margin: 0.5rem 0 0;
+}
+.help-box h4:first-child {
+  margin-top: 0;
+}
+
+.help-box p {
+  margin: 0 0 10px;
+}
+
+.help-box ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+/* RESPONSIVE DESIGN - SMALL SCREENS */
+
 .mobile-nav {
   display: none;
   background-color: #EEE;
@@ -294,8 +328,6 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  background: none;
-  border: none;
 }
 
 .hamburger {
@@ -311,53 +343,34 @@ a:hover {
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
-  flex: 1;
-  min-width: 0;
   margin-right: 1rem;
-  text-align: right;
 }
 
 .mobile-title-app {
   font-weight: bold;
-  flex-shrink: 0;
 }
 
 .mobile-title-filename {
-  font-weight: normal;
   font-size: 0.9rem;
   color: #666;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
 }
-
-.mobile-icon,
-.mobile-title svg {
-  height: 20px;
-  width: 20px;
-  flex-shrink: 0;
-}
-
-/* ==========================================================================
-   6. RESPONSIVE DESIGN - UNIFIED MOBILE/DESKTOP
-   ========================================================================== */
 
 @media (max-width: 768px) {
   html {
     scroll-padding-top: 60px;
   }
-
-  /* Show mobile navigation bar */
   .mobile-nav {
     display: flex;
   }
 
-  /* Container no longer needs margin - sidebar will overlay */
   .container {
-    margin-top: 45px; /* Account for fixed mobile nav */
+    margin-top: 45px;
   }
-  /* Hide sidebar by default on mobile - animate from top */
+  .main {
+    padding: 0 1rem;
+  }
   .sidebar {
     position: fixed;
     top: 45px;
@@ -368,8 +381,10 @@ a:hover {
     transform: translateY(-100%);
     transition: transform 0.3s ease;
     z-index: 999;
-    border-right: none;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: none;
+  }
+  .sidebar-header {
+    display: none;
   }
 
   /* Show sidebar when menu is toggled - slide down from top */
@@ -377,40 +392,19 @@ a:hover {
     transform: translateY(0);
   }
 
-  /* Hide desktop sidebar header on mobile */
-  .sidebar-header {
-    display: none;
-  }
-
   /* Hamburger animation when menu is open */
   .menu-toggle-input:checked ~ .mobile-nav .hamburger:nth-child(1) {
     transform: rotate(45deg) translate(3px, 3px);
   }
-
   .menu-toggle-input:checked ~ .mobile-nav .hamburger:nth-child(2) {
     opacity: 0;
   }
-
   .menu-toggle-input:checked ~ .mobile-nav .hamburger:nth-child(3) {
     transform: rotate(-45deg) translate(4px, -4px);
   }
 
-  /* Main content adjustments for mobile */
-  .main {
-    padding: 0 1rem;
-    overflow-x: hidden;
-  }
-
-  .module {
-    padding-bottom: 1.5rem;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  /* Table responsive adjustments */
   table {
     font-size: 0.85rem;
-    min-width: 500px;
   }
 
   th, td {
@@ -418,131 +412,9 @@ a:hover {
   }
 }
 
-@media (max-width: 480px) {
-  /* Further mobile optimizations */
-  .main {
-    padding: 0.75rem 0.5rem;
-  }
 
-  .header-title {
-    font-size: 1.1rem;
-  }
 
-  table {
-    font-size: 0.8rem;
-    min-width: 400px;
-  }
-
-  .navigation li {
-    padding: 0.4rem 0.75rem;
-  }
-}
-
-/* ==========================================================================
-   7. HELP TOGGLE FUNCTIONALITY
-   ========================================================================== */
-
-/* Hide the checkbox */
-.help-checkbox {
-  display: none;
-}
-
-/* Style the label as a button */
-.help-toggle {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: normal;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.3s ease;
-  margin-right: 5px;
-  user-select: none;
-}
-
-.help-toggle:hover {
-  background-color: #2980b9;
-}
-
-.help-toggle:focus {
-  outline: 2px solid #2980b9;
-  outline-offset: 2px;
-}
-
-/* Show/hide text logic */
-.help-hide {
-  display: none;
-}
-
-.help-checkbox:checked ~ h2 .help-toggle .help-show {
-  display: none;
-}
-
-.help-checkbox:checked ~ h2 .help-toggle .help-hide {
-  display: inline;
-}
-
-.help-box {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 15px;
-  margin: 10px 0 20px 0;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
-  padding-top: 0;
-  padding-bottom: 0;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-/* Show help box when checkbox is checked */
-.help-checkbox:checked ~ .help-box {
-  max-height: 1000px;
-  opacity: 1;
-  padding: 15px;
-  margin: 10px 0 20px 0;
-}
-
-.help-box h4 {
-  margin: 0.5rem 0 0;
-}
-.help-box h4:first-child {
-  margin-top: 0;
-}
-
-.help-box p {
-  margin: 0 0 10px;
-}
-
-.help-box ul {
-  margin: 0 0 10px;
-  padding-left: 20px;
-}
-
-/* Mobile adjustments for help functionality */
-@media (max-width: 768px) {
-  .help-toggle {
-    padding: 3px 6px;
-    font-size: 10px;
-  }
-
-  .help-box {
-    padding: 12px;
-    font-size: 0.85rem;
-  }
-}
-
-/* ==========================================================================
-   8. PRINT STYLES
-   ========================================================================== */
+/* PRINT STYLES */
 
 @media print {
   img {
