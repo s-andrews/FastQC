@@ -199,10 +199,9 @@ public class HTMLReportArchive {
 		zipFile.close();
 	}
 
-	public XMLStreamWriter xhtmlStream ()
-		{
+	public XMLStreamWriter xhtmlStream (){
 		return this.xhtml;
-		}
+	}
 
 	public StringBuffer dataDocument() {
 		return data;
@@ -218,10 +217,6 @@ public class HTMLReportArchive {
 
 	private String loadTemplate(String templatePath) throws IOException {
 		InputStream templateStream = getClass().getResourceAsStream(templatePath);
-		if (templateStream == null) {
-			throw new IOException("Template not found: " + templatePath);
-		}
-
 		StringWriter templateWriter = new StringWriter();
 		byte[] buffer = new byte[1024];
 		int nRead;
@@ -230,10 +225,6 @@ public class HTMLReportArchive {
 		}
 		templateStream.close();
 		return templateWriter.toString();
-	}
-
-		private String loadCss() throws IOException {
-		return loadTemplate("/Templates/fastqc.css");
 	}
 
 	private String generateSummaryItems() throws IOException {
@@ -292,7 +283,7 @@ public class HTMLReportArchive {
 		return summaryText.toString();
 	}
 
-		private String getStatusIcon(QCModule module) throws IOException {
+	private String getStatusIcon(QCModule module) throws IOException {
 		if (module.raisesError()) {
 			return loadTemplate("/Templates/Icons/error.svg");
 		} else if (module.raisesWarning()) {
@@ -370,7 +361,7 @@ public class HTMLReportArchive {
 
 		String html = htmlTemplate;
 		html = html.replace("{{TITLE}}", sequenceFile.name() + " FastQC Report");
-		html = html.replace("{{CSS_CONTENT}}", loadCss());
+		html = html.replace("{{CSS_CONTENT}}", loadTemplate("/Templates/fastqc.css"));
 		html = html.replace("{{DATE}}", df.format(new Date()));
 		html = html.replace("{{FILENAME}}", sequenceFile.name());
 		html = html.replace("{{FASTQC_ICON_SVG_MOBILE}}", getFastQCIconWithUniqueIds("mobile"));
@@ -454,55 +445,6 @@ public class HTMLReportArchive {
 		content = content.trim();
 
 		return content;
-	}
-
-	/**
-	 * Ensure proper HTML list structure by closing any unclosed li tags
-	 */
-	private String ensureProperListStructure(String content) {
-		// Split content into lines for processing
-		String[] lines = content.split("\n");
-		StringBuilder result = new StringBuilder();
-		boolean inListItem = false;
-
-		for (String line : lines) {
-			String trimmed = line.trim();
-
-			// Check if this line starts a new list item
-			if (trimmed.startsWith("<li>") || trimmed.matches("^<li[^>]*>.*")) {
-				// Close previous list item if open
-				if (inListItem) {
-					result.append("</li>\n");
-				}
-				result.append(line).append("\n");
-				inListItem = true;
-			}
-			// Check if this line closes a list item
-			else if (trimmed.equals("</li>")) {
-				result.append(line).append("\n");
-				inListItem = false;
-			}
-			// Check if this line ends a list
-			else if (trimmed.equals("</ol>") || trimmed.equals("</ul>")) {
-				// Close current list item if open
-				if (inListItem) {
-					result.append("</li>\n");
-					inListItem = false;
-				}
-				result.append(line).append("\n");
-			}
-			// Regular line
-			else {
-				result.append(line).append("\n");
-			}
-		}
-
-		// Close final list item if still open
-		if (inListItem) {
-			result.append("</li>\n");
-		}
-
-		return result.toString();
 	}
 
 }
