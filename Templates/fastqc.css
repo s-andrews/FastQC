@@ -1,28 +1,11 @@
-@media print {
-  img {
-    max-width:100% !important;
-    page-break-inside: avoid;
-  }
-  h2, h3 {
-    page-break-after: avoid;
-  }
-  .sidebar-header {
-    background-color: #FFF;
-  }
-  .mobile-nav {
-    display: none !important;
-  }
-  .sidebar {
-    position: static !important;
-    transform: none !important;
-    width: auto !important;
-  }
-  .container {
-    flex-direction: column !important;
-  }
-}
+/* ==========================================================================
+   FastQC CSS Stylesheet
+   ========================================================================== */
 
-/* Reset and base styles */
+/* ==========================================================================
+   1. RESET AND BASE STYLES
+   ========================================================================== */
+
 * {
   box-sizing: border-box;
 }
@@ -34,22 +17,262 @@ body {
   border: 0;
   margin: 0;
   padding: 0;
-  line-height: 1.4;
 }
 
-/* Mobile navigation bar */
+/* ==========================================================================
+   2. LAYOUT COMPONENTS
+   ========================================================================== */
+
+/* Main container */
+.container {
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  flex: 0 0 300px; /* Don't grow, don't shrink, 300px base */
+  background-color: #F8F8F8;
+  border-right: 1px solid #CCC;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  background-color: #EEE;
+  padding: 1rem;
+  border-bottom: 1px solid #CCC;
+}
+
+.sidebar-header a {
+  text-decoration: none;
+  color: #000;
+}
+
+.header-title {
+  font-weight: bold;
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-title img,
+.header-title svg {
+  height: 24px;
+  width: auto;
+}
+
+.header-filename {
+  font-size: 0.85rem;
+}
+
+.header-filename p {
+  margin: 0.25rem 0;
+}
+
+.header-filename strong {
+  color: #000;
+}
+
+/* Main content area */
+.main {
+  padding: 0 2rem;
+  overflow-x: auto;
+}
+
+.module {
+  padding-bottom: 2rem;
+  padding-top: 1rem;
+  overflow-x: auto;
+}
+
+/* ==========================================================================
+   3. NAVIGATION STYLES
+   ========================================================================== */
+
+.navigation {
+  padding: 1rem 0;
+}
+
+.navigation h2 {
+  margin: 0 0 1rem 1rem;
+  font-size: 1.1rem;
+}
+
+.navigation ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.navigation li {
+  padding: 0;
+  border-bottom: 1px solid #DDD;
+}
+
+.navigation li:last-child {
+  border-bottom: none;
+}
+
+.navigation li a:hover {
+  background-color: #F0F0F0;
+}
+
+.navigation li a {
+  padding: 0.5rem 1rem;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  color: #000;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navigation li span {
+  display: inline-block;
+  border: 2px solid;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  text-align: center;
+  min-width: 3.5rem;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+/* Status indicators */
+.sidebar-error {
+  background-color: #f0c6bc;
+  color: #862a13;
+  border-color: #862a13;
+}
+
+.sidebar-warning {
+  background-color: #e8d28f;
+  color: #8d6c08;
+  border-color: #8d6c08;
+}
+
+.sidebar-pass {
+  background-color: #afe0b7;
+  color: #2f6638;
+  border-color: #2f6638;
+}
+
+/* ==========================================================================
+   4. CONTENT STYLING
+   ========================================================================== */
+
+/* Headings */
+h2 {
+  color: #800000;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #800000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Tables */
+table {
+  margin: 1rem 0;
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  min-width: 600px;
+}
+
+th {
+  text-align: center;
+  background-color: #000080;
+  color: #FFF;
+  padding: 0.75rem 0.5rem;
+  font-weight: bold;
+}
+
+td {
+  font-family: monospace;
+  text-align: left;
+  background-color: #F5F5F5;
+  color: #000;
+  padding: 0.5rem;
+  border-bottom: 1px solid #DDD;
+}
+
+tr:nth-child(even) td {
+  background-color: #EEE;
+}
+
+/* Basic Statistics table styling (first module) */
+.module:first-of-type table thead {
+  display: none;
+}
+.module:first-of-type table td {
+  font-family: sans-serif;
+  background-color: transparent;
+}
+
+.module:first-of-type table tbody td:first-child {
+  font-weight: bold;
+  color: #333;
+  text-align: right;
+  width: 12rem;
+}
+
+.module:first-of-type table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Images and media */
+img {
+  max-width: 100%;
+}
+
+/* Text elements */
+p {
+  margin: 1rem 0;
+}
+
+a {
+  color: #000080;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #800000;
+}
+
+/* Footer */
+.footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #EEE;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* ==========================================================================
+   5. UNIFIED NAVIGATION SYSTEM
+   ========================================================================== */
+
+/* Mobile navigation bar - hidden by default, shown on small screens */
 .mobile-nav {
   display: none;
   background-color: #EEE;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #CCC;
+  align-items: center;
+  justify-content: space-between;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .menu-toggle-input {
@@ -80,14 +303,14 @@ body {
   justify-content: flex-end;
   gap: 0.25rem;
   flex: 1;
-  min-width: 0; /* Allow shrinking */
+  min-width: 0;
   margin-right: 1rem;
   text-align: right;
 }
 
 .mobile-title-app {
   font-weight: bold;
-  flex-shrink: 0; /* Don't shrink the "FastQC:" part */
+  flex-shrink: 0;
 }
 
 .mobile-title-filename {
@@ -97,7 +320,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0; /* Allow shrinking */
+  min-width: 0;
 }
 
 .mobile-icon,
@@ -105,294 +328,48 @@ body {
   height: 20px;
   width: 20px;
   flex-shrink: 0;
-  margin: 0 !important;
 }
 
-/* Main container */
-.container {
-  display: flex;
-  min-height: 100vh;
-}
+/* ==========================================================================
+   6. RESPONSIVE DESIGN - UNIFIED MOBILE/DESKTOP
+   ========================================================================== */
 
-/* Sidebar */
-.sidebar {
-  width: 300px;
-  background-color: #F8F8F8;
-  border-right: 1px solid #CCC;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  overflow-y: auto;
-}
-
-.sidebar-header {
-  background-color: #EEE;
-  padding: 1rem;
-  border-bottom: 1px solid #CCC;
-}
-.sidebar-header a {
-  text-decoration: none;
-  color: #000;
-}
-
-.header-title {
-  font-weight: bold;
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.header-title img,
-.header-title svg {
-  height: 24px;
-  width: auto;
-  margin: 0;
-}
-
-.header-filename {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.header-filename p {
-  margin: 0.25rem 0;
-}
-
-.header-filename strong {
-  color: #000;
-}
-
-/* Navigation */
-.navigation {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.navigation h2 {
-  margin: 0 0 1rem 1rem;
-  color: #800000;
-  font-size: 1.1rem;
-}
-
-.navigation ul {
-  padding: 0;
-  margin: 0;
-  list-style-type: none;
-}
-
-.navigation li {
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #DDD;
-  transition: background-color 0.2s ease;
-}
-
-.navigation li:last-child {
-  border-bottom: none;
-}
-
-.navigation li:hover {
-  background-color: #F0F0F0;
-}
-
-.navigation li a {
-  text-decoration: none;
-  color: #000;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.navigation li span {
-  display: inline-block;
-  border: 2px solid;
-  border-radius: 0.2rem;
-  font-size: 0.7rem;
-  padding: 0.1rem 0.3rem;
-  text-align: center;
-  min-width: 3.5rem;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.sidebar-error {
-  background-color: #f0c6bc;
-  color: #862a13;
-  border-color: #862a13;
-}
-
-.sidebar-warning {
-  background-color: #e8d28f;
-  color: #8d6c08;
-  border-color: #8d6c08;
-}
-
-.sidebar-pass {
-  background-color: #afe0b7;
-  color: #2f6638;
-  border-color: #2f6638;
-}
-
-/* Main content area */
-.main {
-  flex: 1;
-  margin-left: 300px;
-  padding: 2rem;
-  background-color: white;
-  min-height: 100vh;
-  max-width: calc(100vw - 300px);
-  overflow-x: auto;
-}
-
-.module {
-  padding-bottom: 2rem;
-  padding-top: 1rem;
-  overflow-x: auto;
-}
-
-/* Footer */
-.footer {
-  margin-top: 3rem;
-  padding: 1.5rem 0;
-  border-top: 1px solid #EEE;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-/* Content styling */
-h2 {
-  color: #800000;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid #800000;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-h2 svg {
-  vertical-align: -0.1rem;
-}
-
-/* Table wrapper for horizontal scrolling */
-
-table {
-  margin: 1rem 0;
-  border-collapse: collapse;
-  width: 100%;
-  max-width: 100%;
-  min-width: 600px; /* Ensure tables don't get too cramped */
-}
-
-th {
-  text-align: center;
-  background-color: #000080;
-  color: #FFF;
-  padding: 0.75rem 0.5rem;
-  font-weight: bold;
-}
-
-td {
-  font-family: monospace;
-  text-align: left;
-  background-color: #F5F5F5;
-  color: #000;
-  padding: 0.5rem;
-  border-bottom: 1px solid #DDD;
-}
-
-tr:nth-child(even) td {
-  background-color: #EEE;
-}
-
-/* Style Basic Statistics table (first module) to look like a definition list */
-.module:first-of-type table {
-  min-width: auto;
-  max-width: 100%;
-}
-
-.module:first-of-type table thead {
-  display: none; /* Hide the table headers */
-}
-
-.module:first-of-type table tbody tr {
-  background: none;
-}
-.module:first-of-type table td {
-  font-family: sans-serif;
-  background-color: transparent;
-}
-
-.module:first-of-type table tbody td:first-child {
-  font-weight: bold;
-  color: #333;
-  text-align: right;
-  width: 12rem;
-}
-.module:first-of-type table tbody td:last-child {
-  color: #000;
-}
-.module:first-of-type table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-img {
-  max-width: 100%;
-}
-
-p {
-  margin: 1rem 0;
-}
-
-a {
-  color: #000080;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: #800000;
-}
-
-/* Mobile responsive styles */
 @media (max-width: 768px) {
+  /* Show mobile navigation bar */
   .mobile-nav {
     display: flex;
   }
 
+  /* Container remains horizontal flex, but we'll hide/show sidebar with flexbox */
   .container {
-    padding-top: 60px; /* Account for fixed mobile nav */
+    margin-top: 45px; /* Account for fixed mobile nav */
   }
 
+  /* Hide sidebar by default on mobile using flexbox */
   .sidebar {
-    position: fixed;
-    top: 48px;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    height: calc(100% - 48px);
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 999;
-    box-shadow: none;
+    flex: 0 0 0; /* Collapse to zero width */
+    overflow: hidden;
+    transition: flex-basis 0.3s ease;
+    border-right: none;
   }
 
-  /* CSS-only toggle for mobile sidebar */
+  /* Show sidebar when menu is toggled */
   .menu-toggle-input:checked ~ .container .sidebar {
-    transform: translateX(0);
+    flex: 0 0 100%; /* Full width when open */
   }
 
-    /* Hide entire sidebar header on mobile */
+  /* Hide desktop sidebar header on mobile */
   .sidebar-header {
     display: none;
   }
 
-    /* Hamburger animation when menu is open */
+  /* When sidebar is open, hide main content */
+  .menu-toggle-input:checked ~ .container .main {
+    flex: 0 0 0;
+    overflow: hidden;
+  }
+
+  /* Hamburger animation when menu is open */
   .menu-toggle-input:checked ~ .mobile-nav .hamburger:nth-child(1) {
     transform: rotate(45deg) translate(3px, 3px);
   }
@@ -405,11 +382,10 @@ a:hover {
     transform: rotate(-45deg) translate(4px, -4px);
   }
 
-    .main {
-    width: 100%;
-    margin-left: 0;
+  /* Main content adjustments for mobile */
+  .main {
     padding: 1rem;
-    overflow-x: hidden; /* Prevent main content horizontal scroll */
+    overflow-x: hidden;
   }
 
   .module {
@@ -418,35 +394,21 @@ a:hover {
     padding-right: 0;
   }
 
+  /* Table responsive adjustments */
   table {
     font-size: 0.85rem;
-    min-width: 500px; /* Smaller minimum width for mobile */
+    min-width: 500px;
   }
 
   th, td {
     padding: 0.5rem 0.25rem;
   }
-
-  /* Ensure images don't cause horizontal scroll */
-  img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
 }
 
 @media (max-width: 480px) {
+  /* Further mobile optimizations */
   .main {
-    padding: 0.75rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-
-  .sidebar {
-    width: 100%;
-  }
-
-  .sidebar-header {
-    padding: 0.75rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .header-title {
@@ -455,15 +417,43 @@ a:hover {
 
   table {
     font-size: 0.8rem;
-    min-width: 400px; /* Even smaller for very small screens */
+    min-width: 400px;
   }
 
   .navigation li {
     padding: 0.4rem 0.75rem;
   }
+}
 
-  .module {
-    padding-left: 0;
-    padding-right: 0;
+/* ==========================================================================
+   7. PRINT STYLES
+   ========================================================================== */
+
+@media print {
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  h2, h3 {
+    page-break-after: avoid;
+  }
+
+  .sidebar-header {
+    background-color: #FFF;
+  }
+
+  .mobile-nav {
+    display: none !important;
+  }
+
+  .sidebar {
+    position: static !important;
+    transform: none !important;
+    width: auto !important;
+  }
+
+  .container {
+    flex-direction: column !important;
   }
 }
