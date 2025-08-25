@@ -151,7 +151,6 @@ public class HTMLReportArchive {
 		zip.close();
 
 		// Save the HTML file at the same level as the zip file
-
 		PrintWriter pr = new PrintWriter(new FileWriter(htmlFile));
 
 		pr.print(finalHtml);
