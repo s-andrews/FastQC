@@ -50,11 +50,11 @@ public class BasicStats extends AbstractQCModule {
 	private long nCount = 0;
 	private char lowestChar = 126;
 	private String fileType = null;
-	
+
 	public String description() {
 		return "Calculates some basic statistics about the file";
 	}
-	
+
 	public boolean ignoreFilteredSequences() {
 		return false;
 	}
@@ -63,14 +63,14 @@ public class BasicStats extends AbstractQCModule {
 		JPanel returnPanel = new JPanel();
 		returnPanel.setLayout(new BorderLayout());
 		returnPanel.add(new JLabel("Basic sequence stats",JLabel.CENTER),BorderLayout.NORTH);
-		
+
 		TableModel model = new ResultsTable();
 		returnPanel.add(new JScrollPane(new JTable(model)),BorderLayout.CENTER);
-		
+
 		return returnPanel;
-	
+
 	}
-	
+
 	public void reset () {
 		minLength = 0;
 		maxLength = 0;
@@ -82,29 +82,29 @@ public class BasicStats extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Basic Statistics";
+		return "Basic statistics";
 	}
-	
+
 	public void setFileName (String name) {
 		this.name = name;
-		
+
 		this.name = this.name.replaceFirst("stdin:", "");
 	}
 
 	public void processSequence(Sequence sequence) {
 
 		if (name == null) setFileName(sequence.file().name());
-		
+
 		// If this is a filtered sequence we simply count it and move on.
 		if (sequence.isFiltered()) {
 			filteredCount++;
 			return;
 		}
-		
+
 		actualCount++;
-		
+
 		totalBases += sequence.getSequence().length();
-		
+
 		if (fileType == null) {
 			if (sequence.getColorspace() != null) {
 				fileType = "Colorspace converted to bases";
@@ -113,7 +113,7 @@ public class BasicStats extends AbstractQCModule {
 				fileType = "Conventional base calls";
 			}
 		}
-		
+
 		if (actualCount == 1) {
 			minLength = sequence.getSequence().length();
 			maxLength = sequence.getSequence().length();
@@ -124,16 +124,16 @@ public class BasicStats extends AbstractQCModule {
 		}
 
 		char [] chars = sequence.getSequence().toCharArray();
-		for (int c=0;c<chars.length;c++) {			
+		for (int c=0;c<chars.length;c++) {
 			switch (chars[c]) {
 				case 'G': ++gCount;break;
 				case 'A': ++aCount;break;
 				case 'T': ++tCount;break;
 				case 'C': ++cCount;break;
-				case 'N': ++nCount;break;			
+				case 'N': ++nCount;break;
 			}
 		}
-		
+
 		chars = sequence.getQualityString().toCharArray();
 		for (int c=0;c<chars.length;c++) {
 			if (chars[c] < lowestChar) {
@@ -141,7 +141,7 @@ public class BasicStats extends AbstractQCModule {
 			}
 		}
 	}
-	
+
 	public boolean raisesError() {
 		return false;
 	}
@@ -149,15 +149,15 @@ public class BasicStats extends AbstractQCModule {
 	public boolean raisesWarning() {
 		return false;
 	}
-	
+
 	public boolean ignoreInReport () {
 		return false;
 	}
-	
+
 	public static String formatLength (long originalLength) {
-		
+
 		double length = originalLength;
-		
+
 		String unit = " bp";
 
 		if (length >= 1000000000) {
@@ -174,21 +174,21 @@ public class BasicStats extends AbstractQCModule {
 			unit = " kbp";
 		}
 
-		
+
 		String rawLength = ""+length;
 		char [] chars = rawLength.toCharArray();
-		
+
 		int lastIndex = 0;
-		
+
 		// Go through until we find a dot (if there is one)
 		for (int i=0;i<chars.length;i++) {
 			lastIndex = i;
 			if (chars[i] == '.') break;
 		}
-		
+
 		// We keep the next char as well if they are non
 		// zero numbers
-		
+
 		if (lastIndex+1 < chars.length && chars[lastIndex+1] != '0') {
 			lastIndex+=1;
 		}
@@ -200,7 +200,7 @@ public class BasicStats extends AbstractQCModule {
 		for (int i=0;i<=lastIndex;i++) {
 			finalChars[i] = chars[i];
 		}
-		
+
 		return new String(finalChars)+unit;
 	}
 
@@ -211,7 +211,7 @@ public class BasicStats extends AbstractQCModule {
 
 	@SuppressWarnings("serial")
 	private class ResultsTable extends AbstractTableModel {
-				
+
 		private String [] rowNames = new String [] {
 				"Filename",
 				"File type",
@@ -221,17 +221,17 @@ public class BasicStats extends AbstractQCModule {
 				"Sequences flagged as poor quality",
 				"Sequence length",
 				"%GC",
-		};		
-		
+		};
+
 		// Sequence - Count - Percentage
 		public int getColumnCount() {
 			return 2;
 		}
-	
+
 		public int getRowCount() {
 			return rowNames.length;
 		}
-	
+
 		public Object getValueAt(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 				case 0: return rowNames[rowIndex];
@@ -250,21 +250,21 @@ public class BasicStats extends AbstractQCModule {
 						else {
 							return minLength+"-"+maxLength;
 						}
-						
-						
-					case 7 : 
+
+
+					case 7 :
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}
 						else {
 							return 0;
 						}
-					
+
 					}
 			}
 			return null;
 		}
-		
+
 		public String getColumnName (int columnIndex) {
 			switch (columnIndex) {
 				case 0: return "Measure";
@@ -272,16 +272,16 @@ public class BasicStats extends AbstractQCModule {
 			}
 			return null;
 		}
-		
+
 		public Class<?> getColumnClass (int columnIndex) {
 			switch (columnIndex) {
 			case 0: return String.class;
 			case 1: return String.class;
 		}
 		return null;
-			
+
 		}
 	}
-	
+
 
 }

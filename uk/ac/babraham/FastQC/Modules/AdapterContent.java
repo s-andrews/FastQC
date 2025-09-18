@@ -91,7 +91,7 @@ public class AdapterContent extends AbstractQCModule {
 					continue;
 				}
 				Adapter adapter = new Adapter(sections[0], sections[1]);
-				c.add(adapter);	
+				c.add(adapter);
 				l.add(adapter.name());
 				if (adapter.sequence().length() > longestAdapter) longestAdapter = adapter.sequence().length();
 			}
@@ -130,7 +130,7 @@ public class AdapterContent extends AbstractQCModule {
 
 		if (!calculated) calculateEnrichment();
 
-		//		System.err.println("Xlabels="+xLabels.length+" labels="+labels.length+" enrichments="+enrichments.length+" enrichments[0]="+enrichments[0].length+" groups="+groups.length);	
+		//		System.err.println("Xlabels="+xLabels.length+" labels="+labels.length+" enrichments="+enrichments.length+" enrichments[0]="+enrichments[0].length+" groups="+groups.length);
 
 		return (new LineGraph(enrichments, 0, 100, "Position in read (bp)", labels, xLabels, "% Adapter"));
 
@@ -145,10 +145,10 @@ public class AdapterContent extends AbstractQCModule {
 		// We need to be careful about making sure that a sequence is not only longer
 		// than we've seen before, but also that the last position we could find a hit
 		// is a positive position.
-		
+
 		// If the sequence is longer than it was then we need to expand the storage in
 		// all of the adapter objects to account for this.
-		
+
 		if (sequence.getSequence().length() > longestSequence && sequence.getSequence().length() - longestAdapter > 0) {
 			longestSequence = sequence.getSequence().length();
 			for (int a=0;a<adapters.length;a++) {
@@ -228,7 +228,7 @@ public class AdapterContent extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Adapter Content";
+		return "Adapter content";
 	}
 
 	public boolean raisesError() {
@@ -285,7 +285,7 @@ public class AdapterContent extends AbstractQCModule {
 				sb.append(table.getColumnName(i));
 			}
 			sb.append("\n");
-			
+
 			for (int r=0;r<table.getRowCount();r++) {
 				for (int c=0;c<table.getColumnCount();c++) {
 					if (c>0) {
@@ -295,7 +295,7 @@ public class AdapterContent extends AbstractQCModule {
 				}
 				sb.append("\n");
 			}
-			
+
 		}
 	}
 
@@ -319,10 +319,10 @@ public class AdapterContent extends AbstractQCModule {
 			// incremented positions.  Rely on the upstream code
 			// having done the expansion correctly already.
 
-			++positions[position];			
+			++positions[position];
 
 		}
-		
+
 		public void expandLengthTo (int newLength) {
 			long [] newPositions = new long[newLength];
 			for (int i=0;i<positions.length;i++) {
@@ -335,9 +335,9 @@ public class AdapterContent extends AbstractQCModule {
 					newPositions[i] = positions[positions.length-1];
 				}
 			}
-			
+
 			positions = newPositions;
-			
+
 		}
 
 		public long [] getPositions () {
