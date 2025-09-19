@@ -27,3 +27,6 @@ hs_err_pid*
 # tests
 test/bin/
 test/reports/
+
+# Other
+.DS_Store
