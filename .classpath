@@ -9,7 +9,6 @@
 	<classpathentry kind="lib" path="jbzip2-0.9.jar"/>
 	<classpathentry kind="lib" path="cisd-jhdf5.jar"/>
 	<classpathentry kind="lib" path="htsjdk.jar"/>
-	<!-- JUnit 5 libraries -->
 	<classpathentry kind="lib" path="lib/junit-jupiter-api-5.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/junit-jupiter-engine-5.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/junit-platform-launcher-1.10.0.jar"/>
@@ -17,6 +16,5 @@
 	<classpathentry kind="lib" path="lib/junit-platform-commons-1.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/opentest4j-1.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/apiguardian-api-1.1.2.jar"/>
-	
 	<classpathentry kind="output" path="bin"/>
 </classpath>
