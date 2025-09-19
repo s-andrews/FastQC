@@ -65,12 +65,12 @@
         </java>
     </target>
     
-    <!-- ===== JUnit 4 targets ===== -->
+    <!-- ===== JUnit 5 targets ===== -->
     <target name="init-test">
         <mkdir dir="test/bin"/>
         <mkdir dir="test/reports"/>
     </target>
-
+    
     <target name="compile-tests" depends="build,init-test">
         <javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false" source="${source}" target="${target}">
             <src path="test"/>
@@ -79,19 +79,20 @@
     </target>
 
     <target name="test" depends="compile-tests">
-        <junit printsummary="true" haltonfailure="true">
+        <echo message="Running JUnit 5 tests..."/>
+        <junitlauncher haltOnFailure="true" printSummary="true">
             <classpath refid="test.classpath"/>
-            <formatter type="xml"/>
-            <formatter type="plain"/>
-            <batchtest todir="test/reports">
+            <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
                     <include name="**/*Test.class"/>
                     <include name="**/Test*.class"/>
                 </fileset>
-            </batchtest>
-        </junit>
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true"/>
+                <listener type="legacy-plain" sendSysOut="true"/>
+            </testclasses>
+        </junitlauncher>
     </target>
-
+    
     <target name="clean-test">
         <delete dir="test/bin"/>
         <delete dir="test/reports"/>

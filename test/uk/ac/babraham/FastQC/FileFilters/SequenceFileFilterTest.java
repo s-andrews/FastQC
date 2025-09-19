@@ -1,8 +1,8 @@
 package uk.ac.babraham.FastQC.FileFilters;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import uk.ac.babraham.FastQC.FileFilters.SequenceFileFilter;
-import static org.junit.Assert.*;
 import java.io.File;
 
 
@@ -17,7 +17,7 @@ public class SequenceFileFilterTest {
 
     @Test
     public void testAcceptsDirectory() {
-        var dir = new File("fake-directory-name") {
+        File dir = new File("fake-directory-name") {
             @Override
             public boolean isDirectory() {
                 return true;
@@ -28,31 +28,31 @@ public class SequenceFileFilterTest {
 
     @Test
     public void testAcceptsValidExtensions() {
-        var fileNames = new String[]{
+        String[] fileNames = new String[]{
             "file.txt.gz", "file.fastq.gz", "file.fq.gz", "file.fq",
             "file.txt.bz2", "file.fastq.bz2", "file.txt", "file.fastq",
             "file.bam", "file.sam", "file.compact-reads", "file.goby"
         };
         for (String name : fileNames) {
-            var f = new File(name);
-            assertTrue("Should accept: " + name, filter.accept(f));
+            File f = new File(name);
+            assertTrue(filter.accept(f), "Should accept: " + name);
         }
     }
 
     @Test
     public void testRejectsInvalidExtensions() {
-        var fileNames = new String[]{
+        String[] fileNames = new String[]{
             "file.doc", "file.jpg", "file.fasta", "file.zip", "file.gz", "file.bz2", "file"
         };
         for (String name : fileNames) {
-            var f = new File(name);
-            assertFalse("Should reject: " + name, filter.accept(f));
+            File f = new File(name);
+            assertFalse(filter.accept(f), "Should reject: " + name);
         }
     }
 
     @Test
     public void testCaseInsensitiveExtensions() {
-        var f = new File("SAMPLE.FASTQ.GZ");
+        File f = new File("SAMPLE.FASTQ.GZ");
         assertTrue(filter.accept(f));
     }
 }
