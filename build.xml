@@ -15,6 +15,13 @@
         <pathelement location="sam-1.103.jar"/>
         <pathelement location="cisd-jhdf5.jar"/>
         <pathelement location="htsjdk.jar"/>
+        <!-- Include any third-party libs placed in lib/ -->
+        <fileset dir="lib" includes="**/*.jar" erroronmissingdir="false" />
+    </path>
+    <path id="test.classpath">
+        <!-- Reuse main classpath and add test output dir -->
+        <path refid="FastQC.classpath" />
+        <pathelement location="test/bin" />
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -56,5 +63,37 @@
         <java classname="uk.ac.babraham.FastQC.FastQCApplication" failonerror="true" fork="yes">
             <classpath refid="FastQC.classpath"/>
         </java>
+    </target>
+    
+    <!-- ===== JUnit 4 targets ===== -->
+    <target name="init-test">
+        <mkdir dir="test/bin"/>
+        <mkdir dir="test/reports"/>
+    </target>
+
+    <target name="compile-tests" depends="build,init-test">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="test"/>
+            <classpath refid="test.classpath"/>
+        </javac>
+    </target>
+
+    <target name="test" depends="compile-tests">
+        <junit printsummary="true" haltonfailure="true">
+            <classpath refid="test.classpath"/>
+            <formatter type="xml"/>
+            <formatter type="plain"/>
+            <batchtest todir="test/reports">
+                <fileset dir="test/bin">
+                    <include name="**/*Test.class"/>
+                    <include name="**/Test*.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="clean-test">
+        <delete dir="test/bin"/>
+        <delete dir="test/reports"/>
     </target>
 </project>
