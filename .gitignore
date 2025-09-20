@@ -17,9 +17,21 @@
 *.jar
 *.war
 *.ear
-*.zip
 *.tar.gz
 *.rar
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# tests
+test/bin/
+test/reports/
+
+# Other
+.DS_Store
+.idea
+
+test/**/*.html
+test/**/*.zip
+test/reports/
+test/integration/output
