@@ -35,3 +35,6 @@ test/**/*.html
 test/**/*.zip
 test/reports/
 test/integration/output
+
+# ApprovalTests generated files
+*.received.*

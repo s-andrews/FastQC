@@ -30,5 +30,9 @@ curl -L -o "opentest4j-1.3.0.jar" "https://repo1.maven.org/maven2/org/opentest4j
 # API Guardian (transitive dep of junit 5)
 curl -L -o "apiguardian-api-1.1.2.jar" "https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
 
+# Approval Tests
+curl -L -o "approvaltests-25.4.3.jar" "https://repo1.maven.org/maven2/com/approvaltests/approvaltests/25.4.3/approvaltests-25.4.3.jar"
+curl -L -o "approvaltests-util-25.4.3.jar" "https://repo1.maven.org/maven2/com/approvaltests/approvaltests-util/25.4.3/approvaltests-util-25.4.3.jar"
+
 echo "Done. Files in $LIB_DIR:"
 ls -1 *.jar | sed 's/^/  - /'

@@ -9,6 +9,7 @@
 	<classpathentry kind="lib" path="jbzip2-0.9.jar"/>
 	<classpathentry kind="lib" path="cisd-jhdf5.jar"/>
 	<classpathentry kind="lib" path="htsjdk.jar"/>
+	<classpathentry kind="lib" path="lib/approvaltests-25.4.3"/>
 	<classpathentry kind="lib" path="lib/junit-jupiter-api-5.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/junit-jupiter-engine-5.10.0.jar"/>
 	<classpathentry kind="lib" path="lib/junit-jupiter-params-5.10.0.jar"/>

@@ -1,31 +1,27 @@
 package test.integration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import test.integration.models.ExecutionHelper;
-import test.integration.models.TestScenario;
+import test.integration.cli.Cli;
+import test.integration.cli.CliScenario;
 
 public class ThreadsTest {
 
     @Test
-    public void shows_error_when_0() throws Exception {
-        ExecutionHelper
-            .Execute(new TestScenario(null, new String[] {"fastqc.threads=0"}))
-            .AssertExitCode(1)
-            .AssertOutputContains("Number of threads must be >= 1");
+    public void shows_error_when_value_is_zero() throws Exception {
+        Cli
+            .Execute(new CliScenario(new String[] {"fastqc.threads=0"}))
+            .assertFailure()
+            .assertOutputContains("Number of threads must be >= 1");
     }
 
     @Test
-    public void shows_error_when_negative() throws Exception {
-        ExecutionHelper
-            .Execute(new TestScenario(null, new String[] {"fastqc.threads=-1"}))
-            .AssertExitCode(1)
-            .AssertOutputContains("Number of threads must be >= 1");
+    public void shows_error_when_value_is_negative() throws Exception {
+        Cli
+            .Execute(new CliScenario(new String[] {"fastqc.threads=-1"}))
+            .assertFailure()
+            .assertOutputContains("Number of threads must be >= 1");
     }
     
     // TODO: 
@@ -35,10 +31,10 @@ public class ThreadsTest {
     // threads = Integer.parseInt(System.getProperty("fastqc.threads"));
     @Test
     @Disabled
-    public void shows_error_when_alpha() throws Exception {
-        ExecutionHelper
-            .Execute(new TestScenario(null, new String[] {"fastqc.threads=abc"}))
-            .AssertExitCode(1)
-            .AssertOutputContains("Number of threads must be >= 1");
+    public void shows_error_when_value_is_non_numeric() throws Exception {
+        Cli
+            .Execute(new CliScenario(new String[] {"fastqc.threads=abc"}))
+            .assertFailure()
+            .assertOutputContains("Number of threads must be >= 1");
     }
 }

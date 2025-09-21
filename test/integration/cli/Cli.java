@@ -1,13 +1,15 @@
-package test.integration.models;
+package test.integration.cli;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Path;
 
-public class ExecutionHelper {
+public class Cli {
     public static final int DEFAULT_TIMEOUT_SECONDS = 30;
 
-    public static ExecutionResult Execute(TestScenario scenario) throws Exception {
+    public static CliResult Execute(CliScenario scenario) throws Exception {
+        System.out.println("Running scenario: " + scenario);
+
         // Build a classpath that matches the CLI example plus compiled classes in bin/
         String sep = java.io.File.pathSeparator;
         String cp = String.join(sep,
@@ -29,6 +31,7 @@ public class ExecutionHelper {
         if (scenario.FastqFilePath != null) {
             cmd.add(scenario.FastqFilePath);
         }
+        System.out.println("Command: " + String.join(" ", cmd));
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(true);
@@ -53,6 +56,8 @@ public class ExecutionHelper {
 
         var exitCode = p.exitValue();
         var output = out.toString();
-        return new ExecutionResult(scenario, exitCode, output);
+        System.out.println("Output:\n" + output); 
+        System.out.println("Exit code:\n" + exitCode);
+        return new CliResult(scenario, exitCode, output);
     }
 }
