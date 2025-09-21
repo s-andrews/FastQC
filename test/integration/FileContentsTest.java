@@ -1,6 +1,9 @@
 package test.integration;
+
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
+import org.approvaltests.core.Scrubber;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static test.integration.TestHelpers.*;
 
@@ -14,35 +17,40 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import test.integration.cli.Cli;
 import test.integration.cli.CliScenario;
-
 public class FileContentsTest {
 
-    @Disabled
     @ParameterizedTest
     @MethodSource("test.integration.cli.CliScenario#scenarios")
-    public void verify_fastqc_data(String name) throws Exception {
+    public void verify_data(String name) throws Exception {
         var content = ExecuteAndExtractFileContent(name, "fastqc_data.txt");
 
-        Approvals.verify(
-            content,
-            new Options().forFile().withName("data/" + name + "_fastqc_data", "txt")
-        );
+        var options = new Options()
+            .forFile()
+            .withName("FileContentsTest_" + name + "_fastqc_data", " txt"); 
+        Approvals.verify(content, options);
     }
 
     @ParameterizedTest
     @MethodSource("test.integration.cli.CliScenario#scenarios")
-    public void verify_fastqc_report(String name) throws Exception {
+    public void verify_html(String name) throws Exception {
         var content = ExecuteAndExtractFileContent(name, "fastqc_report.html");
 
-        Approvals.verify(
-            content,
-            new Options().forFile().withName("data/" + name + "_fastqc_report", "txt")
+        Scrubber dateScrubber = input -> input.replaceAll(
+            "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s+\\d{1,2}\\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{4}",
+            "<DATE>"
         );
+
+        var options = new Options()
+            .withScrubber(dateScrubber)
+            .forFile()
+            .withName("FileContentsTest_" + name + "_fastqc_report", " html"); 
+        Approvals.verify(content, options);
     }
 
-    private String ExecuteAndExtractFileContent(String scenarioName, String extractFileName) throws Exception, IOException {
+    private String ExecuteAndExtractFileContent(String scenarioName, String extractFileName)
+            throws Exception, IOException {
         var outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
-        if(!Files.exists(outputDir)) {
+        if (!Files.exists(outputDir)) {
             Files.createDirectories(outputDir);
         }
 
