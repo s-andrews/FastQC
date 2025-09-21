@@ -36,7 +36,7 @@ public class FileContentsTest {
 
         Approvals.verify(
             content,
-            new Options().forFile().withName("data/" + name + "_fastqc_report", "html")
+            new Options().forFile().withName("data/" + name + "_fastqc_report", "txt")
         );
     }
 
