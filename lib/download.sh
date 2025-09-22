@@ -33,6 +33,8 @@ curl -L -o "apiguardian-api-1.1.2.jar" "https://repo1.maven.org/maven2/org/apigu
 # Approval Tests
 curl -L -o "approvaltests-25.4.3.jar" "https://repo1.maven.org/maven2/com/approvaltests/approvaltests/25.4.3/approvaltests-25.4.3.jar"
 curl -L -o "approvaltests-util-25.4.3.jar" "https://repo1.maven.org/maven2/com/approvaltests/approvaltests-util/25.4.3/approvaltests-util-25.4.3.jar"
+# For html normalisation
+curl -L -o "jsoup-1.18.1.jar" "https://repo1.maven.org/maven2/org/jsoup/jsoup/1.18.1/jsoup-1.18.1.jar"
 
 echo "Done. Files in $LIB_DIR:"
 ls -1 *.jar | sed 's/^/  - /'

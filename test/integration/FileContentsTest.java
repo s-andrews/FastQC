@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import test.integration.HtmlContentHelpers;
 import test.integration.cli.Cli;
 import test.integration.cli.CliScenario;
 public class FileContentsTest {
@@ -34,14 +35,10 @@ public class FileContentsTest {
     @MethodSource("test.integration.cli.CliScenario#scenarios")
     public void verify_html(String name) throws Exception {
         var content = ExecuteAndExtractFileContent(name, "fastqc_report.html");
-
-        Scrubber dateScrubber = input -> input.replaceAll(
-            "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\s+\\d{1,2}\\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+\\d{4}",
-            "<DATE>"
-        );
-
+        content = HtmlContentHelpers.normalizeHtml(content);
+        
         var options = new Options()
-            .withScrubber(dateScrubber)
+            .withScrubber(HtmlContentHelpers::scrubDates)
             .forFile()
             .withName("FileContentsTest_" + name + "_fastqc_report", " html"); 
         Approvals.verify(content, options);
