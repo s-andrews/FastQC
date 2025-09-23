@@ -94,8 +94,8 @@
             <classpath refid="test.classpath" />
             <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
-                    <include name="**/unit/*Test.class" />
-                    <include name="**/unit/Test*.class" />
+                    <include name="**/unit/**/*Test.class" />
+                    <include name="**/unit/**/Test*.class" />
                 </fileset>
                 <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
                 <listener type="legacy-plain" sendSysOut="true" />
@@ -109,8 +109,8 @@
             <classpath refid="test.classpath" />
             <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
-                    <include name="**/integration/*Test.class" />
-                    <include name="**/integration/Test*.class" />
+                    <include name="**/integration/**/*Test.class" />
+                    <include name="**/integration/**/Test*.class" />
                 </fileset>
                 <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
                 <listener type="legacy-plain" sendSysOut="true" />
