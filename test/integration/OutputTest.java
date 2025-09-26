@@ -12,7 +12,7 @@ import test.integration.cli.CliScenario;
 public class OutputTest {
 
     @ParameterizedTest
-    @MethodSource("test.integration.cli.CliScenario#scenarios")
+    @MethodSource("test.data.TestCases#all")
     public void shows_progress_when_processing(String name) throws Exception {
         var outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
         if (!Files.exists(outputDir)) {

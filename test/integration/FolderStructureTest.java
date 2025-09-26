@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FolderStructureTest {
 
     @ParameterizedTest
-    @MethodSource("test.integration.cli.CliScenario#scenarios")
+    @MethodSource("test.data.TestCases#all")
     public void zip_file_contains_all_files(String name) throws Exception {
         var outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
         if(!Files.exists(outputDir)) {

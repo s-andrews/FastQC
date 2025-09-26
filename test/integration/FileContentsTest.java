@@ -21,7 +21,7 @@ import test.integration.cli.CliScenario;
 public class FileContentsTest {
 
     @ParameterizedTest
-    @MethodSource("test.integration.cli.CliScenario#scenarios")
+    @MethodSource("test.data.TestCases#all")
     public void verify_data(String name) throws Exception {
         var content = ExecuteAndExtractFileContent(name, "fastqc_data.txt");
 
@@ -32,7 +32,7 @@ public class FileContentsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("test.integration.cli.CliScenario#scenarios")
+    @MethodSource("test.data.TestCases#all")
     public void verify_html(String name) throws Exception {
         var content = ExecuteAndExtractFileContent(name, "fastqc_report.html");
         content = HtmlContentHelpers.normalizeHtml(content);

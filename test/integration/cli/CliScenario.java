@@ -10,13 +10,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import test.data.TestCases;
+import static test.data.TestCases.TEST_DATA_DIR;
+
 public class CliScenario {
 
-    public static Stream<String> scenarios() {
-        return Stream.of("minimal", "complex");
-    }
-
-    public static String TEST_DATA_DIR = "test/integration/data/";
     public static String TEST_OUT_DIR = "test/integration/output/";
 
     public CliScenario(String[] parameters) {
