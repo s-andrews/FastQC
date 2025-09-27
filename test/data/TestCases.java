@@ -19,13 +19,13 @@ public class TestCases {
 
     /// Returns all test case names (without extensions)
     public static Stream<String> all() {
-        // return the union of quick and slow test cases
-        return Stream.concat(quick(), slow());
+        // return the union of fast and slow test cases
+        return Stream.concat(fast(), slow());
     }
 
-    /// Returns only quick test cases, suitable for interactive testing
+    /// Returns only fast test cases, suitable for interactive testing
     /// (i.e. small files that run quickly)
-    public static Stream<String> quick() {
+    public static Stream<String> fast() {
         return Stream.of("minimal");
     }
 
