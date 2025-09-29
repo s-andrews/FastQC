@@ -5,56 +5,136 @@
               directory with the processing instruction <?eclipse.ant.import?>
               as the first entry and export the buildfile again. -->
 <project basedir="." default="build" name="FastQC">
-    <property environment="env"/>
-    <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="11"/>
-    <property name="source" value="11"/>
+    <property environment="env" />
+    <property name="debuglevel" value="source,lines,vars" />
+    <property name="target" value="11" />
+    <property name="source" value="11" />
     <path id="FastQC.classpath">
-        <pathelement location="bin"/>
-        <pathelement location="jbzip2-0.9.jar"/>
-        <pathelement location="sam-1.103.jar"/>
-        <pathelement location="cisd-jhdf5.jar"/>
-        <pathelement location="htsjdk.jar"/>
+        <pathelement location="bin" />
+        <pathelement location="jbzip2-0.9.jar" />
+        <pathelement location="sam-1.103.jar" />
+        <pathelement location="cisd-jhdf5.jar" />
+        <pathelement location="htsjdk.jar" />
+        <!-- Include any third-party libs placed in lib/ -->
+        <fileset dir="lib" includes="**/*.jar" erroronmissingdir="false" />
+    </path>
+    <path id="test.classpath">
+        <!-- Reuse main classpath and add test output dir -->
+        <path refid="FastQC.classpath" />
+        <pathelement location="test/bin" />
     </path>
     <target name="init">
-        <mkdir dir="bin"/>
+        <mkdir dir="bin" />
         <copy includeemptydirs="false" todir="bin">
             <fileset dir=".">
-                <exclude name="**/*.launch"/>
-                <exclude name="**/*.java"/>
+                <exclude name="**/*.launch" />
+                <exclude name="**/*.java" />
+                <exclude name=".git/**" />
+                <exclude name=".devcontainer/**" />
+                <exclude name=".vscode/**" />
+                <exclude name=".settings/**" />
+                <exclude name=".project" />
+                <exclude name="lib/**" />
+                <exclude name="build.xml" />
             </fileset>
         </copy>
     </target>
     <target name="clean">
-        <delete dir="bin"/>
+        <delete dir="bin" />
+        <delete dir="test/bin" />
+        <delete dir="test/reports" />
+        <delete dir="test/integration/output" />
     </target>
-    <target depends="clean" name="cleanall"/>
-    <target depends="build-subprojects,build-project" name="build"/>
-    <target name="build-subprojects"/>
+    <target depends="clean" name="cleanall" />
+    <target depends="build-subprojects,build-project" name="build" />
+    <target name="build-subprojects" />
     <target depends="init" name="build-project">
-        <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
-            <src path="."/>
-            <classpath refid="FastQC.classpath"/>
+        <echo message="${ant.project.name}: ${ant.file}" />
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false"
+            source="${source}" target="${target}">
+            <src path="." />
+            <classpath refid="FastQC.classpath" />
         </javac>
     </target>
-    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
-    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+    <target
+        description="Build all projects which reference this project. Useful to propagate changes."
+        name="build-refprojects" />
+    <target description="copy Eclipse compiler jars to ant lib directory"
+        name="init-eclipse-compiler">
         <copy todir="${ant.library.dir}">
-            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
         </copy>
         <unzip dest="${ant.library.dir}">
-            <patternset includes="jdtCompilerAdapter.jar"/>
-            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+            <patternset includes="jdtCompilerAdapter.jar" />
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar" />
         </unzip>
     </target>
     <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
-        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
-        <antcall target="build"/>
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+        <antcall target="build" />
     </target>
     <target name="FastQCApplication">
         <java classname="uk.ac.babraham.FastQC.FastQCApplication" failonerror="true" fork="yes">
-            <classpath refid="FastQC.classpath"/>
+            <classpath refid="FastQC.classpath" />
         </java>
+    </target>
+
+    <!-- ===== JUnit 5 targets ===== -->
+    <target name="init-test">
+        <mkdir dir="test/bin" />
+        <mkdir dir="test/reports" />
+    </target>
+
+    <target name="compile-tests" depends="build,init-test">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false"
+            source="${source}" target="${target}">
+            <src path="test" />
+            <classpath refid="test.classpath" />
+        </javac>
+    </target>
+
+    <target name="unit-test" depends="compile-tests">
+        <echo message="Running unit tests..." />
+        <junitlauncher haltOnFailure="true" printSummary="true">
+            <classpath refid="test.classpath" />
+            <testclasses outputdir="test/reports">
+                <fileset dir="test/bin">
+                    <include name="**/unit/**/*Test.class" />
+                    <include name="**/unit/**/Test*.class" />
+                </fileset>
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
+                <listener type="legacy-plain" sendSysOut="true" />
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="integration-test" depends="compile-tests">
+        <echo message="Running integration tests..." />
+        <junitlauncher haltOnFailure="true" printSummary="true">
+            <classpath refid="test.classpath" />
+            <testclasses outputdir="test/reports">
+                <fileset dir="test/bin">
+                    <include name="**/integration/**/*Test.class" />
+                    <include name="**/integration/**/Test*.class" />
+                </fileset>
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
+                <listener type="legacy-plain" sendSysOut="true" />
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="ui-test" depends="compile-tests">
+        <echo message="Running UI tests..." />
+        <junitlauncher haltOnFailure="true" printSummary="true">
+            <classpath refid="test.classpath" />
+            <testclasses outputdir="test/reports">
+                <fileset dir="test/bin">
+                    <include name="**/ui/**/*Test.class" />
+                    <include name="**/ui/**/Test*.class" />
+                </fileset>
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
+                <listener type="legacy-plain" sendSysOut="true" />
+            </testclasses>
+        </junitlauncher>
     </target>
 </project>
