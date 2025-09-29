@@ -36,30 +36,30 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	private String [] xCategories = new String[0];
 	private double max = 0;
 	private boolean calculated = false;
-	
+
 	public JPanel getResultsPanel() {
-	
+
 		if (!calculated) calculateDistribution();
-				
+
 		return new LineGraph(new double [][] {graphCounts}, 0d, max, "Sequence Length (bp)",new String [] {"Sequence Length"}, xCategories, "Distribution of sequence lengths over all sequences");
 	}
-	
+
 	public boolean ignoreFilteredSequences() {
 		return true;
 	}
-	
+
 	public boolean ignoreInReport () {
 		if (ModuleConfig.getParam("sequence_length", "ignore") > 0) {
 			return true;
 		}
 		return false;
 	}
-	
+
 	private synchronized void calculateDistribution () {
 		int maxLen = 0;
 		int minLen = -1;
 		max = 0;
-		
+
 		// Find the min and max lengths
 		for (int i=0;i<lengthCounts.length;i++) {
 			if (lengthCounts[i]>0) {
@@ -69,18 +69,18 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 				maxLen = i;
 			}
 		}
-		
+
 		// We can get a -1 value for min if there aren't any valid sequences
 		// at all.
-		
+
 		if (minLen < 0) minLen = 0;
-		
+
 		// We put one extra category either side of the actual size
 		if (minLen>0) minLen--;
 		maxLen++;
-		
+
 		int [] startAndInterval = getSizeDistribution(minLen, maxLen);
-				
+
 		// Work out how many categories we need
 		int categories = 0;
 		int currentValue = startAndInterval[0];
@@ -88,19 +88,19 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			++categories;
 			currentValue+= startAndInterval[1];
 		}
-		
+
 		graphCounts = new double[categories];
 		xCategories = new String[categories];
-		
+
 		for (int i=0;i<graphCounts.length;i++) {
-			
+
 			int minValue = startAndInterval[0]+(startAndInterval[1]*i);
 			int maxValue = (startAndInterval[0]+(startAndInterval[1]*(i+1)))-1;
 
 			if (maxValue > maxLen) {
 				maxValue = maxLen;
 			}
-			
+
 			for (int bp=minValue;bp<=maxValue;bp++) {
 				if (bp < lengthCounts.length) {
 					graphCounts[i] += lengthCounts[bp];
@@ -113,7 +113,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			else {
 				xCategories[i] = minValue+"-"+maxValue;
 			}
-			
+
 			if (graphCounts[i] > max) max = graphCounts[i];
 		}
 		calculated = true;
@@ -129,31 +129,31 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			}
 			lengthCounts = newLengthCounts;
 		}
-		
+
 		++lengthCounts[seqLen];
-		
+
 	}
-	
+
 	private int [] getSizeDistribution (int min, int max) {
-		
+
 		// We won't group if they've asked us not to
 		if (FastQCConfig.getInstance().nogroup) {
 			return(new int [] {min,1});
 		}
-		
+
 		int base = 1;
-		
+
 		while (base > (max-min)) {
 			base /= 10;
 		}
-				
+
 		int interval;
 		int starting;
 
 		int [] divisions = new int [] {1,2,5};
-		
+
 		OUTER: while (true) {
-			
+
 			for (int d=0;d<divisions.length;d++) {
 				int tester = base * divisions[d];
 				if (((max-min) / tester) <= 50) {
@@ -161,24 +161,24 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 					break OUTER;
 				}
 			}
-		
+
 			base *=10;
-			
+
 		}
-		
+
 		// Now we work out the first value to be plotted
 		int basicDivision = (int)(min/interval);
-				
+
 		int testStart = basicDivision * interval;
-				
+
 		starting = testStart;
-		
+
 		return new int[] {starting,interval};
-		
+
 	}
-	
-	
-	
+
+
+
 	public void reset () {
 		lengthCounts = new long[0];
 	}
@@ -188,12 +188,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Sequence Length Distribution";
+		return "Sequence length distribution";
 	}
 
 	public boolean raisesError() {
 		if (!calculated) calculateDistribution();
-		
+
 		// See if they've turned this test off
 		if (ModuleConfig.getParam("sequence_length", "error") == 0) {
 			return false;
@@ -216,7 +216,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 		if (ModuleConfig.getParam("sequence_length", "warn") == 0) {
 			return false;
 		}
-		
+
 		// Warn if they're not all the same length
 		boolean seenLength = false;
 		for (int i=0;i<lengthCounts.length;i++) {
@@ -236,7 +236,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 		if (!calculated) calculateDistribution();
 
 		writeDefaultImage(report, "sequence_length_distribution.png", "Sequence length distribution",  Math.max(800, graphCounts.length*15), 600);
-		
+
 		StringBuffer sb = report.dataDocument();
 		sb.append("#Length\tCount\n");
 		for (int i=0;i<xCategories.length;i++) {

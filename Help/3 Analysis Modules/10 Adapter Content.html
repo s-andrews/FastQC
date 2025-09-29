@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>Adapter Content</title>
+<title>Adapter content</title>
 <style type="text/css">
 	body {
 		font-family: sans-serif;
@@ -9,11 +9,11 @@
 </style>
 </head>
 <body>
-<h1>Adapter Content</h1>
+<h1>Adapter content</h1>
 <h2>Summary</h2>
 <p>
 The Kmer Content module will do a generic analysis of all of the Kmers
-in your library to find those which do not have even coverage through 
+in your library to find those which do not have even coverage through
 the length of your reads.  This can find a number of different sources
 of bias in the library which can include the presence of read-through
 adapter sequences building up on the end of your sequences.
@@ -26,15 +26,15 @@ always easy to see if there are other biases present in which you might
 be interested.
 </p>
 <p>
-One obvious class of sequences which you might want to analyse are 
-adapter sequences.  It is useful to know if your library contains a 
-significant amount of adapter in order to be able to assess whether 
-you need to adapter trim or not.  Although the Kmer analysis can 
+One obvious class of sequences which you might want to analyse are
+adapter sequences.  It is useful to know if your library contains a
+significant amount of adapter in order to be able to assess whether
+you need to adapter trim or not.  Although the Kmer analysis can
 theoretically spot this kind of contamination it isn't always clear.
 This module therefore does a specific search for a set of separately
 defined Kmers and will give you a view of the total proportion of your
-library which contain these Kmers.  A results trace will always be 
-generated for all of the sequences present in the adapter config file 
+library which contain these Kmers.  A results trace will always be
+generated for all of the sequences present in the adapter config file
 so you can see the adapter content of your library, even if it's low.
 </p>
 <p>
@@ -48,7 +48,7 @@ you see will only increase as the read length goes on.
 In addition to classic adapter sequences the default configuration also
 includes polyA and polyG as sequences to search for.  PolyA can be useful
 to include when looking at RNA-Seq libraries.  PolyG is present as a
-technical artefact in 2-colour illumina libraries where it is produced 
+technical artefact in 2-colour illumina libraries where it is produced
 when the signal from the cluster disappears.  Both of these sequences
 are generally trimmed from the 3' end of sequences, and are therefore
 removed in a similar way to adapters, hence their inclusion in the default
@@ -71,7 +71,7 @@ than 10% of all reads.
 <h2>Common reasons for warnings</h2>
 <p>
 Any library where a reasonable proportion of the insert sizes are shorter
-than the read length will trigger this module.  This doesn't indicate a 
+than the read length will trigger this module.  This doesn't indicate a
 problem as such - just that the sequences will need to be adapter trimmed
 before proceeding with any downstream analysis.
 </p>
