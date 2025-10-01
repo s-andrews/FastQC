@@ -10,5 +10,5 @@
 			"installAnt": "true"
 		}
 	},
-	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y libfreetype6 fonts-liberation fontconfig xvfb libxrender1 libxtst6 libxi6 libxrandr2 libxinerama1 libxfixes3 libxext6 && java -version && ant -version"
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh"
 }

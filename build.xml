@@ -100,6 +100,7 @@
             <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
                     <include name="**/unit/**/*Test.class" />
+                    <include name="**/unit/**/*Tests.class" />
                     <include name="**/unit/**/Test*.class" />
                 </fileset>
                 <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
@@ -115,6 +116,7 @@
             <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
                     <include name="**/integration/**/*Test.class" />
+                    <include name="**/integration/**/*Tests.class" />
                     <include name="**/integration/**/Test*.class" />
                 </fileset>
                 <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
@@ -130,6 +132,7 @@
             <testclasses outputdir="test/reports">
                 <fileset dir="test/bin">
                     <include name="**/ui/**/*Test.class" />
+                    <include name="**/ui/**/*Tests.class" />
                     <include name="**/ui/**/Test*.class" />
                 </fileset>
                 <listener type="legacy-xml" sendSysOut="true" sendSysErr="true" />
