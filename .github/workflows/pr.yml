@@ -52,7 +52,7 @@ jobs:
           check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
 
       - name: Upload received approval files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: received-approval-files
