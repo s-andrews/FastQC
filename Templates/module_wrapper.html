@@ -1,0 +1,16 @@
+        <div class="module">
+            <input type="checkbox" id="help-toggle-{{MODULE_INDEX}}" class="help-checkbox" />
+            <h2 id="M{{MODULE_INDEX}}">
+                <div class="module-title">
+                    {{STATUS_ICON}}{{MODULE_NAME}}
+                </div>
+                <label for="help-toggle-{{MODULE_INDEX}}" class="help-toggle" title="Show/hide help for this module">
+                    <span class="help-show">show help</span>
+                    <span class="help-hide">hide help</span>
+                </label>
+            </h2>
+            <div class="help-box">
+{{HELP_CONTENT}}
+            </div>
+{{MODULE_CONTENT}}
+        </div>
