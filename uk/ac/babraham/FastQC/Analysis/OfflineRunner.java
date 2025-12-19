@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.sound.midi.Sequence;
-
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.ModuleFactory;
 import uk.ac.babraham.FastQC.Modules.QCModule;
