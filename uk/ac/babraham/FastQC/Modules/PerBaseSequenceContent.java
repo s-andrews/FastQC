@@ -24,7 +24,6 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
-import uk.ac.babraham.FastQC.FastQCApplication;
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.BaseGroup;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
