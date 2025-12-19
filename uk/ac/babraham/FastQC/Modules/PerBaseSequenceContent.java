@@ -24,6 +24,8 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCApplication;
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.BaseGroup;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
@@ -39,7 +41,10 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 	private String [] xCategories = new String[0];
 	private boolean calculated = false;
 		
-	
+	public PerBaseSequenceContent(FastQCConfig config) {
+		super(config);
+	}
+
 	public JPanel getResultsPanel() {
 		
 		if (!calculated) getPercentages();
@@ -52,7 +57,7 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("sequence", "ignore") > 0) {
+		if (moduleConfig.getParam("sequence", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -60,7 +65,7 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 
 	private synchronized void getPercentages () {
 
-		BaseGroup [] groups = BaseGroup.makeBaseGroups(gCounts.length);
+		BaseGroup [] groups = BaseGroup.makeBaseGroups(gCounts.length, config);
 		
 		xCategories = new String[groups.length];
 
@@ -175,7 +180,7 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 			double gcDiff = Math.abs(percentages[1][i]-percentages[3][i]);
 			double atDiff = Math.abs(percentages[0][i]-percentages[2][i]);
 			
-			if (gcDiff > ModuleConfig.getParam("sequence", "error") || atDiff > ModuleConfig.getParam("sequence", "error")) return true;
+			if (gcDiff > moduleConfig.getParam("sequence", "error") || atDiff > moduleConfig.getParam("sequence", "error")) return true;
 			
 		}
 		return false;
@@ -191,7 +196,7 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 			double gcDiff = Math.abs(percentages[1][i]-percentages[3][i]);
 			double atDiff = Math.abs(percentages[0][i]-percentages[2][i]);
 			
-			if (gcDiff > ModuleConfig.getParam("sequence", "warn") || atDiff > ModuleConfig.getParam("sequence", "warn")) return true;
+			if (gcDiff > moduleConfig.getParam("sequence", "warn") || atDiff > moduleConfig.getParam("sequence", "warn")) return true;
 			
 		}
 		return false;

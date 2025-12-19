@@ -76,9 +76,10 @@ public class KmerContent extends AbstractQCModule {
 	private String [] xLabels = new String[0];
 	
 	BaseGroup [] groups;
-	public KmerContent () {
-		if (FastQCConfig.getInstance().kmer_size != null) {
-			int kmerSize = FastQCConfig.getInstance().kmer_size;
+	public KmerContent (FastQCConfig config) {
+		super(config);
+		if (config.kmer_size != null) {
+			int kmerSize = config.kmer_size;
 			MIN_KMER_SIZE = kmerSize;
 			MAX_KMER_SIZE = kmerSize;
 		}
@@ -89,7 +90,7 @@ public class KmerContent extends AbstractQCModule {
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("kmer", "ignore") > 0) {
+		if (moduleConfig.getParam("kmer", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -163,7 +164,7 @@ public class KmerContent extends AbstractQCModule {
 		
 		
 		// We'll be grouping together positions later so make up the groups now
-		groups = BaseGroup.makeBaseGroups((longestSequence-MIN_KMER_SIZE)+1);
+		groups = BaseGroup.makeBaseGroups((longestSequence-MIN_KMER_SIZE)+1, config);
 
 		Vector<Kmer>unevenKmers = new Vector<Kmer>();
 				
@@ -391,7 +392,7 @@ public class KmerContent extends AbstractQCModule {
 		// We raise an error if the most enriched kmer is seen more than 100 times
 		// more frequently than we expect.
 		
-		if (enrichedKmers.length > 0 && 0-Math.log10(enrichedKmers[0].pValue()) > ModuleConfig.getParam("kmer", "error")) return true;
+		if (enrichedKmers.length > 0 && 0-Math.log10(enrichedKmers[0].pValue()) > moduleConfig.getParam("kmer", "error")) return true;
 		return false;
 	}
 
@@ -399,7 +400,7 @@ public class KmerContent extends AbstractQCModule {
 		if (!calculated) calculateEnrichment();
 		
 		// We raise a warning if there are any enriched kmers
-		if (enrichedKmers.length > 0 && 0-Math.log10(enrichedKmers[0].pValue()) > ModuleConfig.getParam("kmer", "warn")) return true;
+		if (enrichedKmers.length > 0 && 0-Math.log10(enrichedKmers[0].pValue()) > moduleConfig.getParam("kmer", "warn")) return true;
 		return false;
 	}
 

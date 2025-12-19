@@ -30,6 +30,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
 import uk.ac.babraham.FastQC.Sequence.QualityEncoding.PhredEncoding;
@@ -51,6 +52,10 @@ public class BasicStats extends AbstractQCModule {
 	private char lowestChar = 126;
 	private String fileType = null;
 	
+	public BasicStats(FastQCConfig config) {
+		super(config);
+	}
+
 	public String description() {
 		return "Calculates some basic statistics about the file";
 	}

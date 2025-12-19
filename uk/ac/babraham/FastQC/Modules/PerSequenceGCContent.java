@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Modules.GCModel.GCModel;
 import uk.ac.babraham.FastQC.Modules.GCModel.GCModelValue;
@@ -42,6 +43,10 @@ public class PerSequenceGCContent extends AbstractQCModule {
 	
 	private GCModel [] cachedModels = new GCModel [200];
 	
+	public PerSequenceGCContent(FastQCConfig config) {
+		super(config);
+	}
+
 	public JPanel getResultsPanel() {
 	
 		if (!calculated) calculateDistribution();
@@ -54,7 +59,7 @@ public class PerSequenceGCContent extends AbstractQCModule {
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("gc_sequence", "ignore") > 0) {
+		if (moduleConfig.getParam("gc_sequence", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -241,13 +246,13 @@ public class PerSequenceGCContent extends AbstractQCModule {
 	public boolean raisesError() {
 		if (!calculated) calculateDistribution();
 
-		return deviationPercent > ModuleConfig.getParam("gc_sequence", "error");
+		return deviationPercent > moduleConfig.getParam("gc_sequence", "error");
 	}
 
 	public boolean raisesWarning() {
 		if (!calculated) calculateDistribution();
 
-		return deviationPercent > ModuleConfig.getParam("gc_sequence", "warn");
+		return deviationPercent > moduleConfig.getParam("gc_sequence", "warn");
 	}
 
 	public void makeReport(HTMLReportArchive report) throws IOException,XMLStreamException {

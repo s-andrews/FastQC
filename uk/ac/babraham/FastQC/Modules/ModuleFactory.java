@@ -19,25 +19,33 @@
  */
 package uk.ac.babraham.FastQC.Modules;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
+
 public class ModuleFactory {
 
-	public static QCModule [] getStandardModuleList () {
+	private FastQCConfig config;
+	
+	public ModuleFactory(FastQCConfig config) {
+		this.config = config;
+	}
 
-		OverRepresentedSeqs os = new OverRepresentedSeqs();
+	public QCModule [] getStandardModuleList () {
+
+		OverRepresentedSeqs os = new OverRepresentedSeqs(config);
 		
 		QCModule [] module_list = new QCModule [] {
-				new BasicStats(),
-				new PerBaseQualityScores(),
-				new PerTileQualityScores(),
-				new PerSequenceQualityScores(),
-				new PerBaseSequenceContent(),
-				new PerSequenceGCContent(),
-				new NContent(),
-				new SequenceLengthDistribution(),
+				new BasicStats(config),
+				new PerBaseQualityScores(config),
+				new PerTileQualityScores(config),
+				new PerSequenceQualityScores(config),
+				new PerBaseSequenceContent(config),
+				new PerSequenceGCContent(config),
+				new NContent(config),
+				new SequenceLengthDistribution(config),
 				os.duplicationLevelModule(),
 				os,
-				new AdapterContent(),
-				new KmerContent(),
+				new AdapterContent(config),
+				new KmerContent(config),
 			};
 	
 		return (module_list);

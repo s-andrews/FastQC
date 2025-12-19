@@ -27,6 +27,8 @@ import java.util.Iterator;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCApplication;
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.BaseGroup;
 import uk.ac.babraham.FastQC.Graphs.TileGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
@@ -53,12 +55,14 @@ public class PerTileQualityScores extends AbstractQCModule {
 	private double maxDeviation = 0;
 
 	private boolean ignoreInReport = false;
-
+	public PerTileQualityScores(FastQCConfig config) {
+		super(config);
+	}
 	public JPanel getResultsPanel() {
 
 		if (!calculated) getPercentages();
 
-		return new TileGraph(xLabels, tiles, means);
+		return new TileGraph(xLabels, tiles, means, moduleConfig);
 
 	}
 
@@ -67,7 +71,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 	}
 
 	public boolean ignoreInReport () {
-		if (ignoreInReport || ModuleConfig.getParam("tile", "ignore") > 0  || currentLength == 0) {
+		if (ignoreInReport || moduleConfig.getParam("tile", "ignore") > 0  || currentLength == 0) {
 			return true;
 		}
 		return false;
@@ -82,7 +86,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 			high = 35;
 		}
 
-		BaseGroup [] groups = BaseGroup.makeBaseGroups(currentLength);
+		BaseGroup [] groups = BaseGroup.makeBaseGroups(currentLength, config);
 
 		Integer [] tileNumbers = perTileQualityCounts.keySet().toArray(new Integer[0]);
 		
@@ -177,7 +181,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 
 		// Check if we can skip counting because the module is being ignored anyway
 		if (totalCount == 0) {
-			if (ModuleConfig.getParam("tile", "ignore") > 0) {
+			if (moduleConfig.getParam("tile", "ignore") > 0) {
 				ignoreInReport = true;
 			}
 		}
@@ -322,14 +326,14 @@ public class PerTileQualityScores extends AbstractQCModule {
 	public boolean raisesError() {
 		if (!calculated) getPercentages();
 
-		if (maxDeviation > ModuleConfig.getParam("tile", "error")) return true;
+		if (maxDeviation > moduleConfig.getParam("tile", "error")) return true;
 		return false;
 	}
 
 	public boolean raisesWarning() {
 		if (!calculated) getPercentages();
 		
-		if (maxDeviation > ModuleConfig.getParam("tile", "warn")) return true;
+		if (maxDeviation > moduleConfig.getParam("tile", "warn")) return true;
 		return false;
 	}
 

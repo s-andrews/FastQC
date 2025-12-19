@@ -26,6 +26,7 @@ import java.util.HashMap;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -41,6 +42,10 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	private int mostFrequentScore;
 	private boolean calculated = false;
 	
+	public PerSequenceQualityScores(FastQCConfig config) {
+		super(config);
+	}
+
 	public JPanel getResultsPanel() {
 	
 		if (!calculated) calculateDistribution();
@@ -50,7 +55,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	
 	public boolean ignoreInReport () {
 		// We don't show this if they didn't have any quality data.
-		if (ModuleConfig.getParam("quality_sequence", "ignore") > 0  || averageScoreCounts.size() == 0) {
+		if (moduleConfig.getParam("quality_sequence", "ignore") > 0  || averageScoreCounts.size() == 0) {
 			return true;
 		}
 		return false;
@@ -130,7 +135,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	public boolean raisesError() {
 		if (!calculated) calculateDistribution();
 
-		if (mostFrequentScore <= ModuleConfig.getParam("quality_sequence", "error")) return true;
+		if (mostFrequentScore <= moduleConfig.getParam("quality_sequence", "error")) return true;
 		
 		return false;
 	}
@@ -138,7 +143,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	public boolean raisesWarning() {
 		if (!calculated) calculateDistribution();
 
-		if (mostFrequentScore <= ModuleConfig.getParam("quality_sequence", "warn")) return true;
+		if (mostFrequentScore <= moduleConfig.getParam("quality_sequence", "warn")) return true;
 		
 		return false;
 	}

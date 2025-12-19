@@ -61,7 +61,8 @@ public class AdapterContent extends AbstractQCModule {
 	private String [] xLabels = new String[0];
 
 	BaseGroup [] groups;
-	public AdapterContent () {
+	public AdapterContent (FastQCConfig config) {
+		super(config);
 
 		Vector<Adapter>c = new Vector<Adapter>();
 		Vector<String>l = new Vector<String>();
@@ -69,13 +70,13 @@ public class AdapterContent extends AbstractQCModule {
 		try {
 
 			BufferedReader br = null;
-			if (FastQCConfig.getInstance().adapter_file == null) {
+			if (config.adapter_file == null) {
 				InputStream rsrc=ContaminentFinder.class.getResourceAsStream("/Configuration/adapter_list.txt");
 				if (rsrc==null) throw new FileNotFoundException("cannot find Configuration/adapter_list.txt");
 				br =new BufferedReader(new InputStreamReader(rsrc));
 			}
 			else {
-				br=new BufferedReader(new FileReader(FastQCConfig.getInstance().adapter_file));
+				br=new BufferedReader(new FileReader(config.adapter_file));
 			}
 
 
@@ -112,7 +113,7 @@ public class AdapterContent extends AbstractQCModule {
 	}
 
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("adapter", "ignore") > 0) {
+		if (moduleConfig.getParam("adapter", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -180,7 +181,7 @@ public class AdapterContent extends AbstractQCModule {
 		}
 
 		// We'll be grouping together positions later so make up the groups now
-		groups = BaseGroup.makeBaseGroups(maxLength);
+		groups = BaseGroup.makeBaseGroups(maxLength, config);
 
 		//		System.err.println("Made "+groups.length+" groups from "+maxLength);
 
@@ -236,7 +237,7 @@ public class AdapterContent extends AbstractQCModule {
 
 		for (int i=0;i<enrichments.length;i++) {
 			for (int j=0;j<enrichments[i].length;j++) {
-				if (enrichments[i][j] > ModuleConfig.getParam("adapter", "error")) return true;
+				if (enrichments[i][j] > moduleConfig.getParam("adapter", "error")) return true;
 			}
 		}
 		return false;
@@ -251,7 +252,7 @@ public class AdapterContent extends AbstractQCModule {
 
 		for (int i=0;i<enrichments.length;i++) {
 			for (int j=0;j<enrichments[i].length;j++) {
-				if (enrichments[i][j] > ModuleConfig.getParam("adapter", "warn")) return true;
+				if (enrichments[i][j] > moduleConfig.getParam("adapter", "warn")) return true;
 			}
 		}
 		return false;

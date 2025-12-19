@@ -38,13 +38,20 @@ import uk.ac.babraham.FastQC.Utilities.ImageToBase64;
 import uk.ac.babraham.FastQC.Utilities.ImageSaver.SVGImageSaver;
 
 public abstract class AbstractQCModule implements QCModule {
+	protected FastQCConfig config;
+	protected ModuleConfig moduleConfig;
+	
+	protected AbstractQCModule(FastQCConfig config) {
+		this.config = config;
+		this.moduleConfig = new ModuleConfig(this.config);
+	}
 
 	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData, BufferedImage image, String alt) throws XMLStreamException {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
 		xhtml.writeEmptyElement("img");
 		xhtml.writeAttribute("class", "indented");
-		if (FastQCConfig.getInstance().svg_output) {
+		if (config.svg_output) {
 			xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
 		}
 		else {

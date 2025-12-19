@@ -23,7 +23,6 @@ import java.io.File;
 
 public class FastQCConfig {
 	
-	private static FastQCConfig instance = new FastQCConfig();
 	public boolean nogroup = false;
 	public boolean expgroup = false;
 	public boolean quiet = false;
@@ -46,7 +45,7 @@ public class FastQCConfig {
 	public int dupLength = 0;
 	public boolean svg_output = false;
 
-	private FastQCConfig () {
+	public FastQCConfig () {
 		
 		// Output dir
 		if (System.getProperty("fastqc.output_dir") != null) {
@@ -171,10 +170,4 @@ public class FastQCConfig {
 	public void setCasavaMode (boolean casava) {
 		this.casava = casava;
 	}
-
-	public static FastQCConfig getInstance() {
-		return instance;
-	}
-
-
 }

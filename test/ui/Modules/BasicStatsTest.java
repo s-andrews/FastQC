@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.BasicStats;
 import uk.ac.babraham.FastQC.Sequence.SequenceFactory;
 import org.approvaltests.Approvals;
@@ -23,8 +24,10 @@ public class BasicStatsTest {
     public void testRendering(String name) throws Exception {
         // arrange
         var fastqFile = TestCases.getTestFastQFile(name);
-        var sequenceFile = SequenceFactory.getSequenceFile(fastqFile);
-        var stats = new BasicStats();
+        var config = new FastQCConfig();
+        var factory = new SequenceFactory(config);
+        var sequenceFile = factory.getSequenceFile(fastqFile);
+        var stats = new BasicStats(config);
         while (sequenceFile.hasNext()) {
             var sequence = sequenceFile.next();
             stats.processSequence(sequence);

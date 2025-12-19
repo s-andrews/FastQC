@@ -34,6 +34,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
+import uk.ac.babraham.FastQC.Analysis.AnalysisQueue;
 import uk.ac.babraham.FastQC.Analysis.AnalysisRunner;
 import uk.ac.babraham.FastQC.Analysis.OfflineRunner;
 import uk.ac.babraham.FastQC.Dialogs.WelcomePanel;
@@ -59,8 +60,16 @@ public class FastQCApplication extends JFrame {
 	private JTabbedPane fileTabs;
 	private WelcomePanel welcomePanel;
 	private File lastUsedDir = null;
+	private FastQCConfig config;
+	private AnalysisQueue queue;
+	private SequenceFactory sequenceFactory;
+	private ModuleFactory moduleFactory;
 	
-	public FastQCApplication () {
+	public FastQCApplication (FastQCConfig config, AnalysisQueue queue, SequenceFactory sequenceFactory, ModuleFactory moduleFactory) {
+		this.config = config;
+		this.queue = queue;
+		this.sequenceFactory = sequenceFactory;
+		this.moduleFactory = moduleFactory;
 			setTitle("FastQC");
 			setIconImage(new ImageIcon(ClassLoader.getSystemResource("uk/ac/babraham/FastQC/Resources/fastqc_icon.png")).getImage());
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -118,18 +127,18 @@ public class FastQCApplication extends JFrame {
 		// See if they forced a file format
 		FileFilter chosenFilter = chooser.getFileFilter();
 		if (chosenFilter instanceof FastQFileFilter) {
-			FastQCConfig.getInstance().setSequenceFormat("fastq");
+			config.setSequenceFormat("fastq");
 		}
 		if (chosenFilter instanceof CasavaFastQFileFilter) {
-			FastQCConfig.getInstance().setSequenceFormat("fastq");
-			FastQCConfig.getInstance().setCasavaMode(true);
+			config.setSequenceFormat("fastq");
+			config.setCasavaMode(true);
 
 		}
 		else if (chosenFilter instanceof BAMFileFilter) {
-			FastQCConfig.getInstance().setSequenceFormat("bam");
+			config.setSequenceFormat("bam");
 		}
 		else if (chosenFilter instanceof MappedBAMFileFilter) {
-			FastQCConfig.getInstance().setSequenceFormat("bam_mapped");
+			config.setSequenceFormat("bam_mapped");
 			System.setProperty("fastqc.sequence_format", "bam_mapped");
 		}
 		
@@ -143,7 +152,7 @@ public class FastQCApplication extends JFrame {
 		
 		File [] files = chooser.getSelectedFiles();
 		
-		if (FastQCConfig.getInstance().nano) {
+		if (config.nano) {
 			// Some of the files we've been passed might be directories and we would need to
 			// list the fast5 files within those directories.
 			
@@ -171,10 +180,10 @@ public class FastQCApplication extends JFrame {
 		File [][] fileGroups;
 		
 		// See if we need to group together files from a casava group
-		if (FastQCConfig.getInstance().casava) {
+		if (config.casava) {
 			fileGroups = CasavaBasename.getCasavaGroups(files);
 		}
-		else if (FastQCConfig.getInstance().nano) {
+		else if (config.nano) {
 			fileGroups = NanoporeBasename.getNanoporeGroups(files);
 		}
 		else {
@@ -192,7 +201,7 @@ public class FastQCApplication extends JFrame {
 			
 			
 			try {
-				sequenceFile = SequenceFactory.getSequenceFile(filesToProcess);
+				sequenceFile = sequenceFactory.getSequenceFile(filesToProcess);
 			}
 			catch (SequenceFormatException e) {
 				JPanel errorPanel = new JPanel();
@@ -209,13 +218,13 @@ public class FastQCApplication extends JFrame {
 				continue;
 			}
 					
-			AnalysisRunner runner = new AnalysisRunner(sequenceFile);
+			AnalysisRunner runner = new AnalysisRunner(sequenceFile, queue);
 			ResultsPanel rp = new ResultsPanel(sequenceFile);
 			runner.addAnalysisListener(rp);
 			fileTabs.addTab(sequenceFile.name(), rp);
 			
 
-			QCModule [] module_list = ModuleFactory.getStandardModuleList();
+			QCModule [] module_list = moduleFactory.getStandardModuleList();
 	
 			runner.startAnalysis(module_list);
 		}
@@ -283,7 +292,7 @@ public class FastQCApplication extends JFrame {
 		ResultsPanel selectedPanel = (ResultsPanel)fileTabs.getSelectedComponent();
 		
 		try {
-			new HTMLReportArchive(selectedPanel.sequenceFile(), selectedPanel.modules(), reportFile);
+			new HTMLReportArchive(selectedPanel.sequenceFile(), selectedPanel.modules(), reportFile, config);
 		} 
 		catch (Exception e) {
 			JOptionPane.showMessageDialog(this, "Failed to create archive: "+e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -298,7 +307,10 @@ public class FastQCApplication extends JFrame {
 			System.out.println("FastQC v"+VERSION);
 			System.exit(0);
 		}
-		
+		var config = new FastQCConfig();
+		var queue = new AnalysisQueue(config);
+		var sequenceFactory = new SequenceFactory(config);
+		var moduleFactory = new ModuleFactory(config);
 		if (args.length > 0) {
 			// Set headless to true so we don't get problems
 			// with people working without an X display.
@@ -308,12 +320,10 @@ public class FastQCApplication extends JFrame {
 			// non-interactive runs.  As we now save an HTML
 			// report at the top level we no longer do this
 			// so unzip is false unless explicitly set to be true.
-						
-			if (FastQCConfig.getInstance().do_unzip == null) {
-				FastQCConfig.getInstance().do_unzip = false;
+			if (config.do_unzip == null) {
+				config.do_unzip = false;
 			}
-			
-			new OfflineRunner(args);
+			new OfflineRunner(args, config, queue, sequenceFactory, moduleFactory);
 			System.exit(0);
 		}
 		
@@ -328,14 +338,13 @@ public class FastQCApplication extends JFrame {
 				}
 			} catch (Exception e) {}
 			
-	
 			// The interactive default is to not uncompress the
 			// reports after they have been generated
-			if (FastQCConfig.getInstance().do_unzip == null) {
-				FastQCConfig.getInstance().do_unzip = false;
+			if (config.do_unzip == null) {
+				config.do_unzip = false;
 			}
 	
-			FastQCApplication app = new FastQCApplication();
+			FastQCApplication app = new FastQCApplication(config, queue, sequenceFactory, moduleFactory);
 	
 			app.setVisible(true);
 		}

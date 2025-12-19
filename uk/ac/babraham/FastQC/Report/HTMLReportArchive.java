@@ -66,11 +66,13 @@ public class HTMLReportArchive {
 	private byte [] buffer = new byte[1024];
 	private File htmlFile;
 	private File zipFile;
+	private FastQCConfig config;
 
-	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
+	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile, FastQCConfig config) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
 		this.modules = modules;
 		this.htmlFile = htmlFile;
+		this.config = config;
 		this.zipFile = new File(htmlFile.getAbsoluteFile().toString().replaceAll("\\.html$", "")+".zip");
 		StringWriter htmlStr = new StringWriter();
 		XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
@@ -181,9 +183,9 @@ public class HTMLReportArchive {
 		pr.close();
 
 		
-		if (FastQCConfig.getInstance().do_unzip) {
+		if (config.do_unzip) {
 			unzipZipFile(zipFile);
-			if (FastQCConfig.getInstance().delete_after_unzip) {
+			if (config.delete_after_unzip) {
 				zipFile.delete();
 			}
 		}
@@ -356,7 +358,7 @@ public class HTMLReportArchive {
 			summaryText.append(modules[m].name());
 			summaryText.append("\t");
 			summaryText.append(sequenceFile.name());
-			summaryText.append(FastQCConfig.getInstance().lineSeparator);
+			summaryText.append(config.lineSeparator);
 			
 			xhtml.writeStartElement("a");
 			xhtml.writeAttribute("href", "#M"+m);

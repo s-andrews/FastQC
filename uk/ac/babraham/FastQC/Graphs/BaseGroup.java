@@ -35,7 +35,7 @@ public class BaseGroup {
 	private int lowerCount;
 	private int upperCount;
 
-	public static BaseGroup [] makeBaseGroups (int maxLength) {
+	public static BaseGroup [] makeBaseGroups (int maxLength, FastQCConfig config) {
 		
 
 		// They might have set a fixed max length.  If the observed
@@ -43,19 +43,19 @@ public class BaseGroup {
 		// with it, but if not then we'll use the global value instead 
 		// of theirs
 		
-		if (FastQCConfig.getInstance().minLength > maxLength) {
-			maxLength = FastQCConfig.getInstance().minLength;
+		if (config.minLength > maxLength) {
+			maxLength = config.minLength;
 		}
 		
-		if (FastQCConfig.getInstance().nogroup) {
+		if (config.nogroup) {
 			return(makeUngroupedGroups(maxLength));
 		}
 		
 
-		if (FastQCConfig.getInstance().nogroup) {
+		if (config.nogroup) {
 			return(makeUngroupedGroups(maxLength));
 		}
-		else if (FastQCConfig.getInstance().expgroup) {
+		else if (config.expgroup) {
 			return(makeExponentialBaseGroups(maxLength));
 		}
 		else {

@@ -27,6 +27,12 @@ import uk.ac.babraham.FastQC.Utilities.CasavaBasename;
 import uk.ac.babraham.FastQC.Utilities.NameFormatException;
 
 public class SequenceFactory {
+	private FastQCConfig config;
+
+	public SequenceFactory(FastQCConfig config) {
+		this.config = config;
+	}
+
 	/**
 	 * 
 	 * This option is used when multiple files are to be treated as a group to produce
@@ -37,7 +43,7 @@ public class SequenceFactory {
 	 * @throws SequenceFormatException
 	 * @throws IOException
 	 */
-	public static SequenceFile getSequenceFile (File [] files) throws SequenceFormatException, IOException {
+	public SequenceFile getSequenceFile (File [] files) throws SequenceFormatException, IOException {
 		
 		/*
 		 * We used to build a set of SequenceFile objects to make a sequence group, but we found that
@@ -47,7 +53,7 @@ public class SequenceFactory {
 		
 		if (files.length == 1) {
 			
-			if (FastQCConfig.getInstance().casava) {
+			if (config.casava) {
 				try {
 					// We do this simply to find out if the casava basename is valid.  If it is then the 
 					// Sequencefilegroup is created at the end of this sub.  If it's not then we do a 
@@ -64,14 +70,12 @@ public class SequenceFactory {
 		}
 		
 		
-		return new SequenceFileGroup(files);
+		return new SequenceFileGroup(files, this);
 		
 	}
 	
-	public static SequenceFile getSequenceFile(File file) throws SequenceFormatException, IOException {
+	public SequenceFile getSequenceFile(File file) throws SequenceFormatException, IOException {
 		
-		FastQCConfig config = FastQCConfig.getInstance();
-
 //		System.err.println("Format is "+config.sequence_format);
 		
 		if (config.sequence_format != null) {

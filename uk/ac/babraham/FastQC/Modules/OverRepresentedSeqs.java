@@ -50,6 +50,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 	private boolean calculated = false;
 	private boolean frozen = false;
 	private DuplicationLevel duplicationModule;
+	private ContaminentFinder contaminentFinder;
 	
 	// This is the number of different sequences we want to track
 	private final int OBSERVATION_CUTOFF = 100000;
@@ -61,12 +62,14 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 	// extrapolating to the whole file
 	protected long countAtUniqueLimit = 0;
 	
-	public OverRepresentedSeqs () {
-		duplicationModule = new DuplicationLevel(this);
+	public OverRepresentedSeqs (FastQCConfig config) {
+		super(config);
+		duplicationModule = new DuplicationLevel(this, config);
+		contaminentFinder = new ContaminentFinder(config);
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("overrepresented", "ignore") > 0) {
+		if (moduleConfig.getParam("overrepresented", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -121,8 +124,8 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		while (s.hasNext()) {
 			String seq = s.next();
 			double percentage = ((double)sequences.get(seq)/count)*100;
-			if (percentage > ModuleConfig.getParam("overrepresented", "warn")) {
-				OverrepresentedSeq os = new OverrepresentedSeq(seq, sequences.get(seq), percentage);
+			if (percentage > moduleConfig.getParam("overrepresented", "warn")) {
+				OverrepresentedSeq os = new OverrepresentedSeq(seq, sequences.get(seq), percentage, contaminentFinder);
 				keepers.add(os);
 			}
 		}
@@ -158,8 +161,8 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// specify a shorter truncation length on the command line in the 
 		// dup_length option.
 		
-		if (FastQCConfig.getInstance().dupLength != 0) {
-			seq = new String(seq.substring(0, FastQCConfig.getInstance().dupLength));			
+		if (config.dupLength != 0) {
+			seq = new String(seq.substring(0, config.dupLength));			
 		}
 		else if (seq.length() > 50) {
 			seq = new String(seq.substring(0, 50));
@@ -247,11 +250,11 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		private double percentage;
 		private ContaminantHit contaminantHit;
 		
-		public OverrepresentedSeq (String seq, int count, double percentage) {
+		public OverrepresentedSeq (String seq, int count, double percentage, ContaminentFinder contaminentFinder) {
 			this.seq = seq;
 			this.count = count;
 			this.percentage = percentage;
-			this.contaminantHit = ContaminentFinder.findContaminantHit(seq);
+			this.contaminantHit = contaminentFinder.findContaminantHit(seq);
 		}
 		
 		public String seq () {
@@ -283,7 +286,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 	public boolean raisesError() {
 		if (!calculated) getOverrepresentedSeqs();
 		if (overrepresntedSeqs.length>0) {
-			if (overrepresntedSeqs[0].percentage > ModuleConfig.getParam("overrepresented", "error")) {
+			if (overrepresntedSeqs[0].percentage > moduleConfig.getParam("overrepresented", "error")) {
 				return true;
 			}
 		}

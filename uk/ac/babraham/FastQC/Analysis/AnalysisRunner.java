@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.BasicStats;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -35,9 +36,11 @@ public class AnalysisRunner implements Runnable {
 	private QCModule [] modules;
 	private List<AnalysisListener> listeners = new ArrayList<AnalysisListener>();
 	private int percentComplete = 0;
+	private AnalysisQueue queue;
 	
-	public AnalysisRunner (SequenceFile file) {
+	public AnalysisRunner (SequenceFile file,  AnalysisQueue queue) {
 		this.file = file;
+		this.queue = queue;
 	}
 	
 	public void addAnalysisListener (AnalysisListener l) {
@@ -58,7 +61,7 @@ public class AnalysisRunner implements Runnable {
 		for (int i=0;i<modules.length;i++) {
 			modules[i].reset();
 		}
-		AnalysisQueue.getInstance().addToQueue(this);
+		this.queue.addToQueue(this);
 	}
 
 	public void run() {

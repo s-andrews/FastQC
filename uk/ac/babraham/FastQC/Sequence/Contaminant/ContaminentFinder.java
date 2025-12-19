@@ -31,9 +31,14 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 
 public class ContaminentFinder {
 
-	private static Contaminant [] contaminants;
+	private FastQCConfig config;
+	private Contaminant [] contaminants;
 	
-	public static ContaminantHit findContaminantHit (String sequence) {
+	public ContaminentFinder(FastQCConfig config) {
+		this.config = config;
+	}
+	
+	public ContaminantHit findContaminantHit (String sequence) {
 		if (contaminants == null) {
 			contaminants = makeContaminantList();
 		}
@@ -58,19 +63,19 @@ public class ContaminentFinder {
 	}
 	
 	
-	private static Contaminant [] makeContaminantList () {
+	private Contaminant [] makeContaminantList () {
 		Vector<Contaminant>c = new Vector<Contaminant>();
 		
 		try {
 			
 			BufferedReader br = null;
-			if (FastQCConfig.getInstance().contaminant_file == null) {
+			if (config.contaminant_file == null) {
 				InputStream rsrc=ContaminentFinder.class.getResourceAsStream("/Configuration/contaminant_list.txt");
 				if (rsrc==null) throw new FileNotFoundException("cannot find Confituration/contaminant_list.txt");
 				br =new BufferedReader(new InputStreamReader(rsrc));
 			}
 			else {
-				br=new BufferedReader(new FileReader(FastQCConfig.getInstance().contaminant_file));
+				br=new BufferedReader(new FileReader(config.contaminant_file));
 			}
 			
 			

@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.sound.midi.Sequence;
+
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.ModuleFactory;
 import uk.ac.babraham.FastQC.Modules.QCModule;
@@ -37,6 +39,10 @@ public class OfflineRunner implements AnalysisListener {
 	
 	private AtomicInteger filesRemaining;
 	private boolean showUpdates = true;
+	private FastQCConfig config;
+	private AnalysisQueue queue;
+	private SequenceFactory sequenceFactory;
+	private ModuleFactory moduleFactory;
 	
 	// We'll set a flag which will tell us if any of the sequences failed
 	// so we can exit with an error state so the calling process can tell
@@ -44,10 +50,14 @@ public class OfflineRunner implements AnalysisListener {
 	
 	private boolean somethingFailed = false;
 	
-	public OfflineRunner (String [] filenames) {	
+	public OfflineRunner (String [] filenames, FastQCConfig config, AnalysisQueue queue, SequenceFactory sequenceFactory, ModuleFactory moduleFactory) {	
 		
+		this.config = config;
+		this.queue = queue;
+		this.sequenceFactory = sequenceFactory;
+		this.moduleFactory = moduleFactory;
 		// See if we need to show updates
-		showUpdates = !FastQCConfig.getInstance().quiet;
+		showUpdates = !config.quiet;
 		
 		Vector<File> files = new Vector<File>();
 		
@@ -68,7 +78,7 @@ public class OfflineRunner implements AnalysisListener {
 					continue;
 				}
 
-				if (FastQCConfig.getInstance().nano && file.isDirectory()) {
+				if (config.nano && file.isDirectory()) {
 					File [] fast5files = file.listFiles();
 					for (int i=0;i<fast5files.length;i++) {
 						if (fast5files[i].getName().endsWith(".fast5")) {
@@ -103,10 +113,10 @@ public class OfflineRunner implements AnalysisListener {
 		File [][] fileGroups;
 		
 		// See if we need to group together files from a casava group
-		if (FastQCConfig.getInstance().casava) {
+		if (config.casava) {
 			fileGroups = CasavaBasename.getCasavaGroups(files.toArray(new File[0]));
 		}
-		else if (FastQCConfig.getInstance().nano) {
+		else if (config.nano) {
 			fileGroups = NanoporeBasename.getNanoporeGroups(files.toArray(new File[0]));
 		}
 		else {
@@ -160,12 +170,12 @@ public class OfflineRunner implements AnalysisListener {
 				throw new IOException(files[f].getName()+" doesn't exist");
 			}
 		}
-		SequenceFile sequenceFile = SequenceFactory.getSequenceFile(files);			
+		SequenceFile sequenceFile = sequenceFactory.getSequenceFile(files);			
 						
-		AnalysisRunner runner = new AnalysisRunner(sequenceFile);
+		AnalysisRunner runner = new AnalysisRunner(sequenceFile, this.queue);
 		runner.addAnalysisListener(this);
 			
-		QCModule [] module_list = ModuleFactory.getStandardModuleList();
+		QCModule [] module_list = moduleFactory.getStandardModuleList();
 
 		runner.startAnalysis(module_list);
 
@@ -177,16 +187,16 @@ public class OfflineRunner implements AnalysisListener {
 		if (showUpdates) System.out.println("Analysis complete for "+file.name());
 
 		
-		if (FastQCConfig.getInstance().output_dir != null) {
+		if (config.output_dir != null) {
 			String fileName = file.getFile().getName().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "").replaceAll("\\.ubam$", "")+"_fastqc.html";
-			reportFile = new File(FastQCConfig.getInstance().output_dir+"/"+fileName);						
+			reportFile = new File(config.output_dir+"/"+fileName);						
 		}
 		else {
 			reportFile = new File(file.getFile().getAbsolutePath().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "").replaceAll("\\.ubam$", "")+"_fastqc.html");			
 		}
 		
 		try {
-			new HTMLReportArchive(file, results, reportFile);
+			new HTMLReportArchive(file, results, reportFile, config);
 		}
 		catch (Exception e) {
 			analysisExceptionReceived(file, e);

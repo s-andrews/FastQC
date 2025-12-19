@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.BaseGroup;
 import uk.ac.babraham.FastQC.Graphs.QualityBoxPlot;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
@@ -45,7 +46,11 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	int high = 0;
 	PhredEncoding encodingScheme;
 	private boolean calculated = false;
-		
+
+	public PerBaseQualityScores(FastQCConfig config) {
+		super(config);
+	}
+
 	public JPanel getResultsPanel() {
 		
 		if (!calculated) getPercentages();
@@ -59,7 +64,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	
 	public boolean ignoreInReport () {
 		// We don't show this if there is no quality data.
-		if (ModuleConfig.getParam("quality_base", "ignore") > 0 || qualityCounts.length == 0) {
+		if (moduleConfig.getParam("quality_base", "ignore") > 0 || qualityCounts.length == 0) {
 			return true;
 		}
 		return false;
@@ -75,7 +80,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 			high = 35;
 		}
 		
-		BaseGroup [] groups = BaseGroup.makeBaseGroups(qualityCounts.length);
+		BaseGroup [] groups = BaseGroup.makeBaseGroups(qualityCounts.length, config);
 		
 		means = new double[groups.length];
 		medians = new double[groups.length];
@@ -170,7 +175,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 				// There wasn't enough data for this group to make an assessment
 				continue;
 			}
-			if (lowerQuartile[i] < ModuleConfig.getParam("quality_base_lower", "error") || medians[i] < ModuleConfig.getParam("quality_base_median", "error")) {
+			if (lowerQuartile[i] < moduleConfig.getParam("quality_base_lower", "error") || medians[i] < moduleConfig.getParam("quality_base_median", "error")) {
 				return true;
 			}
 		}
@@ -185,7 +190,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 				// There wasn't enough data for this group to make an assessment
 				continue;
 			}
-			if (lowerQuartile[i] < ModuleConfig.getParam("quality_base_lower", "warn") || medians[i] < ModuleConfig.getParam("quality_base_median", "warn")) {
+			if (lowerQuartile[i] < moduleConfig.getParam("quality_base_lower", "warn") || medians[i] < moduleConfig.getParam("quality_base_median", "warn")) {
 				return true;
 			}
 		}

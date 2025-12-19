@@ -28,21 +28,15 @@ import uk.ac.babraham.FastQC.Sequence.SequenceFile;
 
 public class AnalysisQueue implements Runnable, AnalysisListener{
 
-	private static AnalysisQueue instance = new AnalysisQueue();
-	
 	private LinkedBlockingDeque<AnalysisRunner>queue = new LinkedBlockingDeque<AnalysisRunner>();
 	
 	private AtomicInteger availableSlots = new AtomicInteger(1);
 	private AtomicInteger usedSlots = new AtomicInteger(0);
 	
-	public static AnalysisQueue getInstance () {
-		return instance;
-	}
-	
-	private AnalysisQueue () {
+	public AnalysisQueue (FastQCConfig config) {
 		
-		if (FastQCConfig.getInstance().threads != null) {
-			availableSlots.set(FastQCConfig.getInstance().threads);			
+		if (config.threads != null) {
+			availableSlots.set(config.threads);			
 		}
 		
 		Thread t = new Thread(this);

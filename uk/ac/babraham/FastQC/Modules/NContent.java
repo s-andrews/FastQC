@@ -24,6 +24,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.BaseGroup;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
@@ -36,7 +37,9 @@ public class NContent extends AbstractQCModule {
 	public boolean calculated = false;
 	public double [] percentages = null;
 	public String [] xCategories = new String[0];
-	
+	public NContent(FastQCConfig config) {
+		super(config);
+	}
 	public JPanel getResultsPanel() {
 		
 		if (!calculated) getPercentages();
@@ -48,7 +51,7 @@ public class NContent extends AbstractQCModule {
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("n_content", "ignore") > 0) {
+		if (moduleConfig.getParam("n_content", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -56,7 +59,7 @@ public class NContent extends AbstractQCModule {
 	
 	private synchronized void getPercentages () {
 		
-		BaseGroup [] groups = BaseGroup.makeBaseGroups(nCounts.length);
+		BaseGroup [] groups = BaseGroup.makeBaseGroups(nCounts.length, config);
 		
 		xCategories = new String[groups.length];
 
@@ -130,7 +133,7 @@ public class NContent extends AbstractQCModule {
 	public boolean raisesError() {
 		if (!calculated) getPercentages();
 		for (int i=0;i<percentages.length;i++) {
-			if (percentages[i] > ModuleConfig.getParam("n_content", "error")) {
+			if (percentages[i] > moduleConfig.getParam("n_content", "error")) {
 				return true;
 			}
 		}
@@ -140,7 +143,7 @@ public class NContent extends AbstractQCModule {
 	public boolean raisesWarning() {
 		if (!calculated) getPercentages();
 		for (int i=0;i<percentages.length;i++) {
-			if (percentages[i] > ModuleConfig.getParam("n_content", "warn")) {
+			if (percentages[i] > moduleConfig.getParam("n_content", "warn")) {
 				return true;
 			}
 		}

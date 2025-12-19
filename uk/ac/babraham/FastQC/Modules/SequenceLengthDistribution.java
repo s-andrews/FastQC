@@ -37,6 +37,10 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	private double max = 0;
 	private boolean calculated = false;
 	
+	public SequenceLengthDistribution(FastQCConfig config) {
+		super(config);
+	}
+	
 	public JPanel getResultsPanel() {
 	
 		if (!calculated) calculateDistribution();
@@ -49,7 +53,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("sequence_length", "ignore") > 0) {
+		if (moduleConfig.getParam("sequence_length", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -137,7 +141,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	private int [] getSizeDistribution (int min, int max) {
 		
 		// We won't group if they've asked us not to
-		if (FastQCConfig.getInstance().nogroup) {
+		if (config.nogroup) {
 			return(new int [] {min,1});
 		}
 		
@@ -195,7 +199,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 		if (!calculated) calculateDistribution();
 		
 		// See if they've turned this test off
-		if (ModuleConfig.getParam("sequence_length", "error") == 0) {
+		if (moduleConfig.getParam("sequence_length", "error") == 0) {
 			return false;
 		}
 
@@ -213,7 +217,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 		if (!calculated) calculateDistribution();
 
 		// See if they've turned this test off
-		if (ModuleConfig.getParam("sequence_length", "warn") == 0) {
+		if (moduleConfig.getParam("sequence_length", "warn") == 0) {
 			return false;
 		}
 		

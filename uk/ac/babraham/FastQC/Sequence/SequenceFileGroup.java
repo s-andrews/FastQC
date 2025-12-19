@@ -31,10 +31,13 @@ public class SequenceFileGroup implements SequenceFile {
 	private SequenceFile sequenceFile;
 	private File groupFile;
 	private int currentIndex = 0;
+	private SequenceFactory sequenceFactory;
 
-	public SequenceFileGroup( File [] files) throws IOException, SequenceFormatException {
+
+	public SequenceFileGroup( File [] files, SequenceFactory sequenceFactory) throws IOException, SequenceFormatException {
 		this.files = files;
-		sequenceFile = SequenceFactory.getSequenceFile(files[0]);
+		this.sequenceFactory = sequenceFactory;
+		sequenceFile = this.sequenceFactory.getSequenceFile(files[0]);
 				
 		try {
 			String baseName = CasavaBasename.getCasavaBasename(sequenceFile.name());
@@ -66,7 +69,7 @@ public class SequenceFileGroup implements SequenceFile {
 			while (currentIndex < files.length - 1) {
 				++currentIndex;
 				try {
-					sequenceFile = SequenceFactory.getSequenceFile(files[currentIndex]);
+					sequenceFile = this.sequenceFactory.getSequenceFile(files[currentIndex]);
 				}
 				catch (Exception e) {
 					e.printStackTrace();

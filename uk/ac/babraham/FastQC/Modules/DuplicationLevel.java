@@ -26,7 +26,7 @@ import java.util.Iterator;
 
 import javax.swing.JPanel;
 import javax.xml.stream.XMLStreamException;
-
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Graphs.LineGraph;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -40,7 +40,8 @@ public class DuplicationLevel extends AbstractQCModule {
 	private String [] labels;
 	private static final DecimalFormat df = new DecimalFormat("#.##");
 	
-	protected DuplicationLevel (OverRepresentedSeqs overrepresentedModule) {
+	protected DuplicationLevel (OverRepresentedSeqs overrepresentedModule, FastQCConfig config) {
+		super(config);
 		this.overrepresentedModule = overrepresentedModule;
 	}
 	
@@ -49,14 +50,14 @@ public class DuplicationLevel extends AbstractQCModule {
 	}
 
 	public boolean ignoreFilteredSequences() {
-		if (ModuleConfig.getParam("duplication", "ignore") > 0) {
+		if (moduleConfig.getParam("duplication", "ignore") > 0) {
 			return true;
 		}
 		return false;
 	}
 	
 	public boolean ignoreInReport () {
-		if (ModuleConfig.getParam("duplication", "ignore") > 0) {
+		if (moduleConfig.getParam("duplication", "ignore") > 0) {
 			return true;
 		}
 		return false;
@@ -247,7 +248,7 @@ public class DuplicationLevel extends AbstractQCModule {
 		if (totalPercentages == null) calculateLevels();
 		
 		// Anything over 50% duplicate gets us a error
-		if (percentDifferentSeqs < ModuleConfig.getParam("duplication", "error")) {
+		if (percentDifferentSeqs < moduleConfig.getParam("duplication", "error")) {
 			return true;
 		}
 		
@@ -258,7 +259,7 @@ public class DuplicationLevel extends AbstractQCModule {
 		if (totalPercentages == null) calculateLevels();
 
 		// Anything over 20% duplicate gets us a warning
-		if (percentDifferentSeqs < ModuleConfig.getParam("duplication", "warn")) {
+		if (percentDifferentSeqs < moduleConfig.getParam("duplication", "warn")) {
 			return true;
 		}
 		

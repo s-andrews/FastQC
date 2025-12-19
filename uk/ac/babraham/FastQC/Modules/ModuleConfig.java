@@ -30,11 +30,16 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminentFinder;
 
 public class ModuleConfig {
+	private FastQCConfig config;
 
-	private static HashMap<String, Double>parameters = readParams();
+	public ModuleConfig(FastQCConfig config) {
+		this.config = config;
+	}
+
+	private HashMap<String, Double>parameters = readParams();
 	
 	
-	private static HashMap<String, Double> readParams () {
+	private HashMap<String, Double> readParams () {
 		
 		HashMap<String, Double>params = new HashMap<String, Double>();
 		
@@ -81,13 +86,13 @@ public class ModuleConfig {
 		BufferedReader br;
 		
 		try {
-			if (FastQCConfig.getInstance().limits_file == null) {
+			if (config.limits_file == null) {
 				InputStream rsrc=ContaminentFinder.class.getResourceAsStream("/Configuration/limits.txt");
 				if (rsrc==null) throw new FileNotFoundException("cannot find Configuration/limits.txt");
 				br =new BufferedReader(new InputStreamReader(rsrc));
 			}
 			else {
-				br=new BufferedReader(new FileReader(FastQCConfig.getInstance().limits_file));
+				br=new BufferedReader(new FileReader(config.limits_file));
 			}
 			
 			String line;
@@ -134,7 +139,7 @@ public class ModuleConfig {
 		
 	}
 	
-	public static Double getParam(String module, String level) {
+	public Double getParam(String module, String level) {
 		
 		if (!(level.equals("warn") || level.equals("error") || level.equals("ignore"))) {
 			throw new IllegalArgumentException("Level must be warn, error or ignore");

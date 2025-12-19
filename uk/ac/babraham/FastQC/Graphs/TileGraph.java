@@ -37,11 +37,13 @@ public class TileGraph extends JPanel {
 	private int [] tiles;
 	private double [][]tileBaseMeans;
 	private HotColdColourGradient gradient = new HotColdColourGradient();
+	private ModuleConfig moduleConfig;
 
-	public TileGraph (String [] xLabels, int [] tiles, double [][] tileBaseMeans) {
+	public TileGraph (String [] xLabels, int [] tiles, double [][] tileBaseMeans, ModuleConfig moduleConfig) {
 		this.xLabels = xLabels;
 		this.tiles = tiles;
 		this.tileBaseMeans = tileBaseMeans;
+		this.moduleConfig = moduleConfig;
 
 	}
 	
@@ -143,7 +145,7 @@ public class TileGraph extends JPanel {
 	}
 	
 	private Color getColour(int tile, int base) {		
-		return gradient.getColor(0-tileBaseMeans[tile][base], 0, ModuleConfig.getParam("tile", "error"));
+		return gradient.getColor(0-tileBaseMeans[tile][base], 0, moduleConfig.getParam("tile", "error"));
 	}
 
 
