@@ -31,13 +31,13 @@ import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminentFinder;
 
 public class ModuleConfig {
 	private FastQCConfig config;
+	private HashMap<String, Double> parameters;
 
 	public ModuleConfig(FastQCConfig config) {
 		this.config = config;
+		parameters = readParams();
 	}
 
-	private HashMap<String, Double>parameters = readParams();
-	
 	
 	private HashMap<String, Double> readParams () {
 		
