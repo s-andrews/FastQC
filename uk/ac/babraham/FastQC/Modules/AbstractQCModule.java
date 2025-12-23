@@ -43,7 +43,7 @@ public abstract class AbstractQCModule implements QCModule {
 	
 	protected AbstractQCModule(FastQCConfig config) {
 		this.config = config;
-		this.moduleConfig = new ModuleConfig(this.config);
+		this.moduleConfig = new ModuleConfig(this.config.limits_file);
 	}
 
 	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData, BufferedImage image, String alt) throws XMLStreamException {

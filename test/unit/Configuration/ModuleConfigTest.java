@@ -8,7 +8,6 @@ import static test.unit.Configuration.Constants.*;
 
 import java.util.Set;
 
-import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.ModuleConfig;
 
 public class ModuleConfigTest {
@@ -17,13 +16,12 @@ public class ModuleConfigTest {
 
     @BeforeEach
     public void setUp() {
-        config = new ModuleConfig(new FastQCConfig());
+        config = new ModuleConfig();
     }
 
     @Test
     public void testEnabledModules() {
-        // arrange
-        var enabledModules = Set.of(
+        for (var moduleName : Set.of(
                 N_CONTENT,
                 OVERREPRESENTED,
                 QUALITY_BASE,
@@ -32,23 +30,14 @@ public class ModuleConfigTest {
                 QUALITY_SEQUENCE,
                 TILE,
                 SEQUENCE_LENGTH,
-                ADAPTER);
-        // act
-        for (var moduleName : enabledModules) {
-            // assert
+                ADAPTER)) {
             assertModuleEnabled(moduleName);
         }
     }
 
     @Test
     public void testDisabledModules() {
-        // arrange
-        var disabledModules = Set.of(KMER);
-        // act
-        for (var moduleName : disabledModules) {
-            // assert
-            assertModuleDisabled(moduleName);
-        }
+        assertModuleDisabled(KMER);
     }
 
     private void assertModuleEnabled(String moduleName) {
