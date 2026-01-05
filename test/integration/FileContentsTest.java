@@ -10,6 +10,7 @@ import static test.integration.TestHelpers.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,9 +24,9 @@ public class FileContentsTest {
     @ParameterizedTest
     @MethodSource("test.data.TestCases#all")
     public void verify_data(String name) throws Exception {
-        var content = ExecuteAndExtractFileContent(name, "fastqc_data.txt");
+        String content = ExecuteAndExtractFileContent(name, "fastqc_data.txt");
 
-        var options = new Options()
+        Options options = new Options()
             .forFile()
             .withName("FileContentsTest_" + name + "_fastqc_data", " txt"); 
         Approvals.verify(content, options);
@@ -34,10 +35,10 @@ public class FileContentsTest {
     @ParameterizedTest
     @MethodSource("test.data.TestCases#all")
     public void verify_html(String name) throws Exception {
-        var content = ExecuteAndExtractFileContent(name, "fastqc_report.html");
+        String content = ExecuteAndExtractFileContent(name, "fastqc_report.html");
         content = HtmlContentHelpers.normalizeHtml(content);
         
-        var options = new Options()
+        Options options = new Options()
             .withScrubber(HtmlContentHelpers::scrubDates)
             .forFile()
             .withName("FileContentsTest_" + name + "_fastqc_report", " html"); 
@@ -46,13 +47,13 @@ public class FileContentsTest {
 
     private String ExecuteAndExtractFileContent(String scenarioName, String extractFileName)
             throws Exception, IOException {
-        var outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
+        Path outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
         if (!Files.exists(outputDir)) {
             Files.createDirectories(outputDir);
         }
 
         // create the scenario
-        var scenario = new CliScenario(scenarioName, new String[] {
+        CliScenario scenario = new CliScenario(scenarioName, new String[] {
                 "fastqc.output_dir=" + outputDir
         });
 
@@ -61,11 +62,11 @@ public class FileContentsTest {
         TestHelpers.unzip(scenario.ZipFilePath, scenario.ZipExtractionPath);
 
         // locate the inner folder and check it exists
-        var folder = new File(scenario.ZipExtractionPath, scenario.ZipInnerFolderName).getAbsolutePath().toString();
+        String folder = new File(scenario.ZipExtractionPath, scenario.ZipInnerFolderName).getAbsolutePath().toString();
         assertFolderExists(folder);
 
         // locate the data file
-        var extractedFile = new File(folder, extractFileName);
+        File extractedFile = new File(folder, extractFileName);
         assertFileExists(extractedFile.getAbsolutePath());
 
         System.out.println("Extracted file: " + extractedFile);

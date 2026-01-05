@@ -1,16 +1,6 @@
 package test.integration.cli;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Parameter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.stream.Stream;
-
-import test.data.TestCases;
 import static test.data.TestCases.TEST_DATA_DIR;
 
 public class CliScenario {

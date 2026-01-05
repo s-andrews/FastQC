@@ -2,6 +2,7 @@ package test.integration;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,12 +15,12 @@ public class OutputTest {
     @ParameterizedTest
     @MethodSource("test.data.TestCases#all")
     public void shows_progress_when_processing(String name) throws Exception {
-        var outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
+        Path outputDir = new File(CliScenario.TEST_OUT_DIR).toPath();
         if (!Files.exists(outputDir)) {
             Files.createDirectories(outputDir);
         }
 
-        var scenario = new CliScenario(name, new String[] {
+        CliScenario scenario = new CliScenario(name, new String[] {
             "fastqc.output_dir=" + outputDir
         });
 

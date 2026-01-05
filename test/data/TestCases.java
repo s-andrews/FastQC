@@ -10,7 +10,7 @@ public class TestCases {
 
     /// Returns a File object for the specified test FastQ file
     public static File getTestFastQFile(String testCaseName) throws IOException {
-        var file = new File(TEST_DATA_DIR + testCaseName + ".fastq");
+        File file = new File(TEST_DATA_DIR + testCaseName + ".fastq");
         if (!file.exists()) {
             throw new IOException("Test data file for test case " + testCaseName + " not found: " + file.getAbsolutePath());
         }

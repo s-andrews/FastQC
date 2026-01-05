@@ -2,8 +2,6 @@ package test.integration.cli;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.nio.file.Path;
-
 public class Cli {
     public static final int DEFAULT_TIMEOUT_SECONDS = 30;
 
@@ -54,8 +52,8 @@ public class Cli {
             fail("FastQC CLI did not exit within " + DEFAULT_TIMEOUT_SECONDS + "s. Command: " + String.join(" ", cmd));
         }
 
-        var exitCode = p.exitValue();
-        var output = out.toString();
+        int exitCode = p.exitValue();
+        String output = out.toString();
         System.out.println("Output:\n" + output); 
         System.out.println("Exit code:\n" + exitCode);
         return new CliResult(scenario, exitCode, output);
