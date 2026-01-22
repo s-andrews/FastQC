@@ -1,60 +1,61 @@
-Installing FastQC
--------------------
+# Installing FastQC
 
-OSX
----
+## OSX
+
 FastQC is distributed as a DMG image file.  Download the image from the project page
 and double click it to open it.  You should see the FastQC application appear in a
-Finder window.  Drag the application from there to wherever you want to install it 
+Finder window.  Drag the application from there to wherever you want to install it
 on your machine.  Once you've copied the application double click it to open it.
 
 FastQC is not a signed application therefore it may initially be blocked by the
-Gatekeeper application.  To avoid this open FastQC by right clicking on the app 
-and selecting open.  This may prompt you to allow it to open.  If it is still 
+Gatekeeper application.  To avoid this open FastQC by right clicking on the app
+and selecting open.  This may prompt you to allow it to open.  If it is still
 blocked go to System Preferences > Security and Privacy and you should see an option
 to allow the application to open.  You only need to do this once and the preference
 should be remembered by OSX.
 
-Windows and Linux
------------------
+## Windows and Linux
+
 FastQC is a java application.  In order to run it needs your system to have a suitable
-Java Runtime Environment (JRE) installed.  Before you try to run FastQC you should 
-therefore ensure that you have a suitable JRE.  There are a number of different JREs 
-available however the ones we have tested are the latest Oracle runtime environments 
-and those from the adoptOpenJDK project (https://adoptopenjdk.net/).  You need to 
-download and install a suitable 64-bit JRE and make sure that the java application 
+Java Runtime Environment (JRE) installed.  Before you try to run FastQC you should
+therefore ensure that you have a suitable JRE.  There are a number of different JREs
+available however the ones we have tested are the latest Oracle runtime environments
+and those from the [adoptOpenJDK project](https://adoptopenjdk.net/).  You need to
+download and install a suitable 64-bit JRE and make sure that the java application
 is in your path (most installers will take care of this for you).
 
 On linux most distributions will have java installed already so you might not need to
 do anything.  If java isn't installed then you can add it by doing:
 
-Ubuntu / Mint: sudo apt install default-jre
-
-CentOS / Redhat: sudo yum install java-1.8.0-openjdk
+* Ubuntu / Mint: `sudo apt install default-jre`
+* CentOS / Redhat: `sudo yum install java-1.8.0-openjdk`
 
 You can check whether java is installed by opening the 'cmd' program on windows, or
 any shell on linux and typing:
 
+```bash
 java -version
+```
 
 You should see something like:
 
->java -version
+```console
+$ java -version
 openjdk version "11.0.2" 2019-01-15
 OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.2+9)
 OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.2+9, mixed mode)
+```
 
-On linux FastQC uses a small Perl script to start the program so you will need to have 
-an installation of Perl along with its standard core modules (including the FindBin 
-module which should be there by default).  Most linx systems will have this by default. 
+On linux FastQC uses a small Perl script to start the program so you will need to have
+an installation of Perl along with its standard core modules (including the FindBin
+module which should be there by default).  Most linx systems will have this by default.
 If you don't you can install it with your system's package manager (eg apt install perl
 or dnf install perl).
 
 Actually installing FastQC is as simple as unzipping the zip file it comes in into a
 suitable location.  That's it.  Once unzipped it's ready to go.
 
-Running FastQC
---------------
+## Running FastQC
 
 You can run FastQC in one of two modes, either as an interactive graphical application
 in which you can dynamically load FastQ files and view their results.
@@ -65,31 +66,37 @@ each file without launching a user interface.  This would allow FastQC to be run
 part of an analysis pipeline.
 
 
-Running FastQC Interactively
-----------------------------
-Windows: Simply double click on the run_fastqc bat file.  If you want to make a pretty 
+## Running FastQC Interactively
+
+**Windows:** Simply double click on the run_fastqc bat file.  If you want to make a pretty
 shortcut then we've included an icon file in the top level directory so you don't have
 to use the generic bat file icon.
 
-MacOSX: Double click on the FastQC application icon.
+**MacOSX:** Double click on the FastQC application icon.
 
-Linux:  We have included a wrapper script, called 'fastqc' which is the easiest way to 
-start the program.  The wrapper is in the top level of the FastQC installation.  You 
+**Linux:**  We have included a wrapper script, called 'fastqc' which is the easiest way to
+start the program.  The wrapper is in the top level of the FastQC installation.  You
 may need to make this file executable:
 
+```bash
 chmod 755 fastqc
+```
 
 ..but once you have done that you can run it directly
 
+```bash
 ./fastqc
+```
 
 ..or place a link in /usr/local/bin to be able to run the program from any location:
 
+```bash
 sudo ln -s /path/to/FastQC/fastqc /usr/local/bin/fastqc
+```
 
 
-Running FastQC as part of a pipeline
-------------------------------------
+## Running FastQC as part of a pipeline
+
 To run FastQC non-interactively you should use the fastqc wrapper script to launch
 the program.  You will probably want to use the zipped install file on every platform
 (even OSX).
@@ -97,61 +104,62 @@ the program.  You will probably want to use the zipped install file on every pla
 To run non-interactively you simply have to specify a list of files to process
 on the commandline
 
+```bash
 fastqc somefile.txt someotherfile.txt
+```
 
 You can specify as many files to process in a single run as you like.  If you don't
 specify any files to process the program will try to open the interactive application
 which may result in an error if you're running in a non-graphical environment.
 
 There are a few extra options you can specify when running non-interactively.  Full
-details of these can be found by running 
+details of these can be found by running
 
+```bash
 fastqc --help
+```
 
 By default, in non-interactive mode FastQC will create an HTML report with embedded
 graphs, but also a zip file containing individual graph files and additional data files
 containing the raw data from which plots were drawn.  The zip file will not be extracted
-by default but you can enable this by adding:
-
---extract
-
-To the launch command.
+by default but you can enable this by adding `--extract` to the launch command.
 
 If you want to save your reports in a folder other than the folder which contained
 your original FastQ files then you can specify an alternative location by setting a
---outdir value:
-
---outdir=/some/other/dir/
+`--outdir` value: `--outdir=/some/other/dir/`
 
 If you want to run fastqc on a stream of data to be read from standard input then you
-can do this by specifing 'stdin' as the name of the file to be processed and then 
+can do this by specifing 'stdin' as the name of the file to be processed and then
 streaming uncompressed fastq format data to the program.  For example:
 
+```bash
 zcat *fastq.gz | fastqc stdin
+```
 
 If you want the results from a streamed analysis sent to a file with a name other than
 stdin then you can add a colon and put the file name you want, for example:
 
+```bash
 zcat *fastq.gz | fastqc stdin:my_results
+```
 
-..would write results to my_result.html and my_results.zip.
+..would write results to `my_result.html` and `my_results.zip`.
 
 
-Customising the report output
------------------------------
+## Customising the report output
 
 If you want to run FastQC as part of a sequencing pipeline you may wish to change the
 formatting of the report to add in your own branding or to include extra information.
 
-In the Templates directory you will find a file called 'header_template.html' which
+In the Templates directory you will find a file called `header_template.html` which
 you can edit to change the look of the report.  This file contains all of the header for
 the report file, including the CSS section and you can alter this however you see fit.
 
 Whilst you can make whatever changes you like you should probably leave in place the
-<div> structure of the html template since later code will expect to close the main div
+`<div>` structure of the html template since later code will expect to close the main div
 which is left open at the end of the header.  There is no facility to change the code in
 the main body of the report or the footer (although you can of course change the styling).
 
-The text tags @@FILENAME@@ and @@DATE@@ are placeholders which are filled in when the
+The text tags `@@FILENAME@@` and `@@DATE@@` are placeholders which are filled in when the
 report it created.  You can use these placeholders in other parts of the header if you
 wish.
