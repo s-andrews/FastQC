@@ -169,7 +169,7 @@ public class FastQCConfig {
 	};
 	
 	public void setSequenceFormat (String sequenceFormat) {
-		if (sequenceFormat.equals("fastq") || sequenceFormat.equals("sam") || sequenceFormat.equals("bam") || sequenceFormat.equals("sam_mapped") || sequenceFormat.equals("bam_mapped")) {
+		if (sequenceFormat.equals("fastq") || sequenceFormat.equals("sam") || sequenceFormat.equals("bam") || sequenceFormat.equals("cram") || sequenceFormat.equals("sam_mapped") || sequenceFormat.equals("bam_mapped") || sequenceFormat.equals("cram_mapped")) {
 			sequence_format = sequenceFormat;
 		}
 		else {
