@@ -34,7 +34,8 @@ public class SequenceFileFilterTest {
         String[] fileNames = new String[] {
                 "file.txt.gz", "file.fastq.gz", "file.fq.gz", "file.fq",
                 "file.txt.bz2", "file.fastq.bz2", "file.txt", "file.fastq",
-                "file.bam", "file.sam", "file.compact-reads", "file.goby"
+                "file.bam", "file.sam", "file.cram", "file.compact-reads",
+                "file.goby"
         };
         for (String name : fileNames) {
             File f = new File(name);
