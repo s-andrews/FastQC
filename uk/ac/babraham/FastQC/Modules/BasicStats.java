@@ -41,6 +41,7 @@ public class BasicStats extends AbstractQCModule {
 	private long filteredCount = 0;
 	private int minLength = 0;
 	private int maxLength = 0;
+	private long totalBases = 0;
 	private long gCount = 0;
 	private long cCount = 0;
 	private long aCount = 0;
@@ -102,6 +103,8 @@ public class BasicStats extends AbstractQCModule {
 		
 		actualCount++;
 		
+		totalBases += sequence.getSequence().length();
+		
 		if (fileType == null) {
 			if (sequence.getColorspace() != null) {
 				fileType = "Colorspace converted to bases";
@@ -150,6 +153,57 @@ public class BasicStats extends AbstractQCModule {
 	public boolean ignoreInReport () {
 		return false;
 	}
+	
+	public static String formatLength (long originalLength) {
+		
+		double length = originalLength;
+		
+		String unit = " bp";
+
+		if (length >= 1000000000) {
+			length /= 1000000000;
+			unit = " Gbp";
+		}
+
+		else if (length >= 1000000) {
+			length /= 1000000;
+			unit = " Mbp";
+		}
+		else if (length >= 1000) {
+			length /=1000;
+			unit = " kbp";
+		}
+
+		
+		String rawLength = ""+length;
+		char [] chars = rawLength.toCharArray();
+		
+		int lastIndex = 0;
+		
+		// Go through until we find a dot (if there is one)
+		for (int i=0;i<chars.length;i++) {
+			lastIndex = i;
+			if (chars[i] == '.') break;
+		}
+		
+		// We keep the next char as well if they are non
+		// zero numbers
+		
+		if (lastIndex+1 < chars.length && chars[lastIndex+1] != '0') {
+			lastIndex+=1;
+		}
+		else if (lastIndex > 0 && chars[lastIndex] == '.') {
+			lastIndex -= 1; // Lose the dot if its the last character
+		}
+
+		char [] finalChars = new char[lastIndex+1];
+		for (int i=0;i<=lastIndex;i++) {
+			finalChars[i] = chars[i];
+		}
+		
+		return new String(finalChars)+unit;
+	}
+
 
 	public void makeReport(HTMLReportArchive report) throws XMLStreamException,IOException {
 		super.writeTable(report, new ResultsTable());
@@ -163,6 +217,7 @@ public class BasicStats extends AbstractQCModule {
 				"File type",
 				"Encoding",
 				"Total Sequences",
+				"Total Bases",
 				"Sequences flagged as poor quality",
 				"Sequence length",
 				"%GC",
@@ -186,8 +241,9 @@ public class BasicStats extends AbstractQCModule {
 					case 1 : return fileType;
 					case 2 : return PhredEncoding.getFastQEncodingOffset(lowestChar);
 					case 3 : return ""+actualCount;
-					case 4 : return ""+filteredCount;
-					case 5 :
+					case 4 : return BasicStats.formatLength(totalBases);
+					case 5 : return ""+filteredCount;
+					case 6 :
 						if (minLength == maxLength) {
 							return ""+minLength;
 						}
@@ -196,7 +252,7 @@ public class BasicStats extends AbstractQCModule {
 						}
 						
 						
-					case 6 : 
+					case 7 : 
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}

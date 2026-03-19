@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,8 @@ public class FastQFile implements SequenceFile {
 
 	// We actually read our final data from this buffered reader
 	private BufferedReader br;
+	// We'll keep count of the number of lines read for the error message
+	private long lineNumber = 0;
 
 	// We keep the file stream around just so we can see how far through
 	// the file we've got.  We don't read from this directly, but it's the
@@ -72,11 +75,11 @@ public class FastQFile implements SequenceFile {
 		if (!file.getName().startsWith("stdin")) {
 			fis = new FileInputStream(file);
 		}
-		
+				
 		if (file.getName().startsWith("stdin")) {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
-		else if (file.getName().toLowerCase().endsWith(".gz")) {
+		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
 			br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis)));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
@@ -136,6 +139,7 @@ public class FastQFile implements SequenceFile {
 
 			while (true) {
 				id = br.readLine();
+				++lineNumber;
 
 				if (id == null) {
 					nextSequence = null;
@@ -155,7 +159,7 @@ public class FastQFile implements SequenceFile {
 
 			if (!id.startsWith("@")) {
 				nextSequence = null;
-				throw new SequenceFormatException("ID line didn't start with '@'");
+				throw new SequenceFormatException("ID line didn't start with '@' at line "+lineNumber);
 			}
 
 			String seq;
@@ -164,16 +168,19 @@ public class FastQFile implements SequenceFile {
 			try {
 				// Then the sequence
 				seq = br.readLine();
-				if (seq == null) throw new IOException("No more data");
+				if (seq == null) throw new IOException("No more data, expected sequence, at line "+lineNumber);
+				++lineNumber;
 				// Then another id which we don't need
 				midLine = br.readLine();
-				if (midLine == null) throw new IOException("No more data");
+				if (midLine == null) throw new IOException("No more data, expected midline, at line "+lineNumber);
+				++lineNumber;
 				if (!midLine.startsWith("+")) {
-					throw new SequenceFormatException("Midline '"+midLine+"' didn't start with '+'");
+					throw new SequenceFormatException("Midline '"+midLine+"' didn't start with '+' at "+lineNumber);
 				}
 				// Then the quality string
 				quality = br.readLine();
-				if (quality == null) throw new IOException("No more data");
+				if (quality == null) throw new IOException("No more data, expected quality, at line "+lineNumber);
+				++lineNumber;
 			}
 			catch (IOException ioe) {
 				throw new SequenceFormatException("Ran out of data in the middle of a fastq entry.  Your file is probably truncated");

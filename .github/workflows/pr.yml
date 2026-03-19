@@ -1,0 +1,60 @@
+name: PR
+
+on:
+  push:
+    branches:
+      - master # Run on pushes to the master branch
+  pull_request:
+    branches:
+      - master # Run on pull requests targeting the master branch
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+# Cancel existing executions when new commits are pushed onto the branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  run-tests:
+    name: Run unit and integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "11"
+
+      - name: Test with Ant
+        run: |
+          java --version
+          ant -version
+          ant \
+            clean \
+            build \
+            unit-test \
+            integration-test
+
+      - name: Upload test reports
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: 'test/reports/TEST-*.xml'
+          include_passed: true
+          detailed_summary: true
+          check_title_template: '{{SUITE_NAME}} | {{TEST_NAME}}'
+
+      - name: Upload received approval files
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: received-approval-files
+          path: test/**/*.received.*
+          retention-days: 30

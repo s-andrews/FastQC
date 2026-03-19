@@ -22,6 +22,7 @@ package uk.ac.babraham.FastQC.Graphs;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -39,7 +40,18 @@ public class LineGraph extends JPanel {
 	private double maxY;
 	private double yInterval;
 	
-	private static final Color [] COLOURS = new Color[] {new Color(220,0,0), new Color(0,0,220), new Color(0,220,0), Color.DARK_GRAY, Color.MAGENTA, Color.ORANGE,Color.YELLOW,Color.CYAN,Color.PINK,Color.LIGHT_GRAY};
+	//	Colours taken from the Tol scheme at https://davidmathlogic.com/colorblind/
+	private static final Color [] COLOURS = new Color[] {
+			new Color(136,34,85), 
+			new Color(51,34,136),
+			new Color(17,119,51), 
+			new Color(221,204,119),
+			new Color(68,170,153),
+			new Color(170,68,153),
+			new Color(204,102,119),			
+			new Color(136,204,238)
+			};
+
 	
 	public LineGraph (double [] [] data, double minY, double maxY, String xLabel, String [] xTitles, int [] xCategories, String graphTitle) {
 		this(data,minY,maxY,xLabel,xTitles,new String[0],graphTitle);
@@ -195,6 +207,9 @@ public class LineGraph extends JPanel {
 		}
 		
 		// Now draw the data legend
+		
+		// Make the letters thicker for this so we can see the colours better
+		g.setFont(g.getFont().deriveFont(Font.BOLD));
 
 		if (g instanceof Graphics2D) {
 			((Graphics2D)g).setStroke(new BasicStroke(1));
@@ -221,11 +236,13 @@ public class LineGraph extends JPanel {
 		// Now draw the actual labels
 		for (int t=0;t<xTitles.length;t++) {
 			g.setColor(COLOURS[t % COLOURS.length]);
-			g.drawString(xTitles[t], ((getWidth()-10)-widestLabel)+3, 40+(20*(t+1)));
+			g.drawString(xTitles[t], ((getWidth()-10)-widestLabel)+3, 35+(20*(t+1)));
 		}
 		
 
-		
+		// Put the font back how we found it
+		g.setFont(g.getFont().deriveFont(Font.PLAIN));
+
 		
 	}
 

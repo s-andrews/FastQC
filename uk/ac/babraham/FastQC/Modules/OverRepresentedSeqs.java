@@ -36,6 +36,7 @@ import javax.swing.table.TableModel;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Report.HTMLReportArchive;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
 import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminantHit;
@@ -43,7 +44,7 @@ import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminentFinder;
 
 public class OverRepresentedSeqs extends AbstractQCModule {
 
-	protected HashMap<String, Integer>sequences = new HashMap<String, Integer>();
+	protected HashMap<String, Long>sequences = new HashMap<String, Long>();
 	protected long count = 0;
 	private OverrepresentedSeq [] overrepresntedSeqs = null;
 	private boolean calculated = false;
@@ -151,7 +152,16 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// Since we rely on identity to match sequences we can't trust really long
 		// sequences, so anything over 75bp gets truncated to 50bp.
 		String seq = sequence.getSequence();
-		if (seq.length() > 75) {
+
+		// For long sequences (above 50bp) we truncate to 50bp so that random
+		// base miscalls don't mess things up.  We also allow the user to 
+		// specify a shorter truncation length on the command line in the 
+		// dup_length option.
+		
+		if (FastQCConfig.getInstance().dupLength != 0) {
+			seq = new String(seq.substring(0, FastQCConfig.getInstance().dupLength));			
+		}
+		else if (seq.length() > 50) {
 			seq = new String(seq.substring(0, 50));
 		}
 				
@@ -167,7 +177,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		}
 		else {
 			if (! frozen) {
-				sequences.put(seq, 1);
+				sequences.put(seq, 1L);
 				++uniqueSequenceCount;
 				countAtUniqueLimit = count;
 				if (uniqueSequenceCount == OBSERVATION_CUTOFF) {
@@ -201,7 +211,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 			switch (columnIndex) {
 				case 0: return seqs[rowIndex].seq();
 				case 1: return seqs[rowIndex].count();
-				case 2: return seqs[rowIndex].percentage();
+				case 2: return Math.round(seqs[rowIndex].percentage() * 100.0) / 100.0;
 				case 3: return seqs[rowIndex].contaminantHit();
 					
 			}
@@ -233,11 +243,11 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 	private class OverrepresentedSeq implements Comparable<OverrepresentedSeq>{
 		
 		private String seq;
-		private int count;
+		private long count;
 		private double percentage;
 		private ContaminantHit contaminantHit;
 		
-		public OverrepresentedSeq (String seq, int count, double percentage) {
+		public OverrepresentedSeq (String seq, long count, double percentage) {
 			this.seq = seq;
 			this.count = count;
 			this.percentage = percentage;
@@ -248,7 +258,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 			return seq;
 		}
 		
-		public int count () {
+		public long count () {
 			return count;
 		}
 		
@@ -266,7 +276,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		}
 
 		public int compareTo(OverrepresentedSeq o) {
-			return o.count-count;
+			return Long.compare(o.count,count);
 		}
 	}
 

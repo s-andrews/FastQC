@@ -144,10 +144,7 @@ public class BAMFile implements SequenceFile {
 		// through the file.
 		if (recordSize == 0) {
 			recordSize = (record.getReadLength()*2)+150;
-			
-			// TODO: Work out if this is actually needed or if we can pull
-			// what we need from the fis
-			if (true) {
+			if (br.type() != SamReader.Type.SAM_TYPE) {
 				recordSize /= 4;
 			}
 		}

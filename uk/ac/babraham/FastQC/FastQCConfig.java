@@ -37,12 +37,15 @@ public class FastQCConfig {
 	public boolean nano = false;
 	public boolean nofilter = false;
 	public Boolean do_unzip = null;
+	public boolean delete_after_unzip = false;
 	public String lineSeparator = System.getProperty("line.separator");
 	public String sequence_format = null;
 	public File contaminant_file = null;
 	public File adapter_file = null;
 	public File limits_file = null;
 	public int minLength = 0;
+	public int dupLength = 0;
+	public boolean svg_output = false;
 
 	private FastQCConfig () {
 		
@@ -105,6 +108,11 @@ public class FastQCConfig {
 			minLength = Integer.parseInt(System.getProperty("fastqc.min_length"));
 		}
 
+		// Dup length
+		if (System.getProperty("fastqc.dup_length") != null) {
+			dupLength = Integer.parseInt(System.getProperty("fastqc.dup_length"));
+		}
+
 		
 		// Quiet
 		if (System.getProperty("fastqc.quiet") != null && System.getProperty("fastqc.quiet").equals("true")) {
@@ -116,11 +124,17 @@ public class FastQCConfig {
 			casava = true;
 		}
 
-		// Casava
+		// Nanopore
 		if (System.getProperty("fastqc.nano") != null && System.getProperty("fastqc.nano").equals("true")) {
 			nano = true;
 		}
 
+		// SVG
+		if (System.getProperty("fastqc.svg") != null && System.getProperty("fastqc.svg").equals("true")) {
+			svg_output = true;
+		}
+
+		
 		// Nofilter
 		if (System.getProperty("fastqc.nofilter") != null && System.getProperty("fastqc.nofilter").equals("true")) {
 			nofilter = true;
@@ -140,7 +154,12 @@ public class FastQCConfig {
 		// Unzip
 		if (System.getProperty("fastqc.unzip") != null && System.getProperty("fastqc.unzip").equals("true")) {
 			do_unzip = true;
+			
+			if (System.getProperty("fastqc.delete") != null && System.getProperty("fastqc.delete").equals("true")) {
+				delete_after_unzip = true;
+			}
 		}
+			
 		
 		// Sequence Format
 		if (System.getProperty("fastqc.sequence_format") != null) {

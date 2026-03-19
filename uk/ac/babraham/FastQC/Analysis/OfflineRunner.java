@@ -83,7 +83,7 @@ public class OfflineRunner implements AnalysisListener {
 						if (fast5files[i].isDirectory()) {
 							File [] subFast5files = fast5files[i].listFiles();
 							
-							for (int j=0;j<subFast5files.length;i++) {
+							for (int j=0;j<subFast5files.length;j++) {
 								if (subFast5files[j].getName().endsWith(".fast5")) {
 									files.add(subFast5files[j]);
 								}
@@ -178,11 +178,11 @@ public class OfflineRunner implements AnalysisListener {
 
 		
 		if (FastQCConfig.getInstance().output_dir != null) {
-			String fileName = file.getFile().getName().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "")+"_fastqc.html";
+			String fileName = file.getFile().getName().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "").replaceAll("\\.ubam$", "")+"_fastqc.html";
 			reportFile = new File(FastQCConfig.getInstance().output_dir+"/"+fileName);						
 		}
 		else {
-			reportFile = new File(file.getFile().getAbsolutePath().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "")+"_fastqc.html");			
+			reportFile = new File(file.getFile().getAbsolutePath().replaceAll("stdin:","").replaceAll("\\.gz$","").replaceAll("\\.bz2$","").replaceAll("\\.txt$","").replaceAll("\\.fastq$", "").replaceAll("\\.fq$", "").replaceAll("\\.csfastq$", "").replaceAll("\\.sam$", "").replaceAll("\\.bam$", "").replaceAll("\\.ubam$", "")+"_fastqc.html");			
 		}
 		
 		try {

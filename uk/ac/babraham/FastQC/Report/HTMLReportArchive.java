@@ -183,6 +183,9 @@ public class HTMLReportArchive {
 		
 		if (FastQCConfig.getInstance().do_unzip) {
 			unzipZipFile(zipFile);
+			if (FastQCConfig.getInstance().delete_after_unzip) {
+				zipFile.delete();
+			}
 		}
 	}
 	
@@ -265,6 +268,7 @@ public class HTMLReportArchive {
 
 		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
 		
+		xhtml.writeDTD("<!DOCTYPE html>");
 		xhtml.writeStartElement("html");
 		xhtml.writeStartElement("head");
 		

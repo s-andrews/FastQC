@@ -47,7 +47,7 @@ public class ContaminentFinder {
 			
 			if (thisHit == null) continue; // No hit
 			
-			if (bestHit == null || thisHit.length() > bestHit.length()) {
+			if (bestHit == null || thisHit.length() > bestHit.length() || (thisHit.length() == bestHit.length() && thisHit.percentID() > bestHit.percentID())) {
 				bestHit = thisHit;
 			}
 			
