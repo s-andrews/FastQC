@@ -39,10 +39,10 @@ if ($^O =~ /Win/) {
 }
 
 if ($ENV{CLASSPATH}) {
-	$ENV{CLASSPATH} .= "$delimiter$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+	$ENV{CLASSPATH} .= "$delimiter$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar$delimiter$RealBin/commons-compress-1.26.0.jar";
 }
 else {
-	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar";
+	$ENV{CLASSPATH} = "$RealBin$delimiter$RealBin/htsjdk.jar$delimiter$RealBin/jbzip2-0.9.jar$delimiter$RealBin/cisd-jhdf5.jar$delimiter$RealBin/commons-compress-1.26.0.jar";
 }
 
 
@@ -122,7 +122,11 @@ my $result = GetOptions('version' => \$version,
 						'nogroup' => \$nogroup,
 						'expgroup' => \$expgroup,
 						'outdir=s' => \$outdir,
+<<<<<<< cram
+						'reference=s' => \$reference,
+=======
 						'reference=s' -> \$reference,
+>>>>>>> cram
 						'extract!' => \$unzip,
 						'delete' => \$delete,
 						'format=s' => \$format,
@@ -163,10 +167,17 @@ if ($outdir) {
 }
 
 if ($reference) {
+<<<<<<< cram
+	unless(-e $reference and -r $reference) {
+		die "Specified reference file '$reference' does not exist, or could not be read\n";
+	}
+
+=======
 	unless(-e $reference and -f $reference) {
 		die "Specified reference file '$reference' does not exist\n";
 	}
 	
+>>>>>>> cram
 	push @java_args ,"-Dfastqc.reference=$reference";
 }
 
@@ -292,8 +303,8 @@ if (defined $unzip) {
 
 if ($format) {
 	
-	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped') {
-		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,bam_mapped,sam_mapped and fastq\n";
+	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'cram' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped' || $format eq 'cram_mapped') {
+		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,cram,bam_mapped,sam_mapped,cram_mapped and fastq\n";
 	}
 	
 	push @java_args,"-Dfastqc.sequence_format=$format";	

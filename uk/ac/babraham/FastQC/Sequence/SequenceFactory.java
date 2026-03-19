@@ -95,7 +95,7 @@ public class SequenceFactory {
 		
 		// Otherwise we just use the extension on the end of the file name to try to determine
 		// the type
-		if (file.getName().toLowerCase().endsWith(".bam") || file.getName().toLowerCase().endsWith(".sam") || file.getName().toLowerCase().endsWith(".cram") || file.getName().toLowerCase().endsWith(".ubam")) {
+		if (file.getName().toLowerCase().endsWith(".bam") || file.getName().toLowerCase().endsWith(".sam") || file.getName().toLowerCase().endsWith(".ubam") || file.getName().toLowerCase().endsWith(".cram")) {
 			// We default to using all reads
 			return new BAMFile(file,false);
 		}

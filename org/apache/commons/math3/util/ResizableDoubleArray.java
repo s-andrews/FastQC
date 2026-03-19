@@ -912,8 +912,8 @@ public class ResizableDoubleArray implements DoubleArray, Serializable {
     @Override
     public synchronized int hashCode() {
         int[] hashData = new int[7];
-        hashData[0] = new Float(expansionFactor).hashCode();
-        hashData[1] = new Float(contractionCriteria).hashCode();
+        hashData[0] = Float.hashCode(expansionFactor);
+        hashData[1] = Float.hashCode(contractionCriteria);
         hashData[2] = expansionMode;
             hashData[3] = Arrays.hashCode(internalArray);
             hashData[4] = initialCapacity;
