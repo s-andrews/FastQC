@@ -44,7 +44,7 @@ import uk.ac.babraham.FastQC.Sequence.Contaminant.ContaminentFinder;
 
 public class OverRepresentedSeqs extends AbstractQCModule {
 
-	protected HashMap<String, Integer>sequences = new HashMap<String, Integer>();
+	protected HashMap<String, Long>sequences = new HashMap<String, Long>();
 	protected long count = 0;
 	private OverrepresentedSeq [] overrepresntedSeqs = null;
 	private boolean calculated = false;
@@ -177,7 +177,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		}
 		else {
 			if (! frozen) {
-				sequences.put(seq, 1);
+				sequences.put(seq, 1L);
 				++uniqueSequenceCount;
 				countAtUniqueLimit = count;
 				if (uniqueSequenceCount == OBSERVATION_CUTOFF) {
@@ -211,7 +211,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 			switch (columnIndex) {
 				case 0: return seqs[rowIndex].seq();
 				case 1: return seqs[rowIndex].count();
-				case 2: return seqs[rowIndex].percentage();
+				case 2: return Math.round(seqs[rowIndex].percentage() * 100.0) / 100.0;
 				case 3: return seqs[rowIndex].contaminantHit();
 					
 			}
@@ -243,11 +243,11 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 	private class OverrepresentedSeq implements Comparable<OverrepresentedSeq>{
 		
 		private String seq;
-		private int count;
+		private long count;
 		private double percentage;
 		private ContaminantHit contaminantHit;
 		
-		public OverrepresentedSeq (String seq, int count, double percentage) {
+		public OverrepresentedSeq (String seq, long count, double percentage) {
 			this.seq = seq;
 			this.count = count;
 			this.percentage = percentage;
@@ -258,7 +258,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 			return seq;
 		}
 		
-		public int count () {
+		public long count () {
 			return count;
 		}
 		
@@ -276,7 +276,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		}
 
 		public int compareTo(OverrepresentedSeq o) {
-			return o.count-count;
+			return Long.compare(o.count,count);
 		}
 	}
 
