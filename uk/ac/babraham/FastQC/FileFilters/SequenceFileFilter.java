@@ -37,6 +37,7 @@ public class SequenceFileFilter extends FileFilter {
 				|| f.getName().toLowerCase().endsWith(".fastq") 
 				|| f.getName().toLowerCase().endsWith(".bam") 
 				|| f.getName().toLowerCase().endsWith(".sam")
+				|| f.getName().toLowerCase().endsWith(".cram")
 				|| f.getName().toLowerCase().endsWith(".compact-reads")
 				|| f.getName().toLowerCase().endsWith(".goby")
 				
