@@ -199,8 +199,8 @@ if ($dup_length) {
 }
 
 if ($memory) {
-	if ($memory < 100 || $memory > 10000) {
-		die "Memory value $memory MB was outside the allowed range (100 - 10000)";
+	if ($memory <= 100) {
+		die "Memory value $memory MB must be greater than 100";
 	}
 }
 else {
