@@ -163,17 +163,10 @@ if ($outdir) {
 }
 
 if ($reference) {
-<<<<<<< cram
 	unless(-e $reference and -r $reference) {
 		die "Specified reference file '$reference' does not exist, or could not be read\n";
 	}
 
-=======
-	unless(-e $reference and -f $reference) {
-		die "Specified reference file '$reference' does not exist\n";
-	}
-	
->>>>>>> cram
 	push @java_args ,"-Dfastqc.reference=$reference";
 }
 
