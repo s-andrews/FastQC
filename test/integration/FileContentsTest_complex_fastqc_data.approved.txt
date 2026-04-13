@@ -1,4 +1,4 @@
-##FastQC	0.12.1
+##FastQC	0.12.2.devel
 >>Basic Statistics	pass
 #Measure	Value
 Filename	complex.fastq
