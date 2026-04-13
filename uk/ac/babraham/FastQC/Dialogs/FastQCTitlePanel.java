@@ -41,6 +41,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import uk.ac.babraham.FastQC.FastQCApplication;
+import uk.ac.babraham.FastQC.Utilities.FontManager;
 
 /**
  * The Class SeqMonkTitlePanel.
@@ -132,20 +133,20 @@ public class FastQCTitlePanel extends JPanel {
 		constraints.fill = GridBagConstraints.NONE;
 
 		JLabel program = new SmoothJLabel("FastQC High Throughput Sequence QC Report",JLabel.CENTER);
-		program.setFont(new Font("Dialog",Font.BOLD,18));
+		program.setFont(FontManager.getFont(Font.BOLD, 18f));
 		program.setForeground(new Color(200,0,0));
 		c.add(program,constraints);
 
 		constraints.gridy++;
 		JLabel version = new SmoothJLabel("Version: "+FastQCApplication.VERSION, JLabel.CENTER);
-		version.setFont(new Font("Dialog",Font.BOLD,15));
+		version.setFont(FontManager.getFont(Font.BOLD, 15f));
 		version.setForeground(new Color(0,0,200));
 		c.add(version,constraints);
 
 		constraints.gridy++;
 		// Use a text field so they can copy this
 		JLabel website = new JLabel(" www.bioinformatics.babraham.ac.uk/projects/ ");
-		website.setFont(new Font("Dialog",Font.PLAIN,14));
+		website.setFont(FontManager.getFont(Font.PLAIN, 14f));
 		website.setBorder(null);
 		website.setOpaque(false);
 		website.setHorizontalAlignment(JTextField.CENTER);
@@ -153,27 +154,27 @@ public class FastQCTitlePanel extends JPanel {
 		constraints.gridy++;
 
 		JLabel copyright = new JLabel("\u00a9 Simon Andrews, Pierre Lindenbaum, Brian Howard, Phil Ewels 2011-26,", JLabel.CENTER);
-		copyright.setFont(new Font("Dialog",Font.PLAIN,14));
+		copyright.setFont(FontManager.getFont(Font.PLAIN, 14f));
 		c.add(copyright,constraints);
 		constraints.gridy++;
 		
 		JLabel copyright2 = new JLabel("HTSJDK BAM/SAM reader v2.24.1 from Samtools 2022", JLabel.CENTER);
-		copyright2.setFont(new Font("Dialog",Font.PLAIN,10));
+		copyright2.setFont(FontManager.getFont(Font.PLAIN, 10f));
 		c.add(copyright2,constraints);
 		constraints.gridy++;
 		
 		JLabel copyright3 = new JLabel("BZip decompression \u00a9Matthew J. Francis, 2011", JLabel.CENTER);
-		copyright3.setFont(new Font("Dialog",Font.PLAIN,10));
+		copyright3.setFont(FontManager.getFont(Font.PLAIN, 10f));
 		c.add(copyright3,constraints);
 		constraints.gridy++;
 		
 		JLabel copyright4 = new JLabel("Base64 encoding \u00a9Robert Harder, 2012", JLabel.CENTER);
-		copyright4.setFont(new Font("Dialog",Font.PLAIN,10));
+		copyright4.setFont(FontManager.getFont(Font.PLAIN, 10f));
 		c.add(copyright4,constraints);
 		constraints.gridy++;
 		
 		JLabel copyright5 = new JLabel("Java HDF5 reader \u00a9ETH, CISD and SIS, 2007-14", JLabel.CENTER);
-		copyright5.setFont(new Font("Dialog",Font.PLAIN,10));
+		copyright5.setFont(FontManager.getFont(Font.PLAIN, 10f));
 		c.add(copyright5,constraints);
 
 		add(c,BorderLayout.CENTER);

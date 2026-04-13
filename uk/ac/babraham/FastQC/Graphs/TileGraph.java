@@ -29,6 +29,7 @@ import java.awt.RenderingHints;
 import javax.swing.JPanel;
 
 import uk.ac.babraham.FastQC.Modules.ModuleConfig;
+import uk.ac.babraham.FastQC.Utilities.FontManager;
 import uk.ac.babraham.FastQC.Utilities.HotColdColourGradient;
 
 public class TileGraph extends JPanel {
@@ -54,6 +55,7 @@ public class TileGraph extends JPanel {
 	public void paint (Graphics g) {
 		super.paint(g);
 
+		g.setFont(FontManager.defaultFont());
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.setColor(Color.BLACK);
@@ -81,8 +83,10 @@ public class TileGraph extends JPanel {
 
 		// Draw the graph title
 		String graphTitle = "Quality per tile";
+		g.setFont(FontManager.defaultBoldFont());
 		int titleWidth = g.getFontMetrics().stringWidth(graphTitle);
 		g.drawString(graphTitle, (xOffset + ((getWidth()-(xOffset+10))/2)) - (titleWidth/2), 30);
+		g.setFont(FontManager.defaultFont());
 
 
 		// Now draw the axes
@@ -115,7 +119,7 @@ public class TileGraph extends JPanel {
 
 			if (baseNumberPosition > lastXLabelEnd) {
 				g.drawString(baseNumber,baseNumberPosition, getHeight()-25);
-				lastXLabelEnd = baseNumberPosition+baseNumberWidth+5;
+				lastXLabelEnd = baseNumberPosition+baseNumberWidth+g.getFontMetrics().getHeight()-2;
 			}
 		}
 
