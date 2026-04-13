@@ -29,6 +29,8 @@ import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
 
+import uk.ac.babraham.FastQC.Utilities.FontManager;
+
 public class LineGraph extends JPanel {
 
 	private String [] xTitles;
@@ -105,7 +107,8 @@ public class LineGraph extends JPanel {
 	
 	public void paint (Graphics g) {
 		super.paint(g);
-		
+
+		g.setFont(FontManager.defaultFont());
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.setColor(Color.BLACK);
@@ -138,8 +141,10 @@ public class LineGraph extends JPanel {
 		xOffset += 5;
 		
 		// Draw the graph title
+		g.setFont(FontManager.defaultBoldFont());
 		int titleWidth = g.getFontMetrics().stringWidth(graphTitle);
 		g.drawString(graphTitle, (xOffset + ((getWidth()-(xOffset+10))/2)) - (titleWidth/2), 30);
+		g.setFont(FontManager.defaultFont());
 		
 		
 		// Now draw the axes
@@ -174,7 +179,7 @@ public class LineGraph extends JPanel {
 			
 			if (baseNumberPosition > lastXLabelEnd) {
 				g.drawString(baseNumber,baseNumberPosition, getHeight()-25);
-				lastXLabelEnd = baseNumberPosition+baseNumberWidth+5;
+				lastXLabelEnd = baseNumberPosition+baseNumberWidth+g.getFontMetrics().getHeight()-2;
 			}
 		}
 		
@@ -209,7 +214,7 @@ public class LineGraph extends JPanel {
 		// Now draw the data legend
 		
 		// Make the letters thicker for this so we can see the colours better
-		g.setFont(g.getFont().deriveFont(Font.BOLD));
+		g.setFont(FontManager.defaultBoldFont());
 
 		if (g instanceof Graphics2D) {
 			((Graphics2D)g).setStroke(new BasicStroke(1));
@@ -241,7 +246,7 @@ public class LineGraph extends JPanel {
 		
 
 		// Put the font back how we found it
-		g.setFont(g.getFont().deriveFont(Font.PLAIN));
+		g.setFont(FontManager.defaultFont());
 
 		
 	}
