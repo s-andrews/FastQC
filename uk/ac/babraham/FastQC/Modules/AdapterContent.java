@@ -211,28 +211,22 @@ public class AdapterContent extends AbstractQCModule {
 			}
 		}
 
-		// Trim trailing groups where all adapters have zero enrichment.
 		// When --min_length inflates the X-axis beyond the actual adapter
-		// position data, extra all-zero rows are produced that add no information.
-		int lastNonZero = groups.length - 1;
-		while (lastNonZero >= 0) {
-			boolean allZero = true;
-			for (int a=0;a<adapters.length;a++) {
-				if (enrichments[a][lastNonZero] != 0.0) {
-					allZero = false;
-					break;
+		// position data, BaseGroup produces extra groups with no underlying data.
+		// Trim back to only groups whose upper bound falls within the real data.
+		if (FastQCConfig.getInstance().minLength > maxLength) {
+			int naturalGroupCount = 0;
+			for (int g=0;g<groups.length;g++) {
+				if (groups[g].upperCount() <= maxLength) {
+					naturalGroupCount = g + 1;
 				}
 			}
-			if (!allZero) break;
-			lastNonZero--;
-		}
-
-		int trimmedLength = lastNonZero + 1;
-		if (trimmedLength < groups.length) {
-			groups = Arrays.copyOf(groups, trimmedLength);
-			xLabels = Arrays.copyOf(xLabels, trimmedLength);
-			for (int a=0;a<adapters.length;a++) {
-				enrichments[a] = Arrays.copyOf(enrichments[a], trimmedLength);
+			if (naturalGroupCount < groups.length) {
+				groups = Arrays.copyOf(groups, naturalGroupCount);
+				xLabels = Arrays.copyOf(xLabels, naturalGroupCount);
+				for (int a=0;a<adapters.length;a++) {
+					enrichments[a] = Arrays.copyOf(enrichments[a], naturalGroupCount);
+				}
 			}
 		}
 
