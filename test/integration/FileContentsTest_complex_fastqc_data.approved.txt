@@ -1,4 +1,4 @@
-##FastQC	0.12.1
+##FastQC	0.12.2.devel
 >>Basic Statistics	pass
 #Measure	Value
 Filename	complex.fastq
@@ -205,9 +205,4 @@ ACGTACGTACGTACGT	5	100.0	No Hit
 >>END_MODULE
 >>Adapter Content	pass
 #Position	Illumina Universal Adapter	Illumina Small RNA 3' Adapter	Illumina Small RNA 5' Adapter	Nextera Transposase Sequence	PolyA	PolyG
-1	0.0	0.0	0.0	0.0	0.0	0.0
-2	0.0	0.0	0.0	0.0	0.0	0.0
-3	0.0	0.0	0.0	0.0	0.0	0.0
-4	0.0	0.0	0.0	0.0	0.0	0.0
-5	0.0	0.0	0.0	0.0	0.0	0.0
 >>END_MODULE
