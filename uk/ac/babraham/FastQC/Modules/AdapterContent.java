@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Vector;
 
 import javax.swing.JLabel;
@@ -207,6 +208,31 @@ public class AdapterContent extends AbstractQCModule {
 
 				enrichments[a][g] /= (groups[g].upperCount()-groups[g].lowerCount())+1;
 //				System.err.println("Averge Percetage for group "+groups[g]+" is "+ enrichments[a][g]);
+			}
+		}
+
+		// Trim trailing groups where all adapters have zero enrichment.
+		// When --min_length inflates the X-axis beyond the actual adapter
+		// position data, extra all-zero rows are produced that add no information.
+		int lastNonZero = groups.length - 1;
+		while (lastNonZero >= 0) {
+			boolean allZero = true;
+			for (int a=0;a<adapters.length;a++) {
+				if (enrichments[a][lastNonZero] != 0.0) {
+					allZero = false;
+					break;
+				}
+			}
+			if (!allZero) break;
+			lastNonZero--;
+		}
+
+		int trimmedLength = lastNonZero + 1;
+		if (trimmedLength < groups.length) {
+			groups = Arrays.copyOf(groups, trimmedLength);
+			xLabels = Arrays.copyOf(xLabels, trimmedLength);
+			for (int a=0;a<adapters.length;a++) {
+				enrichments[a] = Arrays.copyOf(enrichments[a], trimmedLength);
 			}
 		}
 
