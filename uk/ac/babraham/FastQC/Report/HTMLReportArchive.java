@@ -34,7 +34,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -59,6 +58,23 @@ import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
 
 public class HTMLReportArchive {
+
+	private static final Pattern SVG_ID_PATTERN = Pattern.compile("id=\"([^\"]+)\"");
+	private static final Pattern SVG_URL_PATTERN = Pattern.compile("url\\(#([^)]+)\\)");
+
+	private static final Pattern HTML_TAG = Pattern.compile("(?s)<html.*?>");
+	private static final Pattern HEAD_BLOCK = Pattern.compile("(?s)<head.*?>.*?</head>");
+	private static final Pattern BODY_OPEN = Pattern.compile("(?s)<body[^>]*>");
+	private static final Pattern BODY_CLOSE = Pattern.compile("(?s)</body>.*?</html>");
+	private static final Pattern IMG_IN_P = Pattern.compile("(?s)<p>\\s*<img[^>]*>\\s*</p>");
+	private static final Pattern IMG_TAG = Pattern.compile("(?s)<img[^>]*>");
+	private static final Pattern EMPTY_P = Pattern.compile("(?s)<p>\\s*</p>");
+	private static final Pattern H1_BLOCK = Pattern.compile("(?s)<h1[^>]*>.*?</h1>");
+	private static final Pattern H2_OPEN = Pattern.compile("(?s)<h2([^>]*)>");
+	private static final Pattern H2_CLOSE = Pattern.compile("(?s)</h2>");
+	private static final Pattern MULTI_BLANK = Pattern.compile("\\n\\s*\\n\\s*\\n");
+	private static final Pattern LEADING_WS = Pattern.compile("(?m)^\\s+");
+
 	private XMLStreamWriter xhtml=null;
 	private StringBuffer data = new StringBuffer();
 	private QCModule [] modules;
@@ -67,9 +83,9 @@ public class HTMLReportArchive {
 	private byte [] buffer = new byte[1024];
 	private File htmlFile;
 	private File zipFile;
-	private StringWriter moduleContentWriter;
 	private String htmlTemplate;
 	private Map<String, String> helpFileMapping;
+	private Map<String, String> templateCache = new HashMap<String, String>();
 
 	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
@@ -77,16 +93,12 @@ public class HTMLReportArchive {
 		this.htmlFile = htmlFile;
 		this.zipFile = new File(htmlFile.getAbsoluteFile().toString().replaceAll("\\.html$", "")+".zip");
 
-		// Load the HTML template
 		this.htmlTemplate = loadTemplate("/Templates/report_template.html");
-
-		// Initialize help file mapping
 		this.helpFileMapping = initializeHelpFileMapping();
 
-		// Create XMLStreamWriter for module content
-		this.moduleContentWriter = new StringWriter();
+		// Create a placeholder XMLStreamWriter (replaced per-module in generateModuleContent)
 		XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
-		this.xhtml= xmlfactory.createXMLStreamWriter(moduleContentWriter);
+		this.xhtml= xmlfactory.createXMLStreamWriter(new StringWriter());
 
 
 		zip = new ZipOutputStream(new FileOutputStream(zipFile));
@@ -94,19 +106,14 @@ public class HTMLReportArchive {
 		zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"));
 		zip.putNextEntry(new ZipEntry(folderName()+"/Images/"));
 
-		// Initialize data document
 		data.append("##FastQC\t");
 		data.append(FastQCApplication.VERSION);
 		data.append("\n");
 
-		// Generate module content using template-based approach
 		String moduleContent = generateModuleContent();
-
-		// Close XMLStreamWriter (no longer needed for main content)
 		xhtml.flush();
 		xhtml.close();
 
-		// Generate final HTML from template
 		String finalHtml = generateHtmlFromTemplate(moduleContent);
 
 		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
@@ -116,7 +123,6 @@ public class HTMLReportArchive {
 		zip.write(data.toString().getBytes());
 		zip.closeEntry();
 
-		// Generate summary.txt
 		String summaryText = generateSummaryText();
 		zip.putNextEntry(new ZipEntry(folderName()+"/summary.txt"));
 		zip.write(summaryText.getBytes());
@@ -215,15 +221,20 @@ public class HTMLReportArchive {
 	}
 
 	private String loadTemplate(String templatePath) throws IOException {
+		String cached = templateCache.get(templatePath);
+		if (cached != null) return cached;
+
 		InputStream templateStream = getClass().getResourceAsStream(templatePath);
 		StringWriter templateWriter = new StringWriter();
 		byte[] buffer = new byte[1024];
 		int nRead;
 		while ((nRead = templateStream.read(buffer)) != -1) {
-			templateWriter.write(new String(buffer, 0, nRead));
+			templateWriter.write(new String(buffer, 0, nRead, "UTF-8"));
 		}
 		templateStream.close();
-		return templateWriter.toString();
+		String result = templateWriter.toString();
+		templateCache.put(templatePath, result);
+		return result;
 	}
 
 	private String generateSummaryItems() throws IOException {
@@ -294,54 +305,45 @@ public class HTMLReportArchive {
 
 	private String getFastQCIconWithUniqueIds(String suffix) throws IOException {
 		String svgContent = loadTemplate("/Templates/Icons/fastqc_icon.svg");
-
-		// Replace all IDs and their references with unique versions
-		return svgContent.replaceAll("id=\"([^\"]+)\"", "id=\"$1_" + suffix + "\"")
-				         .replaceAll("url\\(#([^)]+)\\)", "url(#$1_" + suffix + ")");
+		String result = SVG_ID_PATTERN.matcher(svgContent).replaceAll("id=\"$1_" + suffix + "\"");
+		return SVG_URL_PATTERN.matcher(result).replaceAll("url(#$1_" + suffix + ")");
 	}
 
 	private String generateModuleContent() throws IOException, XMLStreamException {
 		StringBuffer allModulesContent = new StringBuffer();
 		String moduleWrapperTemplate = loadTemplate("/Templates/module_wrapper.html");
 
-		// Generate content for each module
 		for (int m=0;m<modules.length;m++) {
 			if (modules[m].ignoreInReport()) continue;
 
-			// Create a separate XMLStreamWriter for this module's content
 			StringWriter moduleBodyWriter = new StringWriter();
 			XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
 			XMLStreamWriter moduleXhtml = xmlfactory.createXMLStreamWriter(moduleBodyWriter);
 
-			// Temporarily switch the xhtml writer for this module
 			XMLStreamWriter originalXhtml = this.xhtml;
 			this.xhtml = moduleXhtml;
+			try {
+				data.append(">>");
+				data.append(modules[m].name());
+				data.append("\t");
+				if (modules[m].raisesError()) {
+					data.append("fail");
+				} else if (modules[m].raisesWarning()) {
+					data.append("warn");
+				} else {
+					data.append("pass");
+				}
+				data.append("\n");
 
-			// Add data for this module
-			data.append(">>");
-			data.append(modules[m].name());
-			data.append("\t");
-			if (modules[m].raisesError()) {
-				data.append("fail");
-			} else if (modules[m].raisesWarning()) {
-				data.append("warn");
-			} else {
-				data.append("pass");
+				modules[m].makeReport(this);
+				data.append(">>END_MODULE\n");
+
+				moduleXhtml.flush();
+				moduleXhtml.close();
+			} finally {
+				this.xhtml = originalXhtml;
 			}
-			data.append("\n");
 
-			// Let the module generate its content
-			modules[m].makeReport(this);
-			data.append(">>END_MODULE\n");
-
-			// Close the module's XMLStreamWriter
-			moduleXhtml.flush();
-			moduleXhtml.close();
-
-			// Restore the original XMLStreamWriter
-			this.xhtml = originalXhtml;
-
-			// Apply the module wrapper template
 			String moduleWrapper = moduleWrapperTemplate;
 			moduleWrapper = moduleWrapper.replace("{{MODULE_INDEX}}", String.valueOf(m));
 			moduleWrapper = moduleWrapper.replace("{{MODULE_NAME}}", modules[m].name());
@@ -360,46 +362,35 @@ public class HTMLReportArchive {
 
 		String html = htmlTemplate;
 		html = html.replace("{{TITLE}}", sequenceFile.name() + " FastQC Report");
-		html = html.replace("{{CSS_CONTENT}}", loadTemplate("/Templates/fastqc.css"));
 		html = html.replace("{{DATE}}", df.format(new Date()));
 		html = html.replace("{{FILENAME}}", sequenceFile.name());
+		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
 		html = html.replace("{{FASTQC_ICON_SVG_MOBILE}}", getFastQCIconWithUniqueIds("mobile"));
 		html = html.replace("{{FASTQC_ICON_SVG_SIDEBAR}}", getFastQCIconWithUniqueIds("sidebar"));
 		html = html.replace("{{SUMMARY_ITEMS}}", generateSummaryItems());
+		html = html.replace("{{CSS_CONTENT}}", loadTemplate("/Templates/fastqc.css"));
 		html = html.replace("{{MODULE_CONTENT}}", moduleContent);
-		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
 
 		return html;
 	}
 
-
-
-
-
-
-	/**
-	 * Initialize mapping between module names and their corresponding help file paths
-	 */
 	private Map<String, String> initializeHelpFileMapping() {
 		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("Basic statistics", "/Help/3 Analysis Modules/1 Basic statistics.html");
+		mapping.put("Basic statistics", "/Help/3 Analysis Modules/1 Basic Statistics.html");
 		mapping.put("Per base sequence quality", "/Help/3 Analysis Modules/2 Per Base Sequence Quality.html");
 		mapping.put("Per sequence quality scores", "/Help/3 Analysis Modules/3 Per Sequence Quality Scores.html");
 		mapping.put("Per base sequence content", "/Help/3 Analysis Modules/4 Per Base Sequence Content.html");
 		mapping.put("Per sequence GC content", "/Help/3 Analysis Modules/5 Per Sequence GC Content.html");
 		mapping.put("Per base N content", "/Help/3 Analysis Modules/6 Per Base N Content.html");
-		mapping.put("Sequence length distribution", "/Help/3 Analysis Modules/7 Sequence length distribution.html");
+		mapping.put("Sequence length distribution", "/Help/3 Analysis Modules/7 Sequence Length Distribution.html");
 		mapping.put("Sequence duplication levels", "/Help/3 Analysis Modules/8 Duplicate Sequences.html");
 		mapping.put("Overrepresented sequences", "/Help/3 Analysis Modules/9 Overrepresented Sequences.html");
-		mapping.put("Adapter content", "/Help/3 Analysis Modules/10 Adapter content.html");
+		mapping.put("Adapter content", "/Help/3 Analysis Modules/10 Adapter Content.html");
 		mapping.put("Kmer Content", "/Help/3 Analysis Modules/11 Kmer Content.html");
 		mapping.put("Per tile sequence quality", "/Help/3 Analysis Modules/12 Per Tile Sequence Quality.html");
 		return mapping;
 	}
 
-	/**
-	 * Extract text content from help HTML files, removing images and HTML tags
-	 */
 	private String extractHelpText(String moduleName) {
 		String helpFilePath = helpFileMapping.get(moduleName);
 		if (helpFilePath == null) {
@@ -414,33 +405,19 @@ public class HTMLReportArchive {
 		}
 	}
 
-	/**
-	 * Convert help HTML to clean text content, removing images and preserving structure
-	 */
 	private String convertHelpHtmlToText(String htmlContent) {
-		// Remove the HTML document structure, head, and body tags
-		String content = htmlContent.replaceAll("(?s)<html.*?>", "");
-		content = content.replaceAll("(?s)<head.*?>.*?</head>", "");
-		content = content.replaceAll("(?s)<body[^>]*>", "");
-		content = content.replaceAll("(?s)</body>.*?</html>", "");
-
-		// Remove all img tags and p tags containing only images
-		content = content.replaceAll("(?s)<p>\\s*<img[^>]*>\\s*</p>", "");
-		content = content.replaceAll("(?s)<img[^>]*>", "");
-
-		// Remove empty p tags
-		content = content.replaceAll("(?s)<p>\\s*</p>", "");
-
-		// Remove h1 tags completely since they duplicate the module name
-		content = content.replaceAll("(?s)<h1[^>]*>.*?</h1>", "");
-
-		// Convert h2 tags to h4 for better integration
-		content = content.replaceAll("(?s)<h2([^>]*)>", "<h4$1>");
-		content = content.replaceAll("(?s)</h2>", "</h4>");
-
-		// Clean up extra whitespace and newlines
-		content = content.replaceAll("\\n\\s*\\n\\s*\\n", "\n\n");
-		content = content.replaceAll("(?m)^\\s+", "");
+		String content = HTML_TAG.matcher(htmlContent).replaceAll("");
+		content = HEAD_BLOCK.matcher(content).replaceAll("");
+		content = BODY_OPEN.matcher(content).replaceAll("");
+		content = BODY_CLOSE.matcher(content).replaceAll("");
+		content = IMG_IN_P.matcher(content).replaceAll("");
+		content = IMG_TAG.matcher(content).replaceAll("");
+		content = EMPTY_P.matcher(content).replaceAll("");
+		content = H1_BLOCK.matcher(content).replaceAll("");
+		content = H2_OPEN.matcher(content).replaceAll("<h4$1>");
+		content = H2_CLOSE.matcher(content).replaceAll("</h4>");
+		content = MULTI_BLANK.matcher(content).replaceAll("\n\n");
+		content = LEADING_WS.matcher(content).replaceAll("");
 		content = content.trim();
 
 		return content;
