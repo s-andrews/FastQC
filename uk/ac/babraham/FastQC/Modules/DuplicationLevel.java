@@ -68,30 +68,30 @@ public class DuplicationLevel extends AbstractQCModule {
 
 		totalPercentages = new double[16];
 
-		HashMap<Integer, Integer> collatedCounts = new HashMap<Integer, Integer>();
+		HashMap<Long, Long> collatedCounts = new HashMap<Long, Long>();
 
 		Iterator<String> it = overrepresentedModule.sequences.keySet().iterator();
 
 		while (it.hasNext()) {
-			int thisCount = overrepresentedModule.sequences.get(it.next());
+			long thisCount = overrepresentedModule.sequences.get(it.next());
 
 			if (collatedCounts.containsKey(thisCount)) {
 				collatedCounts.put(thisCount,collatedCounts.get(thisCount)+1);
 			}
 			else {
-				collatedCounts.put(thisCount,1);
+				collatedCounts.put(thisCount,1L);
 			}
 		}
 
 		// Now we can correct each of these
 
-		HashMap<Integer, Double> correctedCounts = new HashMap<Integer, Double>();
+		HashMap<Long, Double> correctedCounts = new HashMap<Long, Double>();
 
-		Iterator<Integer> itr = collatedCounts.keySet().iterator();
+		Iterator<Long> itr = collatedCounts.keySet().iterator();
 
 		while (itr.hasNext()) {
-			int dupLevel = itr.next();
-			int count = collatedCounts.get(dupLevel);
+			long dupLevel = itr.next();
+			long count = collatedCounts.get(dupLevel);
 
 			correctedCounts.put(dupLevel,getCorrectedCount(overrepresentedModule.countAtUniqueLimit, overrepresentedModule.count, dupLevel, count));
 
@@ -102,28 +102,31 @@ public class DuplicationLevel extends AbstractQCModule {
 		double dedupTotal = 0;
 		double rawTotal = 0;
 
-		Iterator<Integer> itc = correctedCounts.keySet().iterator();
+		Iterator<Long> itc = correctedCounts.keySet().iterator();
 
 		while (itc.hasNext()) {
-			int dupLevel = itc.next();
+			long dupLevel = itc.next();
 			double count = correctedCounts.get(dupLevel);
 
 			dedupTotal += count;
 			rawTotal += count * dupLevel;
 
-			int dupSlot = dupLevel - 1;
+			long tempDupSlot = dupLevel - 1;
+
+			int dupSlot;
 
 			// The dupSlot < 0 is a kludge to fix a problem we see if we have
 			// a duplication level > 2^31.  It it gets bigger than 2^64 then
 			// we're really stuffed but I think this will work for all practical
 			// purposes and this is a really corner case anyway.
-			if (dupSlot > 9999 || dupSlot < 0) dupSlot = 15;
-			else if (dupSlot > 4999) dupSlot = 14;
-			else if (dupSlot > 999) dupSlot = 13;
-			else if (dupSlot > 499) dupSlot = 12;
-			else if (dupSlot > 99) dupSlot = 11;
-			else if (dupSlot > 49) dupSlot = 10;
-			else if (dupSlot > 9) dupSlot = 9;
+			if (tempDupSlot > 9999 || tempDupSlot < 0) dupSlot = 15;
+			else if (tempDupSlot > 4999) dupSlot = 14;
+			else if (tempDupSlot > 999) dupSlot = 13;
+			else if (tempDupSlot > 499) dupSlot = 12;
+			else if (tempDupSlot > 99) dupSlot = 11;
+			else if (tempDupSlot > 49) dupSlot = 10;
+			else if (tempDupSlot > 9) dupSlot = 9;
+			else dupSlot = (int)tempDupSlot;
 
 
 			totalPercentages[dupSlot] += count * dupLevel;
@@ -154,7 +157,7 @@ public class DuplicationLevel extends AbstractQCModule {
 
 	}
 
-	private static double getCorrectedCount (long countAtLimit, long totalCount, int duplicationLevel, int numberOfObservations) {
+	private static double getCorrectedCount (long countAtLimit, long totalCount, long duplicationLevel, long numberOfObservations) {
 
 //		System.err.println("Count at limit = "+countAtLimit+" total = "+totalCount+" Dup level = "+duplicationLevel+" no obs = "+numberOfObservations);
 
