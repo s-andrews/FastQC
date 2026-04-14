@@ -19,7 +19,6 @@
  */
 package uk.ac.babraham.FastQC.Report;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -33,11 +32,13 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import javax.imageio.ImageIO;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -55,9 +56,25 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.FastQCApplication;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
-import uk.ac.babraham.FastQC.Utilities.ImageToBase64;
 
 public class HTMLReportArchive {
+
+	private static final Pattern SVG_ID_PATTERN = Pattern.compile("id=\"([^\"]+)\"");
+	private static final Pattern SVG_URL_PATTERN = Pattern.compile("url\\(#([^)]+)\\)");
+
+	private static final Pattern HTML_TAG = Pattern.compile("(?s)<html.*?>");
+	private static final Pattern HEAD_BLOCK = Pattern.compile("(?s)<head.*?>.*?</head>");
+	private static final Pattern BODY_OPEN = Pattern.compile("(?s)<body[^>]*>");
+	private static final Pattern BODY_CLOSE = Pattern.compile("(?s)</body>.*?</html>");
+	private static final Pattern IMG_IN_P = Pattern.compile("(?s)<p>\\s*<img[^>]*>\\s*</p>");
+	private static final Pattern IMG_TAG = Pattern.compile("(?s)<img[^>]*>");
+	private static final Pattern EMPTY_P = Pattern.compile("(?s)<p>\\s*</p>");
+	private static final Pattern H1_BLOCK = Pattern.compile("(?s)<h1[^>]*>.*?</h1>");
+	private static final Pattern H2_OPEN = Pattern.compile("(?s)<h2([^>]*)>");
+	private static final Pattern H2_CLOSE = Pattern.compile("(?s)</h2>");
+	private static final Pattern MULTI_BLANK = Pattern.compile("\\n\\s*\\n\\s*\\n");
+	private static final Pattern LEADING_WS = Pattern.compile("(?m)^\\s+");
+
 	private XMLStreamWriter xhtml=null;
 	private StringBuffer data = new StringBuffer();
 	private QCModule [] modules;
@@ -66,90 +83,57 @@ public class HTMLReportArchive {
 	private byte [] buffer = new byte[1024];
 	private File htmlFile;
 	private File zipFile;
+	private String htmlTemplate;
+	private Map<String, String> helpFileMapping;
+	private Map<String, String> templateCache = new HashMap<String, String>();
 
 	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
 		this.modules = modules;
 		this.htmlFile = htmlFile;
 		this.zipFile = new File(htmlFile.getAbsoluteFile().toString().replaceAll("\\.html$", "")+".zip");
-		StringWriter htmlStr = new StringWriter();
+
+		this.htmlTemplate = loadTemplate("/Templates/report_template.html");
+		this.helpFileMapping = initializeHelpFileMapping();
+
+		// Create a placeholder XMLStreamWriter (replaced per-module in generateModuleContent)
 		XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
-		this.xhtml= xmlfactory.createXMLStreamWriter(htmlStr);
-		
-		
+		this.xhtml= xmlfactory.createXMLStreamWriter(new StringWriter());
+
+
 		zip = new ZipOutputStream(new FileOutputStream(zipFile));
 		zip.putNextEntry(new ZipEntry(folderName()+"/"));
 		zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"));
 		zip.putNextEntry(new ZipEntry(folderName()+"/Images/"));
-		startDocument();
-		for (int m=0;m<modules.length;m++) {
-			
-			if (modules[m].ignoreInReport()) continue;
-			
-			xhtml.writeStartElement("div");
-			xhtml.writeAttribute("class", "module");
-			xhtml.writeStartElement("h2");
-			xhtml.writeAttribute("id", "M"+m);
-			
-			
-			// Add an icon before the module name
-			if (modules[m].raisesError())
-				{
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/error.png"));
-				xhtml.writeAttribute("alt","[FAIL]");
-				}
-			
-			else if (modules[m].raisesWarning())
-				{
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/warning.png"));
-				xhtml.writeAttribute("alt","[WARN]");
-				}
-			else {
-				xhtml.writeEmptyElement("img");
-				xhtml.writeAttribute("src",base64ForIcon("Icons/tick.png"));
-				xhtml.writeAttribute("alt","[OK]");
-				}
 
-			
-			xhtml.writeCharacters(modules[m].name());
-			data.append(">>");
-			data.append(modules[m].name());
-			data.append("\t");
-			if (modules[m].raisesError()) {
-				data.append("fail");
-			}
-			else if (modules[m].raisesWarning()) {
-				data.append("warn");
-			}
-			else {
-				data.append("pass");
-			}
-			data.append("\n");
-			xhtml.writeEndElement();
-			modules[m].makeReport(this);
-			data.append(">>END_MODULE\n");
-			
-			xhtml.writeEndElement();
-		}
-		closeDocument();
-		
-		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
+		data.append("##FastQC\t");
+		data.append(FastQCApplication.VERSION);
+		data.append("\n");
+
+		String moduleContent = generateModuleContent();
 		xhtml.flush();
 		xhtml.close();
-		zip.write(htmlStr.toString().getBytes());
+
+		String finalHtml = generateHtmlFromTemplate(moduleContent);
+
+		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_report.html"));
+		zip.write(finalHtml.getBytes());
 		zip.closeEntry();
 		zip.putNextEntry(new ZipEntry(folderName()+"/fastqc_data.txt"));
 		zip.write(data.toString().getBytes());
 		zip.closeEntry();
-		
+
+		String summaryText = generateSummaryText();
+		zip.putNextEntry(new ZipEntry(folderName()+"/summary.txt"));
+		zip.write(summaryText.getBytes());
+		zip.closeEntry();
+
 		//XSL-FO
 		try {
 			DocumentBuilderFactory domFactory=DocumentBuilderFactory.newInstance();
 			domFactory.setNamespaceAware(false);
 			DocumentBuilder builder=domFactory.newDocumentBuilder();
-			Document src=builder.parse(new InputSource( new StringReader(htmlStr.toString())));
+			Document src=builder.parse(new InputSource( new StringReader(finalHtml)));
 			InputStream rsrc=getClass().getResourceAsStream("/Templates/fastqc2fo.xsl");
 			if(rsrc!=null)
 				{
@@ -176,7 +160,7 @@ public class HTMLReportArchive {
 		
 		PrintWriter pr = new PrintWriter(new FileWriter(htmlFile));
 		
-		pr.print(htmlStr.toString());
+		pr.print(finalHtml);
 		
 		pr.close();
 
@@ -238,175 +222,207 @@ public class HTMLReportArchive {
 		return zip;
 	}
 	
-	private void startDocument () throws IOException,XMLStreamException
-		{
-		
-		// Just put the fastQC version at the start of the text report
-		data.append("##FastQC\t");
-		data.append(FastQCApplication.VERSION);
-		data.append("\n");
-		
-		// Add in the icon files for pass/fail/warn
-		for(String icnName:new String[]{
-				"fastqc_icon.png",
-				"warning.png",
-				"error.png",
-				"tick.png"})
-			{
-			InputStream in =getClass().getResourceAsStream("/Templates/Icons/"+icnName);
-			if(in==null) continue;
-			zip.putNextEntry(new ZipEntry(folderName()+"/Icons/"+icnName));
-			int len;
-			while ((len = in.read(buffer)) > 0) { 
-				zip.write(buffer, 0, len); 
-			} 
-			in.close();
-			zip.closeEntry();
-			}
-				
-		
+	private String loadTemplate(String templatePath) throws IOException {
+		String cached = templateCache.get(templatePath);
+		if (cached != null) return cached;
 
-		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
-		
-		xhtml.writeDTD("<!DOCTYPE html>");
-		xhtml.writeStartElement("html");
-		xhtml.writeStartElement("head");
-		
-		xhtml.writeStartElement("title");
-		xhtml.writeCharacters(sequenceFile.name());
-		xhtml.writeCharacters(" FastQC Report");
-		xhtml.writeEndElement();//title
-		
-		InputStream rsrc=getClass().getResourceAsStream("/Templates/header_template.html");
-		if(rsrc!=null)
-			{
-			xhtml.writeStartElement("style");
-			xhtml.writeAttribute("type", "text/css");
+		InputStream templateStream = getClass().getResourceAsStream(templatePath);
+		StringWriter templateWriter = new StringWriter();
+		byte[] buffer = new byte[1024];
+		int nRead;
+		while ((nRead = templateStream.read(buffer)) != -1) {
+			templateWriter.write(new String(buffer, 0, nRead, "UTF-8"));
+		}
+		templateStream.close();
+		String result = templateWriter.toString();
+		templateCache.put(templatePath, result);
+		return result;
+	}
 
-			byte array[]=new byte[128];
-			int nRead;
-			while((nRead=rsrc.read(array))!=-1) { xhtml.writeCharacters(new String(array,0,nRead));}
-			rsrc.close();
-			xhtml.writeEndElement();//style
-			}		
+	private String generateSummaryItems() throws IOException {
+		StringBuffer summaryItems = new StringBuffer();
+		String sidebarItemTemplate = loadTemplate("/Templates/sidebar_item.html");
 
-		
-		
-		
-		xhtml.writeEndElement();//head
-		
-		xhtml.writeStartElement("body");
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "header");
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("id", "header_title");
-		
-		xhtml.writeEmptyElement("img");
-		xhtml.writeAttribute("src", base64ForIcon("Icons/fastqc_icon.png"));
-		xhtml.writeAttribute("alt", "FastQC");
-		xhtml.writeCharacters("FastQC Report");
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("id", "header_filename");
-		xhtml.writeCharacters(df.format(new Date()));
-		xhtml.writeEmptyElement("br");
-		xhtml.writeCharacters(sequenceFile.name());
-		xhtml.writeEndElement();//div
-		xhtml.writeEndElement();//div
-		
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "summary");
-		
-		xhtml.writeStartElement("h2");
-		xhtml.writeCharacters("Summary");
-		xhtml.writeEndElement();//h2
-		
-		
-		xhtml.writeStartElement("ul");
-		
-		StringBuffer summaryText = new StringBuffer();
-		
 		for (int m=0;m<modules.length;m++) {
-			
 			if (modules[m].ignoreInReport()) {
 				continue;
 			}
-			xhtml.writeStartElement("li");
-			xhtml.writeEmptyElement("img");
+
+			String item = sidebarItemTemplate;
+			item = item.replace("{{MODULE_INDEX}}", String.valueOf(m));
+			item = item.replace("{{MODULE_NAME}}", modules[m].name());
+
 			if (modules[m].raisesError()) {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/error.png"));
-				xhtml.writeAttribute("alt", "[FAIL]");
-				summaryText.append("FAIL");
-				}
-			else if (modules[m].raisesWarning()) {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/warning.png"));
-				xhtml.writeAttribute("alt", "[WARNING]");
-				summaryText.append("WARN");
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-error");
+				item = item.replace("{{STATUS_TEXT}}", "Error");
+			} else if (modules[m].raisesWarning()) {
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-warning");
+				item = item.replace("{{STATUS_TEXT}}", "Warn");
+			} else {
+				item = item.replace("{{STATUS_CLASS}}", "sidebar-pass");
+				item = item.replace("{{STATUS_TEXT}}", "Pass");
 			}
-			else {
-				xhtml.writeAttribute("src", base64ForIcon("Icons/tick.png"));
-				xhtml.writeAttribute("alt", "[PASS]");
+
+			summaryItems.append(item).append("\n");
+		}
+
+		return summaryItems.toString();
+	}
+
+	private String generateSummaryText() {
+		StringBuffer summaryText = new StringBuffer();
+
+		for (int m=0;m<modules.length;m++) {
+			if (modules[m].ignoreInReport()) {
+				continue;
+			}
+
+			if (modules[m].raisesError()) {
+				summaryText.append("FAIL");
+			} else if (modules[m].raisesWarning()) {
+				summaryText.append("WARN");
+			} else {
 				summaryText.append("PASS");
 			}
+
 			summaryText.append("\t");
 			summaryText.append(modules[m].name());
 			summaryText.append("\t");
 			summaryText.append(sequenceFile.name());
 			summaryText.append(FastQCConfig.getInstance().lineSeparator);
-			
-			xhtml.writeStartElement("a");
-			xhtml.writeAttribute("href", "#M"+m);
-			xhtml.writeCharacters(modules[m].name());
-			xhtml.writeEndElement();//a
-			xhtml.writeEndElement();//li
-			
-			
 		}
-		xhtml.writeEndElement();//ul
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "main");
-		
 
-		zip.putNextEntry(new ZipEntry(folderName()+"/summary.txt"));
-		zip.write(summaryText.toString().getBytes());
-
+		return summaryText.toString();
 	}
-	
-	private String base64ForIcon (String path) {
+
+	private String getStatusIcon(QCModule module) throws IOException {
+		if (module.raisesError()) {
+			return loadTemplate("/Templates/Icons/error.svg");
+		} else if (module.raisesWarning()) {
+			return loadTemplate("/Templates/Icons/warning.svg");
+		} else {
+			return loadTemplate("/Templates/Icons/pass.svg");
+		}
+	}
+
+	private String getFastQCIconWithUniqueIds(String suffix) throws IOException {
+		String svgContent = loadTemplate("/Templates/Icons/fastqc_icon.svg");
+		String result = SVG_ID_PATTERN.matcher(svgContent).replaceAll("id=\"$1_" + suffix + "\"");
+		return SVG_URL_PATTERN.matcher(result).replaceAll("url(#$1_" + suffix + ")");
+	}
+
+	private String generateModuleContent() throws IOException, XMLStreamException {
+		StringBuffer allModulesContent = new StringBuffer();
+		String moduleWrapperTemplate = loadTemplate("/Templates/module_wrapper.html");
+
+		for (int m=0;m<modules.length;m++) {
+			if (modules[m].ignoreInReport()) continue;
+
+			StringWriter moduleBodyWriter = new StringWriter();
+			XMLOutputFactory xmlfactory = XMLOutputFactory.newInstance();
+			XMLStreamWriter moduleXhtml = xmlfactory.createXMLStreamWriter(moduleBodyWriter);
+
+			XMLStreamWriter originalXhtml = this.xhtml;
+			this.xhtml = moduleXhtml;
+			try {
+				data.append(">>");
+				data.append(modules[m].name());
+				data.append("\t");
+				if (modules[m].raisesError()) {
+					data.append("fail");
+				} else if (modules[m].raisesWarning()) {
+					data.append("warn");
+				} else {
+					data.append("pass");
+				}
+				data.append("\n");
+
+				modules[m].makeReport(this);
+				data.append(">>END_MODULE\n");
+
+				moduleXhtml.flush();
+				moduleXhtml.close();
+			} finally {
+				this.xhtml = originalXhtml;
+			}
+
+			String moduleWrapper = moduleWrapperTemplate;
+			moduleWrapper = moduleWrapper.replace("{{MODULE_INDEX}}", String.valueOf(m));
+			moduleWrapper = moduleWrapper.replace("{{MODULE_NAME}}", modules[m].name());
+			moduleWrapper = moduleWrapper.replace("{{STATUS_ICON}}", getStatusIcon(modules[m]));
+			moduleWrapper = moduleWrapper.replace("{{HELP_CONTENT}}", extractHelpText(modules[m].name()));
+			moduleWrapper = moduleWrapper.replace("{{MODULE_CONTENT}}", moduleBodyWriter.toString());
+
+			allModulesContent.append(moduleWrapper).append("\n");
+		}
+
+		return allModulesContent.toString();
+	}
+
+	private String generateHtmlFromTemplate(String moduleContent) throws IOException {
+		SimpleDateFormat df = new SimpleDateFormat("EEE d MMM yyyy");
+
+		String html = htmlTemplate;
+		html = html.replace("{{TITLE}}", sequenceFile.name() + " FastQC Report");
+		html = html.replace("{{DATE}}", df.format(new Date()));
+		html = html.replace("{{FILENAME}}", sequenceFile.name());
+		html = html.replace("{{VERSION}}", FastQCApplication.VERSION);
+		html = html.replace("{{FASTQC_ICON_SVG_MOBILE}}", getFastQCIconWithUniqueIds("mobile"));
+		html = html.replace("{{FASTQC_ICON_SVG_SIDEBAR}}", getFastQCIconWithUniqueIds("sidebar"));
+		html = html.replace("{{SUMMARY_ITEMS}}", generateSummaryItems());
+		html = html.replace("{{CSS_CONTENT}}", loadTemplate("/Templates/fastqc.css"));
+		html = html.replace("{{MODULE_CONTENT}}", moduleContent);
+
+		return html;
+	}
+
+	private Map<String, String> initializeHelpFileMapping() {
+		Map<String, String> mapping = new HashMap<String, String>();
+		mapping.put("Basic statistics", "/Help/3 Analysis Modules/1 Basic Statistics.html");
+		mapping.put("Per base sequence quality", "/Help/3 Analysis Modules/2 Per Base Sequence Quality.html");
+		mapping.put("Per sequence quality scores", "/Help/3 Analysis Modules/3 Per Sequence Quality Scores.html");
+		mapping.put("Per base sequence content", "/Help/3 Analysis Modules/4 Per Base Sequence Content.html");
+		mapping.put("Per sequence GC content", "/Help/3 Analysis Modules/5 Per Sequence GC Content.html");
+		mapping.put("Per base N content", "/Help/3 Analysis Modules/6 Per Base N Content.html");
+		mapping.put("Sequence length distribution", "/Help/3 Analysis Modules/7 Sequence Length Distribution.html");
+		mapping.put("Sequence duplication levels", "/Help/3 Analysis Modules/8 Duplicate Sequences.html");
+		mapping.put("Overrepresented sequences", "/Help/3 Analysis Modules/9 Overrepresented Sequences.html");
+		mapping.put("Adapter content", "/Help/3 Analysis Modules/10 Adapter Content.html");
+		mapping.put("Kmer Content", "/Help/3 Analysis Modules/11 Kmer Content.html");
+		mapping.put("Per tile sequence quality", "/Help/3 Analysis Modules/12 Per Tile Sequence Quality.html");
+		return mapping;
+	}
+
+	private String extractHelpText(String moduleName) {
+		String helpFilePath = helpFileMapping.get(moduleName);
+		if (helpFilePath == null) {
+			return "<p>Help documentation not available for this module.</p>";
+		}
+
 		try {
-			BufferedImage b = ImageIO.read(ClassLoader.getSystemResource("Templates/"+path));
-			return (ImageToBase64.imageToBase64(b));
-		}
-		catch (IOException ioe) {
-			ioe.printStackTrace();
-			return "Failed";
+			String helpHtml = loadTemplate(helpFilePath);
+			return convertHelpHtmlToText(helpHtml);
+		} catch (IOException e) {
+			return "<p>Help documentation could not be loaded for this module.</p>";
 		}
 	}
-	
-	private void closeDocument () throws XMLStreamException
-		{
-		xhtml.writeEndElement();//div
-		xhtml.writeStartElement("div");
-		xhtml.writeAttribute("class", "footer");
-		xhtml.writeCharacters("Produced by ");
-		xhtml.writeStartElement("a");
-		xhtml.writeAttribute("href", "http://www.bioinformatics.babraham.ac.uk/projects/fastqc/");
-		xhtml.writeCharacters("FastQC");
-		xhtml.writeEndElement();//a
-		xhtml.writeCharacters("  (version "+FastQCApplication.VERSION+")");
-		xhtml.writeEndElement();//div
-		
-		xhtml.writeEndElement();//body
-		xhtml.writeEndElement();//html
-		}
-	
-	
-	
-	
+
+	private String convertHelpHtmlToText(String htmlContent) {
+		String content = HTML_TAG.matcher(htmlContent).replaceAll("");
+		content = HEAD_BLOCK.matcher(content).replaceAll("");
+		content = BODY_OPEN.matcher(content).replaceAll("");
+		content = BODY_CLOSE.matcher(content).replaceAll("");
+		content = IMG_IN_P.matcher(content).replaceAll("");
+		content = IMG_TAG.matcher(content).replaceAll("");
+		content = EMPTY_P.matcher(content).replaceAll("");
+		content = H1_BLOCK.matcher(content).replaceAll("");
+		content = H2_OPEN.matcher(content).replaceAll("<h4$1>");
+		content = H2_CLOSE.matcher(content).replaceAll("</h4>");
+		content = MULTI_BLANK.matcher(content).replaceAll("\n\n");
+		content = LEADING_WS.matcher(content).replaceAll("");
+		content = content.trim();
+
+		return content;
+	}
+
 }

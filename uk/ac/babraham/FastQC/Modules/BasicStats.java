@@ -82,7 +82,7 @@ public class BasicStats extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Basic Statistics";
+		return "Basic statistics";
 	}
 	
 	public void setFileName (String name) {

@@ -43,7 +43,6 @@ public abstract class AbstractQCModule implements QCModule {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
 		xhtml.writeEmptyElement("img");
-		xhtml.writeAttribute("class", "indented");
 		if (FastQCConfig.getInstance().svg_output) {
 			xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
 		}
