@@ -141,7 +141,7 @@ public class HTMLReportArchive {
 				builder=domFactory.newDocumentBuilder();
 				Document html2fo=builder.parse(rsrc);
 				rsrc.close();
-
+				
 				TransformerFactory tf=TransformerFactory.newInstance();
 				Templates templates=tf.newTemplates(new DOMSource(html2fo));
 				zip.putNextEntry(new ZipEntry(folderName()+"/fastqc.fo"));
@@ -152,18 +152,19 @@ public class HTMLReportArchive {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-
-
+		
+		
 		zip.close();
-
+		
 		// Save the HTML file at the same level as the zip file
+		
 		PrintWriter pr = new PrintWriter(new FileWriter(htmlFile));
-
+		
 		pr.print(finalHtml);
-
+		
 		pr.close();
 
-
+		
 		if (FastQCConfig.getInstance().do_unzip) {
 			unzipZipFile(zipFile);
 			if (FastQCConfig.getInstance().delete_after_unzip) {
@@ -171,18 +172,18 @@ public class HTMLReportArchive {
 			}
 		}
 	}
-
+	
 	private void unzipZipFile (File file) throws IOException {
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		int size;
 		byte [] buffer = new byte[1024];
-
+		
 		while (entries.hasMoreElements()) {
 			ZipEntry entry = entries.nextElement();
-
+			
 //			System.out.println("Going to extract '"+entry.getName()+"'");
-
+			
 			if (entry.isDirectory()) {
 				File dir = new File(file.getParent()+"/"+entry.getName());
 				if (dir.exists() && dir.isDirectory()) continue; // Don't need to do anything
@@ -200,26 +201,27 @@ public class HTMLReportArchive {
 			bos.close();
 			bis.close();
 		}
-
+		
 		zipFile.close();
 	}
 
-	public XMLStreamWriter xhtmlStream (){
+	public XMLStreamWriter xhtmlStream ()
+		{
 		return this.xhtml;
-	}
-
+		}
+	
 	public StringBuffer dataDocument() {
 		return data;
 	}
-
+	
 	public String folderName () {
 		return htmlFile.getName().replaceAll("\\.html$", "");
 	}
-
+	
 	public ZipOutputStream zipFile () {
 		return zip;
 	}
-
+	
 	private String loadTemplate(String templatePath) throws IOException {
 		String cached = templateCache.get(templatePath);
 		if (cached != null) return cached;
