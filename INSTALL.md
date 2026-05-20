@@ -151,7 +151,7 @@ zcat *fastq.gz | fastqc stdin:my_results
 If you want to run FastQC as part of a sequencing pipeline you may wish to change the
 formatting of the report to add in your own branding or to include extra information.
 
-In the Templates directory you will find a file called `header_template.html` which
+In the Templates directory you will find a file called `fastqc.css` which
 you can edit to change the look of the report.  This file contains all of the header for
 the report file, including the CSS section and you can alter this however you see fit.
 
