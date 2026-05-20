@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Vector;
 
 import javax.swing.JLabel;
@@ -207,6 +208,25 @@ public class AdapterContent extends AbstractQCModule {
 
 				enrichments[a][g] /= (groups[g].upperCount()-groups[g].lowerCount())+1;
 //				System.err.println("Averge Percetage for group "+groups[g]+" is "+ enrichments[a][g]);
+			}
+		}
+
+		// When --min_length inflates the X-axis beyond the actual adapter
+		// position data, BaseGroup produces extra groups with no underlying data.
+		// Trim back to only groups whose upper bound falls within the real data.
+		if (FastQCConfig.getInstance().minLength > maxLength) {
+			int naturalGroupCount = 0;
+			for (int g=0;g<groups.length;g++) {
+				if (groups[g].upperCount() <= maxLength) {
+					naturalGroupCount = g + 1;
+				}
+			}
+			if (naturalGroupCount < groups.length) {
+				groups = Arrays.copyOf(groups, naturalGroupCount);
+				xLabels = Arrays.copyOf(xLabels, naturalGroupCount);
+				for (int a=0;a<adapters.length;a++) {
+					enrichments[a] = Arrays.copyOf(enrichments[a], naturalGroupCount);
+				}
 			}
 		}
 
