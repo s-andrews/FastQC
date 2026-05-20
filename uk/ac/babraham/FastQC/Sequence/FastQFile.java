@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,11 +75,11 @@ public class FastQFile implements SequenceFile {
 		if (!file.getName().startsWith("stdin")) {
 			fis = new FileInputStream(file);
 		}
-		
+				
 		if (file.getName().startsWith("stdin")) {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
-		else if (file.getName().toLowerCase().endsWith(".gz")) {
+		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
 			br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis)));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {

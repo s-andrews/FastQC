@@ -36,6 +36,7 @@ public class FastQCConfig {
 	public boolean nano = false;
 	public boolean nofilter = false;
 	public Boolean do_unzip = null;
+	public boolean delete_after_unzip = false;
 	public String lineSeparator = System.getProperty("line.separator");
 	public String sequence_format = null;
 	public File contaminant_file = null;
@@ -144,7 +145,12 @@ public class FastQCConfig {
 		// Unzip
 		if (System.getProperty("fastqc.unzip") != null && System.getProperty("fastqc.unzip").equals("true")) {
 			do_unzip = true;
+			
+			if (System.getProperty("fastqc.delete") != null && System.getProperty("fastqc.delete").equals("true")) {
+				delete_after_unzip = true;
+			}
 		}
+			
 		
 		// Sequence Format
 		if (System.getProperty("fastqc.sequence_format") != null) {

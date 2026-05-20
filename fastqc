@@ -95,6 +95,7 @@ my $version;
 my $help;
 my $outdir;
 my $unzip;
+my $delete;
 my $format;
 my $contaminant;
 my $adapter;
@@ -121,6 +122,7 @@ my $result = GetOptions('version' => \$version,
 						'expgroup' => \$expgroup,
 						'outdir=s' => \$outdir,
 						'extract!' => \$unzip,
+						'delete' => \$delete,
 						'format=s' => \$format,
 						'memory=i' => \$memory,
 						'threads=i' => \$threads,
@@ -216,7 +218,7 @@ if ($threads) {
 	unshift @java_args,"-Xmx${used_memory}m";
 }
 else {
-	unshift @java_args,'-Xmx${memory}m';
+	unshift @java_args,"-Xmx${memory}m";
 }
 
 if ($kmer_size) {
@@ -270,7 +272,13 @@ if (defined $unzip) {
 	}
 	
 	push @java_args,"-Dfastqc.unzip=$unzip";	
+
+	if ($delete) {
+		push @java_args, "-Dfastqc.delete=true";
+	}	
 }
+
+
 
 if ($format) {
 	
@@ -284,12 +292,8 @@ if ($format) {
 
 
 if ($svg) {
-	
-	unless ($format eq 'bam' || $format eq 'sam' || $format eq 'fastq' || $format eq 'sam_mapped' || $format eq 'bam_mapped') {
-		die "Unrecognised sequence format '$format', acceptable formats are bam,sam,bam_mapped,sam_mapped and fastq\n";
-	}
-	
-	push @java_args,"-Dfastqc.svg=1";	
+		
+	push @java_args,"-Dfastqc.svg=true";	
 	
 }
 
@@ -399,9 +403,9 @@ DESCRIPTION
                     casava as poor quality when performing the QC analysis.
                    
     --extract       If set then the zipped output file will be uncompressed in
-                    the same directory after it has been created.  By default
-                    this option will be set if fastqc is run in non-interactive
-                    mode.
+                    the same directory after it has been created. If --delete is 
+                    also specified then the zip file will be removed after the 
+                    contents are unzipped. 
                     
     -j --java       Provides the full path to the java binary you want to use to
                     launch fastqc. If not supplied then java is assumed to be in
@@ -425,10 +429,10 @@ DESCRIPTION
                     datasets with somewhat variable read lengths.
 
     --dup_length    Sets a length to which the sequences will be truncated when 
-    				defining them to be duplicates, affecting the duplication and
-    				overrepresented sequences plot.  This can be useful if you have
-    				long reads with higher levels of miscalls, or contamination with
-    				adapter dimers containing UMI sequences.
+                    defining them to be duplicates, affecting the duplication and
+                    overrepresented sequences plot.  This can be useful if you have
+                    long reads with higher levels of miscalls, or contamination with
+                    adapter dimers containing UMI sequences.
 
                     
     -f --format     Bypasses the normal sequence file format detection and
@@ -443,7 +447,7 @@ DESCRIPTION
     --svg           Save the graphs in the report in SVG format.
 
     -t --threads    Specifies the number of files which can be processed
-                    simultaneously.  Each thread will be allocated 250MB of
+                    simultaneously.  Each thread will be allocated 512MB of
                     memory so you shouldn't run more threads than your
                     available memory will cope with, and not more than
                     6 threads on a 32 bit machine
@@ -471,7 +475,7 @@ DESCRIPTION
                     module. Specified Kmer length must be between 2 and 10. Default
                     length is 7 if not specified.
                     
-   -q --quiet       Supress all progress messages on stdout and only report errors.
+   -q --quiet       Suppress all progress messages on stdout and only report errors.
    
    -d --dir         Selects a directory to be used for temporary files written when
                     generating report images. Defaults to system temp directory if

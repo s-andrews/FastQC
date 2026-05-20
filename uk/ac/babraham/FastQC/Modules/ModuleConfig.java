@@ -70,7 +70,7 @@ public class ModuleConfig {
 		params.put("overrepresented:ignore",0d);
 		params.put("quality_base:ignore",0d);
 		params.put("sequence:ignore",0d);
-		params.put("gc_quality:ignore",0d);
+		params.put("gc_sequence:ignore",0d);
 		params.put("quality_sequence:ignore",0d);
 		params.put("tile:ignore",0d);
 		params.put("sequence_length:ignore",0d);

@@ -47,22 +47,17 @@ public class ImageToBase64 {
 	}
 
 	public static String svgImageToBase64 (String svgdata) {
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		OutputStream b64 = new Base64.OutputStream(os);
 		
-		try {
-			b64.write(svgdata.getBytes());
-			
-			String data = "data:image/svg+xml;base64,"+os.toString("UTF-8");
-			
-			b64.close();
-			
-			return(data);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			return "Failed";
-		}
+
+		// We've moved to using the Java.util Base64 encoder which means that
+		// SVG output will only work on java v8+ but there was a bug in the 
+		// library we were using which caused the last character to get lost
+		// some times so this is an easy fix and no one is using java <v8 
+		// any more.
+
+		String data = "data:image/svg+xml;base64,"+java.util.Base64.getEncoder().encodeToString(svgdata.getBytes());			
+
+		return(data);
 		
 	}
 
