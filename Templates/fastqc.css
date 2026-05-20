@@ -180,6 +180,10 @@ a:hover {
 }
 
 /* CONTENT STYLING */
+h1 {
+  font-size: 1.8rem;
+}
+
 h2 {
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
