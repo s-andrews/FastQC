@@ -24,6 +24,8 @@ import java.awt.Graphics;
 
 import javax.swing.JPanel;
 
+import uk.ac.babraham.FastQC.Utilities.FontManager;
+
 public class QualityBoxPlot extends JPanel {
 
 	private double [] means;
@@ -64,7 +66,8 @@ public class QualityBoxPlot extends JPanel {
 		
 	public void paint (Graphics g) {
 		super.paint(g);
-		
+
+		g.setFont(FontManager.defaultFont());
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.setColor(Color.BLACK);
@@ -102,8 +105,10 @@ public class QualityBoxPlot extends JPanel {
 		
 		
 		// Draw the graph title
+		g.setFont(FontManager.defaultBoldFont());
 		int titleWidth = g.getFontMetrics().stringWidth(graphTitle);
 		g.drawString(graphTitle, (xOffset + ((getWidth()-(xOffset+10))/2)) - (titleWidth/2), 30);
+		g.setFont(FontManager.defaultFont());
 		
 		
 		
@@ -149,7 +154,7 @@ public class QualityBoxPlot extends JPanel {
 			
 			if (labelStart > lastXLabelEnd) {
 				g.drawString(xLabels[i], labelStart, getHeight()-25);
-				lastXLabelEnd = labelStart+g.getFontMetrics().stringWidth(xLabels[i])+5;
+				lastXLabelEnd = labelStart+baseNumberWidth+g.getFontMetrics().getHeight()-2;
 			}
 		}
 		
