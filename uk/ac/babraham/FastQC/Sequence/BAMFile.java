@@ -33,6 +33,7 @@ import htsjdk.samtools.SamInputResource;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
+import htsjdk.samtools.cram.ref.ReferenceSource;
 import uk.ac.babraham.FastQC.FastQCConfig;
 
 
@@ -68,7 +69,12 @@ public class BAMFile implements SequenceFile {
 			br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).referenceSequence(FastQCConfig.getInstance().reference).open(sir);
 		}
 		else {
-			br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).open(sir);
+			// For unaligned CRAM we might still be able to read the file if it's not using
+			// reference encoding.  We need to explicitly set a null reference source.  This
+			// along with the silent validation stringency will mean it should have a go at
+			// reading the file.
+			System.out.println("Trying without a reference");
+			br = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT).referenceSource(new ReferenceSource((File)null)).open(sir);
 		}
 		
 		it = br.iterator();
