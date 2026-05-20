@@ -58,14 +58,18 @@ file in the Configuration directory.
 
 <h2>Warning</h2>
 <p>
-This module will issue a warning if any sequence is present in more
-than 5% of all reads.
+This module will issue a warning if the cumulative percentage for any
+configured adapter, polyA, or polyG sequence is greater than 5% at any
+position in the reads.  It will also warn if the reads are shorter than
+the longest configured adapter sequence, since the adapter content
+analysis cannot be performed in that case.
 </p>
 
 <h2>Failure</h2>
 <p>
-This module will issue a warning if any sequence is present in more
-than 10% of all reads.
+This module will fail if the cumulative percentage for any configured
+adapter, polyA, or polyG sequence is greater than 10% at any position
+in the reads.
 </p>
 
 <h2>Common reasons for warnings</h2>
@@ -74,6 +78,11 @@ Any library where a reasonable proportion of the insert sizes are shorter
 than the read length will trigger this module.  This doesn't indicate a 
 problem as such - just that the sequences will need to be adapter trimmed
 before proceeding with any downstream analysis.
+</p>
+<p>
+Very short reads can also trigger a warning if they are shorter than the
+longest configured adapter sequence, because the adapter content analysis
+cannot be performed.
 </p>
 
 </body>

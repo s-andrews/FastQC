@@ -159,7 +159,8 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// dup_length option.
 		
 		if (FastQCConfig.getInstance().dupLength != 0) {
-			seq = new String(seq.substring(0, FastQCConfig.getInstance().dupLength));			
+			int dupLength = Math.min(FastQCConfig.getInstance().dupLength, seq.length());
+			seq = new String(seq.substring(0, dupLength));
 		}
 		else if (seq.length() > 50) {
 			seq = new String(seq.substring(0, 50));
