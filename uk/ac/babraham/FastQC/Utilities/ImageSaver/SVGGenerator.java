@@ -134,6 +134,7 @@ public class SVGGenerator {
 		sb.append("\" height=\"");
 		sb.append(c.getHeight());
 		sb.append("\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+		sb.append("<style>text{font-family:Arial}</style>\n");
 
 		c.paint(new SVGGraphics());
 
@@ -237,7 +238,7 @@ public class SVGGenerator {
 			sb.append(y2);
 			sb.append("\" stroke=\"rgb(");
 			appendColor();
-			sb.append(")\" stroke-width=\"1\"/>\n");
+			sb.append(")\" stroke-width=\"2\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -273,9 +274,9 @@ public class SVGGenerator {
 			sb.append(width);
 			sb.append("\" ry=\"");
 			sb.append(height);
-			sb.append("\" style=\"fill:none;stroke:rgb(");
+			sb.append("\" fill=\"none\" stroke=\"rgb(");
 			appendColor();
-			sb.append(");stroke-width:1\"/>\n");
+			sb.append(")\"/>\n");
 		}
 		
 		/* (non-Javadoc)
@@ -311,9 +312,9 @@ public class SVGGenerator {
 			sb.append(width);
 			sb.append("\" ry=\"");
 			sb.append(height);
-			sb.append("\" style=\"fill:rgb(");
+			sb.append("\" fill=\"rgb(");
 			appendColor();
-			sb.append(");stroke:none\"/>\n");
+			sb.append(")\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -344,7 +345,7 @@ public class SVGGenerator {
 			sb.append(y);
 			sb.append("\" fill=\"rgb(");
 			appendColor();
-			sb.append(")\" font-family=\"Arial\" font-size=\"");
+			sb.append(")\" font-size=\"");
 			sb.append(font.getSize());
 			if (font.isBold()) {
 				sb.append("\" font-weight=\"bold");
@@ -404,8 +405,7 @@ public class SVGGenerator {
 			sb.append(arcWidth);
 			sb.append("\" ry=\"");
 			sb.append(arcHeight);
-			sb.append("\" style=\"fill:none");
-			sb.append(";stroke-width:1;stroke:rgb(");
+			sb.append("\" fill=\"none\" stroke=\"rgb(");
 					
 			appendColor();
 					
@@ -450,11 +450,11 @@ public class SVGGenerator {
 				sb.append("\" ry=\"");
 				sb.append(arcHeight);
 			}
-			sb.append("\" style=\"fill:rgb(");
+			sb.append("\" fill=\"rgb(");
 			
 			appendColor();
 	
-			sb.append(");stroke:none\"/>\n");
+			sb.append(")\"/>\n");
 		}
 		
 		/* (non-Javadoc)
@@ -607,11 +607,11 @@ public class SVGGenerator {
 				sb.append(correctedYPoints[i]);
 			}
 			
-			sb.append("\" style=\"stroke-width:1;stroke:rgb(");
+			sb.append("\" fill=\"none\" stroke=\"rgb(");
 			
 			appendColor();
 	
-			sb.append(");fill:none\"/>\n");
+			sb.append(")\"/>\n");
 		}
 	
 		/* (non-Javadoc)
@@ -661,11 +661,11 @@ public class SVGGenerator {
 				sb.append(correctedYPoints[i]);
 			}
 			
-			sb.append("\" style=\"fill:rgb(");
+			sb.append("\" fill=\"rgb(");
 			
 			appendColor();
 	
-			sb.append(");stroke:none\"/>\n");
+			sb.append(")\"/>\n");
 
 		}
 	
