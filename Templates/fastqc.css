@@ -21,6 +21,15 @@ img {
   max-width: 100%;
 }
 
+p.plot {
+  margin: 1rem 0;
+}
+p.plot > svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 p {
   margin: 1rem 0;
 }
@@ -421,7 +430,8 @@ tr:nth-child(even) td {
 /* PRINT STYLES */
 
 @media print {
-  img {
+  img,
+  p.plot > svg {
     max-width: 100% !important;
     page-break-inside: avoid;
   }

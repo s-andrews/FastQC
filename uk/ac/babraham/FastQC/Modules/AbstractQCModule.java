@@ -42,20 +42,17 @@ public abstract class AbstractQCModule implements QCModule {
 	protected 	void simpleXhtmlReport(HTMLReportArchive report,String svgData, BufferedImage image, String alt) throws XMLStreamException {
 		XMLStreamWriter xhtml = report.xhtmlStream();
 		xhtml.writeStartElement("p");
-		xhtml.writeEmptyElement("img");
+		xhtml.writeAttribute("class", "plot");
 		if (FastQCConfig.getInstance().svg_output) {
-			xhtml.writeAttribute("src", ImageToBase64.svgImageToBase64(svgData));
+			String placeholder = report.registerInlineSvg(svgData);
+			xhtml.writeAttribute("aria-label", alt);
+			xhtml.writeComment(placeholder);
 		}
 		else {
+			xhtml.writeEmptyElement("img");
 			xhtml.writeAttribute("src", ImageToBase64.imageToBase64(image));
+			xhtml.writeAttribute("alt", alt);
 		}
-		xhtml.writeAttribute("alt", alt);
-		
-//		if(svgData!=null){
-//			xhtml.writeAttribute("width",String.valueOf(img.getWidth()));
-//			xhtml.writeAttribute("height",String.valueOf(img.getHeight()));
-//		}
-		
 		xhtml.writeEndElement();//p
 	}
 	

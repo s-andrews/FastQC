@@ -30,10 +30,13 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -61,6 +64,9 @@ public class HTMLReportArchive {
 
 	private static final Pattern SVG_ID_PATTERN = Pattern.compile("id=\"([^\"]+)\"");
 	private static final Pattern SVG_URL_PATTERN = Pattern.compile("url\\(#([^)]+)\\)");
+	private static final Pattern SVG_XML_DECL = Pattern.compile("^\\s*<\\?xml[^>]*\\?>\\s*");
+	private static final Pattern SVG_DOCTYPE = Pattern.compile("^\\s*<!DOCTYPE[^>]*>\\s*");
+	private static final Pattern INLINE_SVG_PLACEHOLDER = Pattern.compile("<!--\\s*FASTQC_INLINE_SVG_(\\d+)\\s*-->");
 
 	private static final Pattern HTML_TAG = Pattern.compile("(?s)<html.*?>");
 	private static final Pattern HEAD_BLOCK = Pattern.compile("(?s)<head.*?>.*?</head>");
@@ -86,6 +92,7 @@ public class HTMLReportArchive {
 	private String htmlTemplate;
 	private Map<String, String> helpFileMapping;
 	private Map<String, String> templateCache = new HashMap<String, String>();
+	private List<String> inlineSvgs = new ArrayList<String>();
 
 	public HTMLReportArchive (SequenceFile sequenceFile, QCModule [] modules, File htmlFile) throws IOException, XMLStreamException {
 		this.sequenceFile = sequenceFile;
@@ -222,6 +229,33 @@ public class HTMLReportArchive {
 		return zip;
 	}
 	
+	public String registerInlineSvg(String svgData) {
+		int id = inlineSvgs.size();
+		inlineSvgs.add(prepareSvgForInline(svgData));
+		return "FASTQC_INLINE_SVG_" + id;
+	}
+
+	private static String prepareSvgForInline(String svg) {
+		svg = SVG_XML_DECL.matcher(svg).replaceFirst("");
+		svg = SVG_DOCTYPE.matcher(svg).replaceFirst("");
+		return svg.trim();
+	}
+
+	private String replaceInlineSvgPlaceholders(String content) {
+		Matcher m = INLINE_SVG_PLACEHOLDER.matcher(content);
+		if (!m.find()) return content;
+
+		StringBuffer sb = new StringBuffer(content.length());
+		m.reset();
+		while (m.find()) {
+			int id = Integer.parseInt(m.group(1));
+			String svg = inlineSvgs.get(id);
+			m.appendReplacement(sb, Matcher.quoteReplacement(svg));
+		}
+		m.appendTail(sb);
+		return sb.toString();
+	}
+
 	private String loadTemplate(String templatePath) throws IOException {
 		String cached = templateCache.get(templatePath);
 		if (cached != null) return cached;
@@ -346,12 +380,14 @@ public class HTMLReportArchive {
 				this.xhtml = originalXhtml;
 			}
 
+			String moduleBody = replaceInlineSvgPlaceholders(moduleBodyWriter.toString());
+
 			String moduleWrapper = moduleWrapperTemplate;
 			moduleWrapper = moduleWrapper.replace("{{MODULE_INDEX}}", String.valueOf(m));
 			moduleWrapper = moduleWrapper.replace("{{MODULE_NAME}}", modules[m].name());
 			moduleWrapper = moduleWrapper.replace("{{STATUS_ICON}}", getStatusIcon(modules[m]));
 			moduleWrapper = moduleWrapper.replace("{{HELP_CONTENT}}", extractHelpText(modules[m].name()));
-			moduleWrapper = moduleWrapper.replace("{{MODULE_CONTENT}}", moduleBodyWriter.toString());
+			moduleWrapper = moduleWrapper.replace("{{MODULE_CONTENT}}", moduleBody);
 
 			allModulesContent.append(moduleWrapper).append("\n");
 		}
