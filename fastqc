@@ -113,11 +113,13 @@ my $temp_directory;
 my $min_length;
 my $dup_length;
 my $svg;
+my $png;
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
 						'quiet' => \$quiet,
 						'svg' => \$svg,
+						'png' => \$png,
 						'nogroup' => \$nogroup,
 						'expgroup' => \$expgroup,
 						'outdir=s' => \$outdir,
@@ -291,10 +293,10 @@ if ($format) {
 }
 
 
-if ($svg) {
-		
+if (!($png && !$svg)) {
+	# We make SVG by default now so only if they specify --png and they didn't put --svg
+	# do they get png output 
 	push @java_args,"-Dfastqc.svg=true";	
-	
 }
 
 
@@ -444,7 +446,9 @@ DESCRIPTION
                     each file.  Defaults to 512MB.  You may need to increase this if
                     you have a file with very long sequences in it.
                 
-    --svg           Save the graphs in the report in SVG format.
+    --svg           Save the graphs in the report in SVG format (default).
+    
+    --png			Save the graphs in PNG format
 
     -t --threads    Specifies the number of files which can be processed
                     simultaneously.  Each thread will be allocated 512MB of
