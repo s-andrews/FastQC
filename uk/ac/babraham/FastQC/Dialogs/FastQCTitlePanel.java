@@ -203,6 +203,7 @@ public class FastQCTitlePanel extends JPanel {
 			if (g instanceof Graphics2D) {
 				((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			}
+			FontManager.enableTextAntialiasing(g);
 			super.paintComponent(g);
 		}
 

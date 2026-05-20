@@ -21,7 +21,10 @@ package uk.ac.babraham.FastQC.Utilities;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -96,5 +99,19 @@ public class FontManager {
 	public static Font defaultBoldFont() {
 		initialize();
 		return cachedDefaultBoldFont;
+	}
+
+	/**
+	 * Enable text anti-aliasing on the given Graphics context. Liberation Sans
+	 * has weaker bytecode hinting than Microsoft's Arial, so without text AA the
+	 * font looks jagged on Windows/Linux at small sizes. macOS enables text AA
+	 * by default via CoreText, so this is a no-op there in practice.
+	 */
+	public static void enableTextAntialiasing(Graphics g) {
+		if (g instanceof Graphics2D) {
+			Graphics2D g2 = (Graphics2D) g;
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+		}
 	}
 }

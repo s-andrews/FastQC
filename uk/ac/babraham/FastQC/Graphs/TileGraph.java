@@ -55,6 +55,8 @@ public class TileGraph extends JPanel {
 	public void paint (Graphics g) {
 		super.paint(g);
 
+		FontManager.enableTextAntialiasing(g);
+
 		g.setFont(FontManager.defaultFont());
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, getWidth(), getHeight());
