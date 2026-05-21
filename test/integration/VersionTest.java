@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import test.integration.cli.Cli;
 import test.integration.cli.CliScenario;
+import uk.ac.babraham.FastQC.FastQCApplication;
 
 public class VersionTest {
 
@@ -12,7 +13,7 @@ public class VersionTest {
         Cli
             .Execute(new CliScenario(null, new String[] {"fastqc.show_version=true"}))
             .assertSuccess()
-            .assertOutputContains("FastQC v0.12.1");
+            .assertOutputContains("FastQC v" + FastQCApplication.VERSION);
     }
 
 }

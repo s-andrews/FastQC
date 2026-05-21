@@ -44,7 +44,7 @@ public class FastQCConfig {
 	public File limits_file = null;
 	public int minLength = 0;
 	public int dupLength = 0;
-	public boolean svg_output = false;
+	public boolean svg_output = true;
 
 	private FastQCConfig () {
 		
@@ -120,9 +120,10 @@ public class FastQCConfig {
 			nano = true;
 		}
 
-		// SVG
-		if (System.getProperty("fastqc.svg") != null && System.getProperty("fastqc.svg").equals("true")) {
-			svg_output = true;
+		// SVG output is on by default; pass -Dfastqc.svg=false to opt back into PNG.
+		String svgProperty = System.getProperty("fastqc.svg");
+		if (svgProperty != null) {
+			svg_output = svgProperty.equals("true");
 		}
 
 		
