@@ -292,7 +292,13 @@ public class FastQCApplication extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		
+
+		// Enable system-wide font anti-aliasing for Swing. Must be set before
+		// any AWT/Swing class loads. Liberation Sans renders poorly on
+		// Windows/Linux without this; see GitHub issue #193.
+		System.setProperty("awt.useSystemAAFontSettings", "on");
+		System.setProperty("swing.aatext", "true");
+
 		// See if we just have to print out the version
 		if (System.getProperty("fastqc.show_version") != null && System.getProperty("fastqc.show_version").equals("true")) {
 			System.out.println("FastQC v"+VERSION);
