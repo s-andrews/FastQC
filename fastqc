@@ -450,11 +450,9 @@ DESCRIPTION
     
     --png			Save the graphs in PNG format
 
-    -t --threads    Specifies the number of files which can be processed
-                    simultaneously.  Each thread will be allocated 512MB of
-                    memory so you shouldn't run more threads than your
-                    available memory will cope with, and not more than
-                    6 threads on a 32 bit machine
+    -t --threads    Total number of CPU threads to use.  Each file uses up to
+                    4 threads.  Defaults to 4 x number of files, capped at
+                    the number of available CPUs.
                   
     -c              Specifies a non-default file which contains the list of
     --contaminants  contaminants to screen overrepresented sequences against.
