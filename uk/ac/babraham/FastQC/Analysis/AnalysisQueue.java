@@ -34,19 +34,50 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	
 	private AtomicInteger availableSlots = new AtomicInteger(1);
 	private AtomicInteger usedSlots = new AtomicInteger(0);
-	
+	private volatile int processorsPerFile = 0;
+
+	// Per-file pipeline = 1 reader + up to MAX_PROCESSORS_PER_FILE processor
+	// threads. Past 3 processors gains plateau as the reader becomes the bottleneck.
+	private static final int MAX_PROCESSORS_PER_FILE = 3;
+	private static final int THREADS_PER_FILE = 1 + MAX_PROCESSORS_PER_FILE;
+
 	public static AnalysisQueue getInstance () {
 		return instance;
 	}
-	
+
 	private AnalysisQueue () {
-		
-		if (FastQCConfig.getInstance().threads != null) {
-			availableSlots.set(FastQCConfig.getInstance().threads);			
-		}
-		
+		// Sized for a single file; OfflineRunner overrides via configure().
+		configure(1);
+
 		Thread t = new Thread(this);
 		t.start();
+	}
+
+	/**
+	 * Size the CPU budget. -t/-Dfastqc.threads is a total-thread budget
+	 * split between outer concurrency (files in parallel) and inner
+	 * concurrency (per-file pipeline). Unset defaults to
+	 * <code>min(THREADS_PER_FILE * max(1, expectedFiles), availableProcessors)</code>.
+	 * A budget of 1 makes AnalysisRunner take its single-threaded path.
+	 * Call before submitting any AnalysisRunner.
+	 */
+	void configure (int expectedFiles) {
+		int totalThreads;
+		if (FastQCConfig.getInstance().threads != null) {
+			totalThreads = FastQCConfig.getInstance().threads;
+		}
+		else {
+			int filesForBudget = Math.max(1, expectedFiles);
+			long requested = (long) THREADS_PER_FILE * filesForBudget; // long to avoid overflow
+			totalThreads = (int) Math.min(requested, Runtime.getRuntime().availableProcessors());
+		}
+		processorsPerFile = totalThreads <= 1 ? 0 : Math.min(MAX_PROCESSORS_PER_FILE, totalThreads - 1);
+		int actualThreadsPerFile = processorsPerFile == 0 ? 1 : 1 + processorsPerFile;
+		availableSlots.set(Math.max(1, totalThreads / actualThreadsPerFile));
+	}
+
+	int getProcessorsPerFile() {
+		return processorsPerFile;
 	}
 	
 	public void addToQueue (AnalysisRunner runner) {

@@ -118,7 +118,10 @@ public class OfflineRunner implements AnalysisListener {
 		
 		
 		filesRemaining = new AtomicInteger(fileGroups.length);
-				
+
+		// Let the queue size its CPU budget to the actual workload.
+		AnalysisQueue.getInstance().configure(fileGroups.length);
+
 		for (int i=0;i<fileGroups.length;i++) {
 
 			try {
