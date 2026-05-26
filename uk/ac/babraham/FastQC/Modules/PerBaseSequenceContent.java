@@ -113,13 +113,14 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 	
 	public void processSequence(Sequence sequence) {
 		calculated = false;
-		char [] seq = sequence.getSequence().toCharArray();
-		if (gCounts.length < seq.length) {
-			
-			long [] gCountsNew = new long [seq.length];
-			long [] aCountsNew = new long [seq.length];
-			long [] cCountsNew = new long [seq.length];
-			long [] tCountsNew = new long [seq.length];
+		String seq = sequence.getSequence();
+		int seqLen = seq.length();
+		if (gCounts.length < seqLen) {
+
+			long [] gCountsNew = new long [seqLen];
+			long [] aCountsNew = new long [seqLen];
+			long [] cCountsNew = new long [seqLen];
+			long [] tCountsNew = new long [seqLen];
 
 			for (int i=0;i<gCounts.length;i++) {
 				gCountsNew[i] = gCounts[i];
@@ -134,17 +135,18 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 			cCounts = cCountsNew;
 		}
 		
-		for (int i=0;i<seq.length;i++) {
-			if (seq[i] == 'G') {
+		for (int i=0;i<seqLen;i++) {
+			char b = seq.charAt(i);
+			if (b == 'G') {
 				++gCounts[i];
 			}
-			else if (seq[i] == 'A') {
+			else if (b == 'A') {
 				++aCounts[i];
 			}
-			else if (seq[i] == 'T') {
+			else if (b == 'T') {
 				++tCounts[i];
 			}
-			else if (seq[i] == 'C') {
+			else if (b == 'C') {
 				++cCounts[i];
 			}
 		}

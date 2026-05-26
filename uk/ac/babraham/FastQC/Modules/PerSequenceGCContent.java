@@ -171,22 +171,24 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		// encounter we need to reduce the number of models.  We can do this by
 		// rounding off the sequence once we get above a certain size
 		
-		char [] seq = truncateSequence(sequence);
-		
-		if (seq.length == 0) return; // Ignore empty sequences
+		String seq = truncateSequence(sequence);
+		int seqLen = seq.length();
+
+		if (seqLen == 0) return; // Ignore empty sequences
 		
 		
 		int thisSeqGCCount = 0;
-		for (int i=0;i<seq.length;i++) {
-			if (seq[i] == 'G' || seq[i] == 'C') {
+		for (int i=0;i<seqLen;i++) {
+			char b = seq.charAt(i);
+			if (b == 'G' || b == 'C') {
 				++thisSeqGCCount;
 			}
 		}
 
-		if (seq.length >= cachedModels.length) {
+		if (seqLen >= cachedModels.length) {
 			// We need to extend the length of cached models
 			
-			GCModel [] longerModels = new GCModel[seq.length+1];
+			GCModel [] longerModels = new GCModel[seqLen+1];
 			for (int i=0;i<cachedModels.length;i++) {
 				longerModels[i] = cachedModels[i];
 			}
@@ -194,11 +196,11 @@ public class PerSequenceGCContent extends AbstractQCModule {
 			cachedModels = longerModels;
 		}
 		
-		if (cachedModels[seq.length] == null) {
-			cachedModels[seq.length] = new GCModel(seq.length);
+		if (cachedModels[seqLen] == null) {
+			cachedModels[seqLen] = new GCModel(seqLen);
 		}
 
-		GCModelValue [] values = cachedModels[seq.length].getModelValues(thisSeqGCCount);
+		GCModelValue [] values = cachedModels[seqLen].getModelValues(thisSeqGCCount);
 
 		for (int i=0;i<values.length;i++) {
 			gcDistribution[values[i].percentage()] += values[i].increment();
@@ -206,7 +208,7 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		
 	}
 	
-	private char [] truncateSequence (Sequence sequence) {
+	private String truncateSequence (Sequence sequence) {
 		
 		String seq = sequence.getSequence();
 		
@@ -215,14 +217,14 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		
 		if (seq.length() > 1000) {
 			int length = (seq.length()/1000)*1000;
-			return seq.substring(0, length).toCharArray();
+			return seq.substring(0, length);
 		}
 		if (seq.length() > 100) {
 			int length = (seq.length()/100)*100;
-			return seq.substring(0, length).toCharArray();
+			return seq.substring(0, length);
 		}
 
-		return seq.toCharArray();		
+		return seq;
 		
 	}
 	
