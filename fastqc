@@ -293,10 +293,10 @@ if ($format) {
 }
 
 
-if (!($png && !$svg)) {
-	# We make SVG by default now so only if they specify --png and they didn't put --svg
-	# do they get png output 
-	push @java_args,"-Dfastqc.svg=true";	
+if ($png && !$svg) {
+	# SVG is the default now (see FastQCConfig.svg_output); only opt back into PNG
+	# if the user explicitly passed --png without --svg.
+	push @java_args,"-Dfastqc.svg=false";
 }
 
 
