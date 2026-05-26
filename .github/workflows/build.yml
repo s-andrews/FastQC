@@ -70,10 +70,10 @@ jobs:
 
       - name: Upload artifact (manual run)
         if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: fastqc_${{ steps.vars.outputs.version }}.zip
           path: fastqc_${{ steps.vars.outputs.version }}.zip
+          archive: false
 
   build-dmg:
     name: Build DMG (macOS)
@@ -161,9 +161,9 @@ jobs:
 
       - name: Upload artifact (manual run)
         if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: fastqc_${{ steps.vars.outputs.version }}.dmg
           path: fastqc_${{ steps.vars.outputs.version }}.dmg
+          archive: false
 
 
