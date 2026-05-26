@@ -84,7 +84,6 @@ public class HelpPage extends DefaultMutableTreeNode {
 	 * @param hits the hits
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	@SuppressWarnings("unchecked")
 	public void containsString (String searchTerm, Vector<HelpPage>hits) throws IOException {
 				
 		// Since this will be part of a search thread then take a quick
@@ -106,6 +105,8 @@ public class HelpPage extends DefaultMutableTreeNode {
 					break;
 				}
 			}
+			
+			br.close();
 		}
 
 		// Extend the search to our children

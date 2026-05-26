@@ -48,7 +48,7 @@ public class FastQCMenuBar extends JMenuBar implements ActionListener {
 		
 		JMenuItem fileOpen = new JMenuItem("Open...");
 		fileOpen.setMnemonic(KeyEvent.VK_O);
-		fileOpen.setAccelerator(KeyStroke.getKeyStroke('O', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		fileOpen.setAccelerator(KeyStroke.getKeyStroke('O', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
 		fileOpen.setActionCommand("open");
 		fileOpen.addActionListener(this);
 		fileMenu.add(fileOpen);
@@ -57,7 +57,7 @@ public class FastQCMenuBar extends JMenuBar implements ActionListener {
 		
 		JMenuItem fileSave = new JMenuItem("Save report...");
 		fileSave.setMnemonic(KeyEvent.VK_S);
-		fileSave.setAccelerator(KeyStroke.getKeyStroke('S', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		fileSave.setAccelerator(KeyStroke.getKeyStroke('S', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
 		fileSave.setActionCommand("save");
 		fileSave.addActionListener(this);
 		fileMenu.add(fileSave);
@@ -66,7 +66,7 @@ public class FastQCMenuBar extends JMenuBar implements ActionListener {
 		
 		JMenuItem fileClose = new JMenuItem("Close");
 		fileClose.setMnemonic(KeyEvent.VK_C);
-		fileClose.setAccelerator(KeyStroke.getKeyStroke('W', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		fileClose.setAccelerator(KeyStroke.getKeyStroke('W', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
 		fileClose.setActionCommand("close");
 		fileClose.addActionListener(this);
 		fileMenu.add(fileClose);

@@ -29,7 +29,6 @@ import ch.systemsx.cisd.hdf5.IHDF5SimpleReader;
 
 public class Fast5File implements SequenceFile {
 
-	private Sequence nextSequence = null;
 	private File file;
 	private String name;
 	private IHDF5SimpleReader reader;

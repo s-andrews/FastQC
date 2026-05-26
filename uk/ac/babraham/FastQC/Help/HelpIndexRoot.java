@@ -83,7 +83,6 @@ public class HelpIndexRoot extends DefaultMutableTreeNode {
 	 * @return the help page[]
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	@SuppressWarnings("unchecked")
 	public HelpPage [] findPagesForTerm (String searchTerm) throws IOException {
 		Vector<HelpPage>hits = new Vector<HelpPage>();
 				
