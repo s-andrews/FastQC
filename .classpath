@@ -6,7 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="jbzip2-0.9.jar"/>
 	<classpathentry kind="lib" path="cisd-jhdf5.jar"/>
 	<classpathentry kind="lib" path="htsjdk.jar"/>
 	<classpathentry kind="lib" path="lib/junit-jupiter-api-5.10.0.jar"/>
@@ -20,5 +19,7 @@
 	<classpathentry kind="lib" path="lib/jsoup-1.18.1.jar"/>
 	<classpathentry kind="lib" path="lib/approvaltests-25.4.3.jar"/>
 	<classpathentry kind="lib" path="lib/approvaltests-util-25.4.3.jar"/>
+	<classpathentry kind="lib" path="commons-compress-1.28.0.jar"/>
+	<classpathentry kind="lib" path="commons-io-2.22.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

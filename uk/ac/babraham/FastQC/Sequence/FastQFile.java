@@ -28,7 +28,7 @@ import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.itadaki.bzip2.BZip2InputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream;
@@ -83,7 +83,7 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis)));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
-			br = new BufferedReader(new InputStreamReader(new BZip2InputStream(fis,false)));
+			br = new BufferedReader(new InputStreamReader(new BZip2CompressorInputStream(fis,true)));
 		} 
 
 		else {

@@ -193,7 +193,7 @@ def modify_classpath():
 
     write_debug("Setting CLASSPATH delimiter to "+classpath_delimiter)
 
-    new_elements = [base_dir,base_dir/"htsjdk.jar",base_dir/"jbzip2-0.9.jar",base_dir/"cisd-jhdf5.jar"]
+    new_elements = [base_dir,base_dir/"htsjdk.jar",base_dir/"commons-io-2.22.0.jar",base_dir/"commons-compress-1.28.0.jar",base_dir/"cisd-jhdf5.jar"]
 
     # Convert to non-relative full path strings
     new_elements = [str(x.resolve()) for x in new_elements]
