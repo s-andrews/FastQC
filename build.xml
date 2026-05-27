@@ -7,8 +7,8 @@
 <project basedir="." default="build" name="FastQC">
     <property environment="env" />
     <property name="debuglevel" value="source,lines,vars" />
-    <property name="target" value="11" />
-    <property name="source" value="11" />
+    <property name="target" value="1.8" />
+    <property name="source" value="1.8" />
     <path id="FastQC.classpath">
         <pathelement location="bin" />
         <pathelement location="commons-compress-1.28.0.jar" />
