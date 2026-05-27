@@ -232,7 +232,7 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		public Class<?> getColumnClass (int columnIndex) {
 			switch (columnIndex) {
 			case 0: return String.class;
-			case 1: return Integer.class;
+			case 1: return Long.class;
 			case 2: return Double.class;
 			case 3: return String.class;
 		}
