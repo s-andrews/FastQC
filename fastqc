@@ -138,6 +138,13 @@ def get_java_args():
 
     if options.files or options.version:
         java_args.append("-Djava.awt.headless=true")
+    
+    else:
+        # This is an attempt to work around a known issue with XQuartz on
+        # OSX displaying programs with a black background.  We'll only set
+        # this if we appear to be running interactively.  We don't do much 
+        # interaction so losing xrender is hopefully not too onerous
+        java_args.append("-Dsun.java2d.xrender=false")
 
 
     write_debug("Java args are "+str(java_args))
