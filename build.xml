@@ -11,7 +11,8 @@
     <property name="source" value="11" />
     <path id="FastQC.classpath">
         <pathelement location="bin" />
-        <pathelement location="jbzip2-0.9.jar" />
+        <pathelement location="commons-compress-1.28.0.jar" />
+        <pathelement location="commons-io-2.22.0.jar" />
         <pathelement location="sam-1.103.jar" />
         <pathelement location="cisd-jhdf5.jar" />
         <pathelement location="htsjdk.jar" />
