@@ -11,15 +11,16 @@ import subprocess
 ## given to the program and creates a java launch command which does the actual 
 ## work.
 
-base_dir = Path(__file__).parent
+# We need to add resolve() in case this script is being accessed via a symlink
+base_dir = Path(__file__).resolve().parent
 options = None
 
 def main():
     ## Often people try to download and run the source distribution of fastqc.  We'll
     ## test for this specifically.
 
-    # if (base_dir / "uk/ac/babraham/FastQC/FastQCApplication.java").exists():
-    #     exit_with_error("You have downloaded the sourcecode of FastQC, rather than the compiled version. You need to download the compiled version to be able to run the program.")
+    if (base_dir / "uk/ac/babraham/FastQC/FastQCApplication.java").exists():
+        exit_with_error("You have downloaded the sourcecode of FastQC, rather than the compiled version. You need to download the compiled version to be able to run the program.")
 
     global options
     options = get_options()
