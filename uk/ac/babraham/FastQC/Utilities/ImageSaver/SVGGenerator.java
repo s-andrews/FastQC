@@ -133,6 +133,10 @@ public class SVGGenerator {
 		sb.append(c.getWidth());
 		sb.append("\" height=\"");
 		sb.append(c.getHeight());
+		sb.append("\" viewBox=\"0 0 ");
+		sb.append(c.getWidth());
+		sb.append(" ");
+		sb.append(c.getHeight());
 		sb.append("\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n");
 		sb.append("<style>text{font-family:Arial}</style>\n");
 

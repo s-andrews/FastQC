@@ -1,4 +1,10 @@
-# FastQC
+<h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="uk/ac/babraham/FastQC/Resources/fastqc_logo_darkbg.svg">
+  <source media="(prefers-color-scheme: light)" srcset="uk/ac/babraham/FastQC/Resources/fastqc_logo.svg">
+  <img src="uk/ac/babraham/FastQC/Resources/fastqc_logo.svg" alt="FastQC">
+</picture>
+</h1>
 
 **A Quality Control application for FastQ files**
 
@@ -23,7 +29,8 @@ FastQC is an application which takes a FastQ file and runs a series of tests on 
 FastQC can be run either as an interactive graphical application which allows you to view results for multiple files in a single application.  Alternatively you can run the program in a non interactive way (say as part of a pipeline) which will generate an HTML report for each file you process.
 
 FastQC is a cross-platform application, written in java. In theory it should run on any platform which has a suitable java runtime environment.
-Having said that we've only tested in on Windows, MacOSX and Linux running the Oracle v1.6 to 1.8 JREs.  Please let us know what happened if you try running it on other platforms / JREs.  Please see the detailed instructions in the INSTALL.txt document to tell you how to get a suitable java version to run FastQC on your system.
+Having said that we've only tested in on Windows, MacOSX and Linux running the Oracle v1.6 to 1.8 JREs.  Please let us know what happened if you try running it on other platforms / JREs.
+Please see the detailed instructions [in `INSTALL.md`](`INSTALL.md`) to tell you how to get a suitable java version to run FastQC on your system.
 
 ## Installation
 
@@ -31,8 +38,15 @@ Please see the [**project web page**](http://www.bioinformatics.babraham.ac.uk/p
 
 ## Contributions
 
-If you have any comments about FastQC we would like to hear them.  You can either enter them into the github bug tracker at:
+If you have any comments about FastQC we would like to hear them.
+You can either create a [GitHub issue](https://github.com/s-andrews/FastQC/issues/) or send them directly to simon.andrews@babraham.ac.uk.
 
-https://github.com/s-andrews/FastQC/issues/
+FastQC was written by Simon Andrews, at the Babraham Institute, Cambridge, UK.
 
-..or send them directly to simon.andrews@babraham.ac.uk.
+https://www.bioinformatics.babraham.ac.uk/
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="uk/ac/babraham/FastQC/Resources/babraham_darkbg.svg">
+  <source media="(prefers-color-scheme: light)" srcset="uk/ac/babraham/FastQC/Resources/babraham.svg">
+  <img src="uk/ac/babraham/FastQC/Resources/babraham.svg" alt="Babraham Institute" width=100>
+</picture>

@@ -212,7 +212,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Sequence Length Distribution";
+		return "Sequence length distribution";
 	}
 
 	public boolean raisesError() {

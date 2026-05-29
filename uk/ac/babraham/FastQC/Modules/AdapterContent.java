@@ -248,7 +248,7 @@ public class AdapterContent extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Adapter Content";
+		return "Adapter content";
 	}
 
 	public boolean raisesError() {
