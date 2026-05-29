@@ -8,6 +8,8 @@ Total Sequences	5
 Total Bases	80 bp
 Sequences flagged as poor quality	0
 Sequence length	16
+Mean sequence length	16.00
+Median sequence length	16
 %GC	50
 >>END_MODULE
 >>Per base sequence quality	pass

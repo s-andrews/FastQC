@@ -21,6 +21,7 @@ package uk.ac.babraham.FastQC.Modules;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
+import java.util.Locale;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -41,6 +42,9 @@ public class BasicStats extends AbstractQCModule {
 	private long filteredCount = 0;
 	private int minLength = 0;
 	private int maxLength = 0;
+	// Histogram of read lengths (over non-filtered sequences), indexed by
+	// length. Used to calculate the median read length.
+	private long [] lengthCounts = new long[0];
 	private long totalBases = 0;
 	private long gCount = 0;
 	private long cCount = 0;
@@ -74,6 +78,7 @@ public class BasicStats extends AbstractQCModule {
 	public void reset () {
 		minLength = 0;
 		maxLength = 0;
+		lengthCounts = new long[0];
 		gCount = 0;
 		cCount = 0;
 		aCount = 0;
@@ -123,6 +128,17 @@ public class BasicStats extends AbstractQCModule {
 			if (sequence.getSequence().length() > maxLength) maxLength = sequence.getSequence().length();
 		}
 
+		// Record the length in the histogram (used for the median).
+		int len = sequence.getSequence().length();
+		if (len+1 > lengthCounts.length) {
+			long [] newLengthCounts = new long[len+1];
+			for (int i=0;i<lengthCounts.length;i++) {
+				newLengthCounts[i] = lengthCounts[i];
+			}
+			lengthCounts = newLengthCounts;
+		}
+		++lengthCounts[len];
+
 		String seq = sequence.getSequence();
 		int seqLen = seq.length();
 		for (int c=0;c<seqLen;c++) {
@@ -157,6 +173,41 @@ public class BasicStats extends AbstractQCModule {
 		return false;
 	}
 	
+	// Mean read length over all non-filtered sequences. Returns 0 for an empty file.
+	private double meanLength () {
+		if (actualCount == 0) return 0;
+		return (double)totalBases / actualCount;
+	}
+
+	// Median read length over all non-filtered sequences. For an even number
+	// of sequences this is the mean of the two central values, rounded up.
+	// Returns 0 for an empty file.
+	private long medianLength () {
+		if (actualCount == 0) return 0;
+		if (actualCount % 2 == 1) {
+			return lengthAtRank(actualCount/2);
+		}
+		else {
+			long lo = lengthAtRank((actualCount/2) - 1);
+			long hi = lengthAtRank(actualCount/2);
+			// Integer ceiling division: rounds a halfway average (e.g. 15.5) up.
+			return (lo + hi + 1) / 2;
+		}
+	}
+
+	// Returns the read length at the given zero-based rank in ascending order
+	// of length (i.e. as if all read lengths were sorted).
+	private long lengthAtRank (long rank) {
+		long cumulative = 0;
+		for (int length=0;length<lengthCounts.length;length++) {
+			cumulative += lengthCounts[length];
+			if (cumulative > rank) {
+				return length;
+			}
+		}
+		return 0;
+	}
+
 	public static String formatLength (long originalLength) {
 		
 		double length = originalLength;
@@ -223,8 +274,10 @@ public class BasicStats extends AbstractQCModule {
 				"Total Bases",
 				"Sequences flagged as poor quality",
 				"Sequence length",
+				"Mean sequence length",
+				"Median sequence length",
 				"%GC",
-		};		
+		};
 		
 		// Sequence - Count - Percentage
 		public int getColumnCount() {
@@ -253,16 +306,16 @@ public class BasicStats extends AbstractQCModule {
 						else {
 							return minLength+"-"+maxLength;
 						}
-						
-						
-					case 7 : 
+					case 7 : return String.format(Locale.ROOT, "%.2f", meanLength());
+					case 8 : return ""+medianLength();
+					case 9 :
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}
 						else {
 							return 0;
 						}
-					
+
 					}
 			}
 			return null;
