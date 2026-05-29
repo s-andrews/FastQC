@@ -55,6 +55,30 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 		return false;
 	}
 	
+	public int medianLength() {
+		// We need to go through the data twice - once to get the 
+		// total number of reads and the second time to find the 
+		// length at the 50th percent rank
+		
+		long total = 0;
+		for (int i=0;i<lengthCounts.length;i++) {
+			total += lengthCounts[i];
+		}
+		
+		long rank50 = total/2;
+
+		long runningCount = 0;
+		for (int i=0;i<lengthCounts.length;i++) {
+			if (runningCount + lengthCounts[i] > rank50) {
+				return(i);
+			}
+			
+			runningCount += lengthCounts[i];
+		}
+		
+		throw new RuntimeException("Should never fail to find a value above the 50th percentile");
+	}	
+	
 	private synchronized void calculateDistribution () {
 		int maxLen = 0;
 		int minLen = -1;

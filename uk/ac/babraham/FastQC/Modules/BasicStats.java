@@ -38,7 +38,6 @@ public class BasicStats extends AbstractQCModule {
 
 	private String name = null;
 	private long actualCount = 0;
-	private long filteredCount = 0;
 	private int minLength = 0;
 	private int maxLength = 0;
 	private long totalBases = 0;
@@ -46,10 +45,9 @@ public class BasicStats extends AbstractQCModule {
 	private long cCount = 0;
 	private long aCount = 0;
 	private long tCount = 0;
-	@SuppressWarnings("unused")
-	private long nCount = 0;
 	private char lowestChar = 126;
 	private String fileType = null;
+	private SequenceLengthDistribution lengthDist = null;
 	
 	public String description() {
 		return "Calculates some basic statistics about the file";
@@ -57,6 +55,10 @@ public class BasicStats extends AbstractQCModule {
 	
 	public boolean ignoreFilteredSequences() {
 		return false;
+	}
+	
+	public void addLengthDistribution(SequenceLengthDistribution lengthDist) {
+		this.lengthDist = lengthDist;
 	}
 
 	public JPanel getResultsPanel() {
@@ -78,7 +80,6 @@ public class BasicStats extends AbstractQCModule {
 		cCount = 0;
 		aCount = 0;
 		tCount = 0;
-		nCount = 0;
 	}
 
 	public String name() {
@@ -94,13 +95,7 @@ public class BasicStats extends AbstractQCModule {
 	public void processSequence(Sequence sequence) {
 
 		if (name == null) setFileName(sequence.file().name());
-		
-		// If this is a filtered sequence we simply count it and move on.
-		if (sequence.isFiltered()) {
-			filteredCount++;
-			return;
-		}
-		
+				
 		actualCount++;
 		
 		totalBases += sequence.getSequence().length();
@@ -131,7 +126,6 @@ public class BasicStats extends AbstractQCModule {
 				case 'A': ++aCount;break;
 				case 'T': ++tCount;break;
 				case 'C': ++cCount;break;
-				case 'N': ++nCount;break;			
 			}
 		}
 		
@@ -221,8 +215,9 @@ public class BasicStats extends AbstractQCModule {
 				"Encoding",
 				"Total Sequences",
 				"Total Bases",
-				"Sequences flagged as poor quality",
 				"Sequence length",
+				"Mean Length",
+				"Median Length",
 				"%GC",
 		};		
 		
@@ -245,8 +240,7 @@ public class BasicStats extends AbstractQCModule {
 					case 2 : return PhredEncoding.getFastQEncodingOffset(lowestChar);
 					case 3 : return ""+actualCount;
 					case 4 : return BasicStats.formatLength(totalBases);
-					case 5 : return ""+filteredCount;
-					case 6 :
+					case 5 :
 						if (minLength == maxLength) {
 							return ""+minLength;
 						}
@@ -254,8 +248,16 @@ public class BasicStats extends AbstractQCModule {
 							return minLength+"-"+maxLength;
 						}
 						
-						
-					case 7 : 
+					case 6 :
+						return ""+(totalBases/actualCount);
+					case 7 :
+						if (lengthDist == null) {
+							return "NA";
+						}
+						else {
+							return ""+lengthDist.medianLength();
+						}
+					case 8 : 
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}

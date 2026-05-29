@@ -24,16 +24,19 @@ public class ModuleFactory {
 	public static QCModule [] getStandardModuleList () {
 
 		OverRepresentedSeqs os = new OverRepresentedSeqs();
+		SequenceLengthDistribution ld = new SequenceLengthDistribution();
+		BasicStats bs = new BasicStats();
+		bs.addLengthDistribution(ld);
 		
 		QCModule [] module_list = new QCModule [] {
-				new BasicStats(),
+				bs,
 				new PerBaseQualityScores(),
 				new PerTileQualityScores(),
 				new PerSequenceQualityScores(),
 				new PerBaseSequenceContent(),
 				new PerSequenceGCContent(),
 				new NContent(),
-				new SequenceLengthDistribution(),
+				ld,
 				os.duplicationLevelModule(),
 				os,
 				new AdapterContent(),
