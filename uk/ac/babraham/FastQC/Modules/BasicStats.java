@@ -21,6 +21,7 @@ package uk.ac.babraham.FastQC.Modules;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
+import java.util.Locale;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -249,7 +250,8 @@ public class BasicStats extends AbstractQCModule {
 						}
 						
 					case 6 :
-						return ""+(totalBases/actualCount);
+						if (actualCount == 0) return "0.0";
+						return String.format(Locale.ROOT, "%.1f", (double)totalBases/actualCount);
 					case 7 :
 						if (lengthDist == null) {
 							return "NA";
