@@ -61,7 +61,7 @@ jobs:
 
       - name: Upload asset to GitHub Release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: fastqc_${{ steps.vars.outputs.version }}.zip
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload asset to GitHub Release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
           files: fastqc_${{ steps.vars.outputs.version }}.dmg
