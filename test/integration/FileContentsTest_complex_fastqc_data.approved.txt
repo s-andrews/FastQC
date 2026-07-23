@@ -6,8 +6,9 @@ File type	Conventional base calls
 Encoding	Illumina 1.5
 Total Sequences	5
 Total Bases	80 bp
-Sequences flagged as poor quality	0
 Sequence length	16
+Mean Length	16.0
+Median Length	16
 %GC	50
 >>END_MODULE
 >>Per base sequence quality	pass
