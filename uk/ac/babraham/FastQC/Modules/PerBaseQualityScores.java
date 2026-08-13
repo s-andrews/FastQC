@@ -44,6 +44,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	int low = 0;
 	int high = 0;
 	PhredEncoding encodingScheme;
+	private PhredEncoding fileEncoding = null;
 	private boolean calculated = false;
 		
 	public JPanel getResultsPanel() {
@@ -68,7 +69,12 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	private synchronized void getPercentages () {
 		
 		char [] range = calculateOffsets();
-		encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
+		if (fileEncoding != null) {
+			encodingScheme = fileEncoding;
+		}
+		else {
+			encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
+		}
 		low = 0;
 		high = range[1] - encodingScheme.offset();
 		if (high < 35) {
@@ -129,6 +135,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	public void processSequence(Sequence sequence) {
 		
 		calculated = false;
+		if (fileEncoding == null) fileEncoding = sequence.file().getPhredEncoding();
 		String qual = sequence.getQualityString();
 		int qualLen = qual.length();
 		if (qualityCounts.length < qualLen) {
@@ -153,6 +160,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	
 	public void reset () {
 		qualityCounts = new QualityCount[0];
+		fileEncoding = null;
 	}
 
 	public String description() {

@@ -46,6 +46,7 @@ public class BasicStats extends AbstractQCModule {
 	private long aCount = 0;
 	private long tCount = 0;
 	private char lowestChar = 126;
+	private PhredEncoding fileEncoding = null;
 	private String fileType = null;
 	private SequenceLengthDistribution lengthDist = null;
 	
@@ -80,6 +81,7 @@ public class BasicStats extends AbstractQCModule {
 		cCount = 0;
 		aCount = 0;
 		tCount = 0;
+		fileEncoding = null;
 	}
 
 	public String name() {
@@ -95,6 +97,7 @@ public class BasicStats extends AbstractQCModule {
 	public void processSequence(Sequence sequence) {
 
 		if (name == null) setFileName(sequence.file().name());
+		if (fileEncoding == null) fileEncoding = sequence.file().getPhredEncoding();
 				
 		actualCount++;
 		
@@ -237,7 +240,9 @@ public class BasicStats extends AbstractQCModule {
 					switch (rowIndex) {
 					case 0 : return name;
 					case 1 : return fileType;
-					case 2 : return PhredEncoding.getFastQEncodingOffset(lowestChar);
+					case 2 :
+						if (fileEncoding != null) return fileEncoding;
+						return PhredEncoding.getFastQEncodingOffset(lowestChar);
 					case 3 : return ""+actualCount;
 					case 4 : return BasicStats.formatLength(totalBases);
 					case 5 :

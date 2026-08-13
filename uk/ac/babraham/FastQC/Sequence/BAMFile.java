@@ -34,6 +34,8 @@ import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 
+import uk.ac.babraham.FastQC.Sequence.QualityEncoding.PhredEncoding;
+
 
 public class BAMFile implements SequenceFile {
 
@@ -86,6 +88,14 @@ public class BAMFile implements SequenceFile {
 
 	public boolean isColorspace () {
 		return false;
+	}
+		
+	public PhredEncoding getPhredEncoding () {
+		// BAM/SAM base qualities are always Phred+33 once htsjdk has decoded
+		// them, so there is nothing to infer from the quality data.  Guessing
+		// from the lowest seen character misdetects Illumina 1.5 whenever a
+		// file contains no base below Q31.
+		return PhredEncoding.SANGER;
 	}
 		
 	public boolean hasNext() {

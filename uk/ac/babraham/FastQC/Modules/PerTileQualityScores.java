@@ -44,6 +44,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 	private int [] tiles;
 	private int high = 0;
 	PhredEncoding encodingScheme;
+	private PhredEncoding fileEncoding = null;
 	private boolean calculated = false;
 	
 	private long totalCount = 0;
@@ -76,7 +77,12 @@ public class PerTileQualityScores extends AbstractQCModule {
 	private synchronized void getPercentages () {
 
 		char [] range = calculateOffsets();
-		encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
+		if (fileEncoding != null) {
+			encodingScheme = fileEncoding;
+		}
+		else {
+			encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
+		}
 		high = range[1] - encodingScheme.offset();
 		if (high < 35) {
 			high = 35;
@@ -193,6 +199,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 		}
 				
 		calculated = false;
+		if (fileEncoding == null) fileEncoding = sequence.file().getPhredEncoding();
 
 		// Try to find the tile id.  This can come in one of two forms:
 		//		@HWI-1KL136:211:D1LGAACXX:1:1101:18518:48851 3:N:0:ATGTCA
@@ -310,6 +317,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 	public void reset () {
 		totalCount = 0;
 		perTileQualityCounts = new HashMap<Integer, QualityCount[]>();
+		fileEncoding = null;
 	}
 
 	public String description() {

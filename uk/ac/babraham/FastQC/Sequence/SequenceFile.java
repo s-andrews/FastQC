@@ -21,6 +21,8 @@ package uk.ac.babraham.FastQC.Sequence;
 
 import java.io.File;
 
+import uk.ac.babraham.FastQC.Sequence.QualityEncoding.PhredEncoding;
+
 public interface SequenceFile {
 
 	public boolean hasNext();
@@ -29,5 +31,13 @@ public interface SequenceFile {
 	public String name();
 	public int getPercentComplete();
 	public File getFile();
+	
+	/**
+	 * The quality encoding fixed by the file format, or null if the
+	 * encoding has to be inferred from the quality data.
+	 */
+	public default PhredEncoding getPhredEncoding() {
+		return null;
+	}
 	
 }

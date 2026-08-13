@@ -37,6 +37,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	private double [] qualityDistribution = null;
 	private int [] xCategories = new int[0];
 	private char lowestChar = 126;
+	private PhredEncoding fileEncoding = null;
 	private int maxCount = 0;
 	private int mostFrequentScore;
 	private boolean calculated = false;
@@ -58,7 +59,13 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	
 	private synchronized void calculateDistribution () {
 		
-		PhredEncoding encoding = PhredEncoding.getFastQEncodingOffset(lowestChar);
+		PhredEncoding encoding;
+		if (fileEncoding != null) {
+			encoding = fileEncoding;
+		}
+		else {
+			encoding = PhredEncoding.getFastQEncodingOffset(lowestChar);
+		}
 		
 		Integer [] rawScores = averageScoreCounts.keySet().toArray(new Integer [0]);
 		Arrays.sort(rawScores);
@@ -88,6 +95,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 
 	public void processSequence(Sequence sequence) {
 				
+		if (fileEncoding == null) fileEncoding = sequence.file().getPhredEncoding();
 		String qual = sequence.getQualityString();
 		int qualLen = qual.length();
 		int averageQuality = 0;
@@ -117,6 +125,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	public void reset () {
 		averageScoreCounts.clear();
 		lowestChar = 126;
+		fileEncoding = null;
 		maxCount = 0;
 		calculated = false;
 	}

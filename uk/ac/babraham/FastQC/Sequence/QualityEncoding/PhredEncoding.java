@@ -27,6 +27,8 @@ public class PhredEncoding {
 	private static final int SANGER_ENCODING_OFFSET = 33;
 	private static final int ILLUMINA_1_3_ENCODING_OFFSET = 64;
 	
+	public static final PhredEncoding SANGER = new PhredEncoding("Sanger / Illumina 1.9", SANGER_ENCODING_OFFSET);
+	
 	public static PhredEncoding getFastQEncodingOffset (char lowestChar) {
 		if (lowestChar < 33) {
 			throw new IllegalArgumentException("No known encodings with chars < 33 (Yours was '"+lowestChar+"' with value "+(int)lowestChar+")");
