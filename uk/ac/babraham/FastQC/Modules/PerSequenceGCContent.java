@@ -146,7 +146,7 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		deviationPercent = 0;
 		
 		for (int i=0;i<theoreticalDistribution.length;i++) {
-			double probability = nd.getZScoreForValue(i);
+			double probability = nd.getProbDensityForValue(i);
 			theoreticalDistribution[i] = probability*totalCount;
 			
 			if (theoreticalDistribution[i] > max) {

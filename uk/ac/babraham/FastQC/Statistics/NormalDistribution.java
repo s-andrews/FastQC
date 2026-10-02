@@ -30,7 +30,7 @@ public class NormalDistribution {
 		this.stdev = stdev;
 	}
 	
-	public double getZScoreForValue (double value) {
+	public double getProbDensityForValue (double value) {
 		double lhs = 1d/(Math.sqrt(2*Math.PI*stdev*stdev));
 		double rhs = Math.pow(Math.E, 0 - (Math.pow(value-mean,2)/(2*stdev*stdev)));
 		
