@@ -65,6 +65,12 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 			total += lengthCounts[i];
 		}
 		
+		// If there are no sequence in the file we return 0 as 
+		// the median length;
+		if (total == 0) {
+			return 0;
+		}
+		
 		long rank50 = total/2;
 
 		long runningCount = 0;

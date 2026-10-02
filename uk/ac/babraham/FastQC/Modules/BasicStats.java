@@ -249,6 +249,9 @@ public class BasicStats extends AbstractQCModule {
 						}
 						
 					case 6 :
+						if (actualCount == 0) {
+							return 0;
+						}
 						return ""+(totalBases/actualCount);
 					case 7 :
 						if (lengthDist == null) {
