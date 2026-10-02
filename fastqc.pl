@@ -91,29 +91,14 @@ if ($^O =~/darwin/) {
 # We now need to scan the command line for switches which we're going
 # to pass on to the main java program.
 
-my $version;
-my $help;
-my $outdir;
-my $unzip;
-my $delete;
-my $format;
-my $contaminant;
-my $adapter;
-my $limits;
-my $memory;
-my $threads;
-my $quiet;
-my $nogroup;
-my $expgroup;
-my $casava;
-my $nano;
-my $nofilter;
-my $kmer_size;
-my $temp_directory;
-my $min_length;
-my $dup_length;
-my $svg;
-my $png;
+my (
+    $version, $help, $outdir, $unzip, $delete, $format,
+    $contaminant, $adapter, $limits, $memory, $threads,
+    $quiet, $nogroup, $expgroup, $casava, $nano, $nofilter,
+    $kmer_size, $temp_directory, $min_length, $dup_length,
+    $svg, $png
+);
+
 
 my $result = GetOptions('version' => \$version,
 						'help' => \$help,
