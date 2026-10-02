@@ -19,6 +19,8 @@
  */
 package uk.ac.babraham.FastQC.Sequence.QualityEncoding;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
+
 public class PhredEncoding {
 
 	private String name;
@@ -28,24 +30,29 @@ public class PhredEncoding {
 	private static final int ILLUMINA_1_3_ENCODING_OFFSET = 64;
 	
 	public static PhredEncoding getFastQEncodingOffset (char lowestChar) {
+		
 		if (lowestChar < 33) {
 			throw new IllegalArgumentException("No known encodings with chars < 33 (Yours was '"+lowestChar+"' with value "+(int)lowestChar+")");
 		}
-		else if (lowestChar < 64) {
+		
+		if (FastQCConfig.getInstance().phred64) {
+			if (lowestChar < ILLUMINA_1_3_ENCODING_OFFSET) {
+				throw new IllegalArgumentException("Phred64 encoding is incompatible with having ASCII char '"+lowestChar+"' with value "+(int)lowestChar+") in the file");				
+			}
+			if (lowestChar == ILLUMINA_1_3_ENCODING_OFFSET+1) {
+				return new PhredEncoding("Illumina 1.3", ILLUMINA_1_3_ENCODING_OFFSET);			
+			}
+			else {
+				return new PhredEncoding("Illumina 1.5", ILLUMINA_1_3_ENCODING_OFFSET);
+			}
+		}
+		else {
+			if (lowestChar >= 64) {
+				System.err.println("Using Phred32 encoding your lowest quality is "+(((int)lowestChar)-32)+" could this file be Phred64 encoded?");				
+			}
 			return new PhredEncoding("Sanger / Illumina 1.9", SANGER_ENCODING_OFFSET);
 		}
-		
-		// There are potentially two encodings using an offset of 64.  Illumina
-		// v1.3 allowed quality values of 1, whereas from v1.5 onwards the lowest
-		// value allowed was 2.  If we guess wrong between these two then it's not
-		// the end of the world since they use the same offset.
-		else if (lowestChar == ILLUMINA_1_3_ENCODING_OFFSET+1) {
-			return new PhredEncoding("Illumina 1.3", ILLUMINA_1_3_ENCODING_OFFSET);			
-		}
-		else if (lowestChar <= 126) {
-			return new PhredEncoding("Illumina 1.5", ILLUMINA_1_3_ENCODING_OFFSET);
-		}
-		throw new IllegalArgumentException("No known encodings with chars > 126 (Yours was "+lowestChar+" with value "+(int)lowestChar+")");
+				
 	}
 	
 	public static double convertSangerPhredToProbability (int phred) {

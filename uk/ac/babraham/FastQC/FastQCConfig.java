@@ -35,6 +35,7 @@ public class FastQCConfig {
 	public boolean casava = false;
 	public boolean nano = false;
 	public boolean nofilter = false;
+	public boolean phred64 = false;
 	public Boolean do_unzip = null;
 	public boolean delete_after_unzip = false;
 	public String lineSeparator = System.getProperty("line.separator");
@@ -132,6 +133,11 @@ public class FastQCConfig {
 			nofilter = true;
 		}
 
+		
+		// Phred64
+		if (System.getProperty("fastqc.phred64") != null && System.getProperty("fastqc.phred64").equals("true")) {
+			phred64 = true;
+		}
 		
 		// No group
 		if (System.getProperty("fastqc.nogroup") != null && System.getProperty("fastqc.nogroup").equals("true")) {
