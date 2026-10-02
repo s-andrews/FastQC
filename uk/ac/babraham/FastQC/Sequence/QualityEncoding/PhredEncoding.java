@@ -47,7 +47,10 @@ public class PhredEncoding {
 			}
 		}
 		else {
-			if (lowestChar >= 64) {
+						
+			// We set 1000 as the default lowest char which can't be real.  If 
+			// we see this coming through then there were no sequences in the file.
+			if (lowestChar >= 64 & lowestChar != 1000) {
 				System.err.println("Using Phred32 encoding your lowest quality is "+(((int)lowestChar)-32)+" could this file be Phred64 encoded?");				
 			}
 			return new PhredEncoding("Sanger / Illumina 1.9", SANGER_ENCODING_OFFSET);

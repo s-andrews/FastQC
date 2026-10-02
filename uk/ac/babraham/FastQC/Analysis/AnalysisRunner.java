@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
+import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.BasicStats;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.Sequence;
@@ -38,9 +39,30 @@ public class AnalysisRunner implements Runnable {
 	private QCModule [] modules;
 	private List<AnalysisListener> listeners = new ArrayList<AnalysisListener>();
 	private volatile int percentComplete = 0;
+
+	// We might have read length filters. If we do then we want to 
+	// check for these quickly so we'll make some booleans to speed
+	// this up.
+	private boolean filterLengths = false;
+	private boolean minLengthFilter = false;
+	private int minLength;
+	private boolean maxLengthFilter = false;
+	private int maxLength;
 	
 	public AnalysisRunner (SequenceFile file) {
 		this.file = file;
+		
+		if (FastQCConfig.getInstance().minLength != 0) {
+			filterLengths = true;
+			minLengthFilter = true;
+			minLength = FastQCConfig.getInstance().minLength;
+		}
+		
+		if (FastQCConfig.getInstance().maxLength != 0) {
+			filterLengths = true;
+			maxLengthFilter = true;
+			maxLength = FastQCConfig.getInstance().maxLength;
+		}
 	}
 	
 	public void addAnalysisListener (AnalysisListener l) {
@@ -87,6 +109,19 @@ public class AnalysisRunner implements Runnable {
 			Sequence seq;
 			try {
 				seq = file.next();
+				
+				if (filterLengths) {
+					if (minLengthFilter) {
+						if (seq.getSequence().length() < minLength) {
+							continue;
+						}
+					}
+					if (maxLengthFilter) {
+						if (seq.getSequence().length() > maxLength) {
+							continue;
+						}
+					}
+				}
 			}
 			catch (SequenceFormatException e) {
 				i = listeners.iterator();
@@ -234,6 +269,21 @@ public class AnalysisRunner implements Runnable {
 
 						for (int b = 0; b < batch.length; b++) {
 							Sequence seq = batch[b];
+							
+							// We need to apply length filters here if we have them.
+							if (filterLengths) {
+								if (minLengthFilter) {
+									if (seq.getSequence().length() < minLength) {
+										continue;
+									}
+								}
+								if (maxLengthFilter) {
+									if (seq.getSequence().length() > maxLength) {
+										continue;
+									}
+								}
+							}	
+							
 							for (int m = 0; m < myModules.length; m++) {
 								if (seq.isFiltered() && myModules[m].ignoreFilteredSequences()) continue;
 								myModules[m].processSequence(seq);
@@ -293,13 +343,15 @@ public class AnalysisRunner implements Runnable {
 
 		// We need to account for their potentially being no sequences
 		// in the file.  In this case the BasicStats module never gets
-		// the file name so we need to explicitly pass it.
+		// the file name so we need to explicitly pass it.  The sequence
+		// counts aren't reliable here as they may have been reduced due
+		// to sequence length filtering, ie sequences read != sequences used.
+		// There isn't really a downside to setting the file name again
+		// so let's do that.
 
-		if (seqCount == 0) {
-			for (int m=0; m<modules.length; m++) {
-				if (modules[m] instanceof BasicStats) {
-					((BasicStats)modules[m]).setFileName(file.name());
-				}
+		for (int m=0; m<modules.length; m++) {
+			if (modules[m] instanceof BasicStats) {
+				((BasicStats)modules[m]).setFileName(file.name());
 			}
 		}
 

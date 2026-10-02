@@ -45,7 +45,7 @@ public class BasicStats extends AbstractQCModule {
 	private long cCount = 0;
 	private long aCount = 0;
 	private long tCount = 0;
-	private char lowestChar = 126;
+	private char lowestChar = 1000;
 	private String fileType = null;
 	private SequenceLengthDistribution lengthDist = null;
 	

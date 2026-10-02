@@ -85,6 +85,9 @@ def get_java_args():
     if options.min_length:
         java_args.append(f"-Dfastqc.min_length={options.min_length}")
 
+    if options.max_length:
+        java_args.append(f"-Dfastqc.max_length={options.max_length}")
+
     if options.dup_length:
         java_args.append(f"-Dfastqc.dup_length={options.dup_length}")
 
@@ -100,8 +103,6 @@ def get_java_args():
         thread_multiplier = max(1,options.threads // 4)
 
         used_memory *= min(file_multipler, thread_multiplier)
-
-        print(f"Used mem is {used_memory}")
 
 
     java_args.insert(0,f"-Xmx{used_memory}m")
@@ -243,7 +244,8 @@ def get_options():
     parser.add_argument("-a","--adapters", type=str, help="Specifies a non-default file which contains the list of adapter sequences which will be explicity searched against the library. The file must contain sets of named adapters in the form name[tab]sequence.  Lines prefixed with a hash will be ignored.")
     parser.add_argument("-l","--limits", type=str, help="Specifies a non-default file which contains a set of criteria which will be used to determine the warn/error limits for the various modules.  This file can also be used to selectively remove some modules from the output all together.  The format needs to mirror the default limits.txt file found in the Configuration folder.")
     parser.add_argument("-d","--dir", type=str, help="Selects a directory to be used for temporary files written when generating report images. Defaults to system temp directory if not specified.")
-    parser.add_argument("--min_length", type=int, help="Sets an artificial lower limit on the length of the sequence to be shown in the report. As long as you set this to a value greater or equal to your longest read length then this will be the sequence length used to create your read groups.  This can be useful for making directly comaparable statistics from datasets with somewhat variable read lengths.")
+    parser.add_argument("--min_length", type=int, help="Ignore reads shorter than this length (bp)")
+    parser.add_argument("--max_length", type=int, help="Ignore reads longer than this length (bp)")
     parser.add_argument("--dup_length", type=int, help="Sets a length to which the sequences will be truncated when defining them to be duplicates, affecting the duplication and overrepresented sequences plot.  This can be useful if you have long reads with higher levels of miscalls, or contamination with adapter dimers containing UMI sequences.")
     parser.add_argument("--memory", type=int, help="Sets the base amount of memory, in Megabytes, used to process each file.  Defaults to 512MB. You may need to increase this if you have a file with very long sequences in it.", default=512)
     parser.add_argument("-t","--threads", type=int, help="Total number of CPU threads to use. Processing a single file can use up to 4 threads. Defaults to 4, capped at the number of available CPUs.", default=4)
@@ -308,6 +310,15 @@ def get_options():
     if options.min_length:
         if options.min_length < 1:
             exit_with_error("Min length value must be positive")
+
+    # Check min length
+    if options.max_length:
+        if options.max_length < 1:
+            exit_with_error("Max length value must be positive")
+
+    if options.min_length and options.max_length:
+        if options.max_length < options.min_length:
+            exit_with_error("Max length value was less than min length")
 
     # Check dup length
     if options.dup_length:

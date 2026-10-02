@@ -36,7 +36,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	private HashMap<Integer, Long> averageScoreCounts = new HashMap<Integer, Long>();
 	private double [] qualityDistribution = null;
 	private int [] xCategories = new int[0];
-	private char lowestChar = 126;
+	private char lowestChar = 1000;
 	private int maxCount = 0;
 	private int mostFrequentScore;
 	private boolean calculated = false;
@@ -116,7 +116,7 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 	
 	public void reset () {
 		averageScoreCounts.clear();
-		lowestChar = 126;
+		lowestChar = 1000;
 		maxCount = 0;
 		calculated = false;
 	}

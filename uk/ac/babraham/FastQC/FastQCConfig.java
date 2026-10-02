@@ -44,6 +44,7 @@ public class FastQCConfig {
 	public File adapter_file = null;
 	public File limits_file = null;
 	public int minLength = 0;
+	public int maxLength = 0;
 	public int dupLength = 0;
 	public boolean svg_output = true;
 
@@ -100,6 +101,12 @@ public class FastQCConfig {
 			minLength = Integer.parseInt(System.getProperty("fastqc.min_length"));
 		}
 
+		// Max length
+		if (System.getProperty("fastqc.max_length") != null) {
+			maxLength = Integer.parseInt(System.getProperty("fastqc.max_length"));
+		}
+
+		
 		// Dup length
 		if (System.getProperty("fastqc.dup_length") != null) {
 			dupLength = Integer.parseInt(System.getProperty("fastqc.dup_length"));

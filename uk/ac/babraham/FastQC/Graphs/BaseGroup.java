@@ -37,15 +37,6 @@ public class BaseGroup {
 
 	public static BaseGroup [] makeBaseGroups (int maxLength) {
 		
-
-		// They might have set a fixed max length.  If the observed
-		// length is longer than this then tough - they'll have to deal
-		// with it, but if not then we'll use the global value instead 
-		// of theirs
-		
-		if (FastQCConfig.getInstance().minLength > maxLength) {
-			maxLength = FastQCConfig.getInstance().minLength;
-		}
 		
 		if (FastQCConfig.getInstance().nogroup) {
 			return(makeUngroupedGroups(maxLength));

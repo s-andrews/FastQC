@@ -211,25 +211,6 @@ public class AdapterContent extends AbstractQCModule {
 			}
 		}
 
-		// When --min_length inflates the X-axis beyond the actual adapter
-		// position data, BaseGroup produces extra groups with no underlying data.
-		// Trim back to only groups whose upper bound falls within the real data.
-		if (FastQCConfig.getInstance().minLength > maxLength) {
-			int naturalGroupCount = 0;
-			for (int g=0;g<groups.length;g++) {
-				if (groups[g].upperCount() <= maxLength) {
-					naturalGroupCount = g + 1;
-				}
-			}
-			if (naturalGroupCount < groups.length) {
-				groups = Arrays.copyOf(groups, naturalGroupCount);
-				xLabels = Arrays.copyOf(xLabels, naturalGroupCount);
-				for (int a=0;a<adapters.length;a++) {
-					enrichments[a] = Arrays.copyOf(enrichments[a], naturalGroupCount);
-				}
-			}
-		}
-
 		calculated = true;
 
 	}
