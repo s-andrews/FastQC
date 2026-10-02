@@ -66,6 +66,8 @@ public class AdapterContent extends AbstractQCModule {
 
 		Vector<Adapter>c = new Vector<Adapter>();
 		Vector<String>l = new Vector<String>();
+		
+		boolean differentAdapterLengths = false;
 
 		try {
 
@@ -94,6 +96,9 @@ public class AdapterContent extends AbstractQCModule {
 				Adapter adapter = new Adapter(sections[0], sections[1]);
 				c.add(adapter);	
 				l.add(adapter.name());
+				
+				if (longestAdapter > 0 && adapter.sequence().length() != longestAdapter) differentAdapterLengths=true;
+				
 				if (adapter.sequence().length() > longestAdapter) longestAdapter = adapter.sequence().length();
 			}
 			labels = l.toArray(new String[0]);
@@ -102,6 +107,10 @@ public class AdapterContent extends AbstractQCModule {
 		}
 		catch (IOException e) {
 			e.printStackTrace();
+		}
+		
+		if (differentAdapterLengths) {
+			System.err.println("[Warning] You are using adapter sequences with different lengths. Matches will only be reported up to the position where the longest adapter could match. Matches to shorter adapters at the end of sequences will not be recorded.");
 		}
 
 		adapters = c.toArray(new Adapter[0]);
