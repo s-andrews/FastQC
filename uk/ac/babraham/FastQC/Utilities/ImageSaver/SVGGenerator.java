@@ -33,6 +33,8 @@ import java.text.AttributedCharacterIterator;
 
 import javax.swing.RepaintManager;
 
+import uk.ac.babraham.FastQC.Utilities.FontManager;
+
 /**
  * SVGGenerator is an implementation of the Graphics interface which can be
  * passed to any paint method and will generate an SVG version of the display.
@@ -134,7 +136,7 @@ public class SVGGenerator {
 		sb.append("\" height=\"");
 		sb.append(c.getHeight());
 		sb.append("\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n");
-		sb.append("<style>text{font-family:Arial}</style>\n");
+		sb.append("<style>text{font-family:" + FontManager.SVG_FONT_FAMILY + "}</style>\n");
 
 		c.paint(new SVGGraphics());
 
@@ -168,7 +170,7 @@ public class SVGGenerator {
 		private Color color = Color.BLACK;
 		
 		/** The font. */
-		private Font font = new Font("Default",Font.PLAIN,12);
+		private Font font = FontManager.defaultFont();
 		
 
 		/**

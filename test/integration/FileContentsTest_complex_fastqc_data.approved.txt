@@ -1,37 +1,38 @@
-##FastQC	0.12.2.devel
+##FastQC	0.13.0
 >>Basic Statistics	pass
 #Measure	Value
 Filename	complex.fastq
 File type	Conventional base calls
-Encoding	Illumina 1.5
+Encoding	Sanger / Illumina 1.9
 Total Sequences	5
 Total Bases	80 bp
-Sequences flagged as poor quality	0
 Sequence length	16
+Mean Length	16
+Median Length	16
 %GC	50
 >>END_MODULE
 >>Per base sequence quality	pass
 #Base	Mean	Median	Lower Quartile	Upper Quartile	10th Percentile	90th Percentile
-1	9.0	NaN	NaN	NaN	NaN	NaN
-2	9.0	NaN	NaN	NaN	NaN	NaN
-3	9.0	NaN	NaN	NaN	NaN	NaN
-4	9.0	NaN	NaN	NaN	NaN	NaN
-5	9.0	NaN	NaN	NaN	NaN	NaN
-6	9.0	NaN	NaN	NaN	NaN	NaN
-7	9.0	NaN	NaN	NaN	NaN	NaN
-8	9.0	NaN	NaN	NaN	NaN	NaN
-9	9.0	NaN	NaN	NaN	NaN	NaN
-10	9.0	NaN	NaN	NaN	NaN	NaN
-11	9.0	NaN	NaN	NaN	NaN	NaN
-12	9.0	NaN	NaN	NaN	NaN	NaN
-13	9.0	NaN	NaN	NaN	NaN	NaN
-14	9.0	NaN	NaN	NaN	NaN	NaN
-15	9.0	NaN	NaN	NaN	NaN	NaN
-16	9.0	NaN	NaN	NaN	NaN	NaN
+1	40.0	NaN	NaN	NaN	NaN	NaN
+2	40.0	NaN	NaN	NaN	NaN	NaN
+3	40.0	NaN	NaN	NaN	NaN	NaN
+4	40.0	NaN	NaN	NaN	NaN	NaN
+5	40.0	NaN	NaN	NaN	NaN	NaN
+6	40.0	NaN	NaN	NaN	NaN	NaN
+7	40.0	NaN	NaN	NaN	NaN	NaN
+8	40.0	NaN	NaN	NaN	NaN	NaN
+9	40.0	NaN	NaN	NaN	NaN	NaN
+10	40.0	NaN	NaN	NaN	NaN	NaN
+11	40.0	NaN	NaN	NaN	NaN	NaN
+12	40.0	NaN	NaN	NaN	NaN	NaN
+13	40.0	NaN	NaN	NaN	NaN	NaN
+14	40.0	NaN	NaN	NaN	NaN	NaN
+15	40.0	NaN	NaN	NaN	NaN	NaN
+16	40.0	NaN	NaN	NaN	NaN	NaN
 >>END_MODULE
->>Per sequence quality scores	fail
+>>Per sequence quality scores	pass
 #Quality	Count
-9	5.0
+40	5.0
 >>END_MODULE
 >>Per base sequence content	fail
 #Base	G	A	T	C
