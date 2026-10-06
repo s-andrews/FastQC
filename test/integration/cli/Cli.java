@@ -13,7 +13,8 @@ public class Cli {
         String cp = String.join(sep,
                 "bin",
                 ".",
-                "jbzip2-0.9.jar",
+                "commons-compress-1.28.0.jar",
+                "commons-io-2.22.0.jar",
                 "cisd-jhdf5.jar",
                 "htsjdk.jar");
 
