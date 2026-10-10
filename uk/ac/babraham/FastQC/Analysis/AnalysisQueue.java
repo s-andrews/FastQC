@@ -80,37 +80,41 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 		return processorsPerFile;
 	}
 	
-	public void addToQueue (AnalysisRunner runner) {
+	public synchronized void addToQueue (AnalysisRunner runner) {
 		queue.add(runner);
+		notifyAll();
 	}
 
 	public void run() {
 
 		while (true) {
-//			System.err.println("Status available="+availableSlots+" used="+usedSlots+" queue="+queue.size());
-			if (availableSlots.intValue() > usedSlots.intValue() && queue.size() > 0) {
+			AnalysisRunner currentRun;
+			// Wait for a queued run and a free slot, we're notified when either changes
+			synchronized (this) {
+				while (availableSlots.intValue() <= usedSlots.intValue() || queue.isEmpty()) {
+					try {
+						wait();
+					} catch (InterruptedException e) {}
+				}
 				usedSlots.incrementAndGet();
-				AnalysisRunner currentRun = queue.getFirst();
-				queue.removeFirst();
-				currentRun.addAnalysisListener(this);
-				Thread t = new Thread(currentRun);
-				t.start();
+				currentRun = queue.removeFirst();
 			}
-			
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {}
+			currentRun.addAnalysisListener(this);
+			Thread t = new Thread(currentRun);
+			t.start();
 		}
 	}
 
-	public void analysisComplete(SequenceFile file, QCModule[] results) {
+	public synchronized void analysisComplete(SequenceFile file, QCModule[] results) {
 		usedSlots.decrementAndGet();
+		notifyAll();
 	}
 
 	public void analysisUpdated(SequenceFile file, int sequencesProcessed, int percentComplete) {}
 
-	public void analysisExceptionReceived(SequenceFile file, Exception e) {
+	public synchronized void analysisExceptionReceived(SequenceFile file, Exception e) {
 		usedSlots.decrementAndGet();
+		notifyAll();
 	}
 
 	public void analysisStarted(SequenceFile file) {}

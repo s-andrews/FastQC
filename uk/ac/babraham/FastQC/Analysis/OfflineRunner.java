@@ -22,7 +22,7 @@ package uk.ac.babraham.FastQC.Analysis;
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
 
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.ModuleFactory;
@@ -35,7 +35,7 @@ import uk.ac.babraham.FastQC.Utilities.NanoporeBasename;
 
 public class OfflineRunner implements AnalysisListener {
 	
-	private AtomicInteger filesRemaining;
+	private CountDownLatch filesRemaining;
 	private boolean showUpdates = true;
 	
 	// We'll set a flag which will tell us if any of the sequences failed
@@ -117,7 +117,7 @@ public class OfflineRunner implements AnalysisListener {
 		}
 		
 		
-		filesRemaining = new AtomicInteger(fileGroups.length);
+		filesRemaining = new CountDownLatch(fileGroups.length);
 
 		// Let the queue size its CPU budget to the actual workload.
 		AnalysisQueue.getInstance().configure(fileGroups.length);
@@ -135,7 +135,7 @@ public class OfflineRunner implements AnalysisListener {
 			catch (Exception e) {
 				System.err.println("Failed to process "+fileGroups[i][0]);
 				e.printStackTrace();
-				filesRemaining.decrementAndGet();
+				filesRemaining.countDown();
 				somethingFailed = true;
 			}
 			
@@ -144,9 +144,10 @@ public class OfflineRunner implements AnalysisListener {
 		
 		// We need to hold this class open as otherwise the main method
 		// exits when it's finished.
-		while (filesRemaining.intValue() > 0) {
+		while (true) {
 			try {
-				Thread.sleep(1000);
+				filesRemaining.await();
+				break;
 			} 
 			catch (InterruptedException e) {}
 		}
@@ -195,7 +196,7 @@ public class OfflineRunner implements AnalysisListener {
 			analysisExceptionReceived(file, e);
 			return;
 		}
-		filesRemaining.decrementAndGet();
+		filesRemaining.countDown();
 
 	}
 
@@ -218,7 +219,7 @@ public class OfflineRunner implements AnalysisListener {
 		System.err.println("Failed to process file "+file.name());
 		somethingFailed = true;
 		e.printStackTrace();
-		filesRemaining.decrementAndGet();
+		filesRemaining.countDown();
 	}
 
 	public void analysisStarted(SequenceFile file) {
