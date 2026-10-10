@@ -118,25 +118,29 @@ public class BasicStats extends AbstractQCModule {
 			if (sequence.getSequence().length() > maxLength) maxLength = sequence.getSequence().length();
 		}
 
+		// Bases are random, so count without branches which would mostly be mispredicted
 		String seq = sequence.getSequence();
 		int seqLen = seq.length();
-		for (int c=0;c<seqLen;c++) {
-			switch (seq.charAt(c)) {
-				case 'G': ++gCount;break;
-				case 'A': ++aCount;break;
-				case 'T': ++tCount;break;
-				case 'C': ++cCount;break;
-			}
+		int g = 0, a = 0, t = 0, c = 0;
+		for (int i=0;i<seqLen;i++) {
+			char b = seq.charAt(i);
+			g += b == 'G' ? 1 : 0;
+			a += b == 'A' ? 1 : 0;
+			t += b == 'T' ? 1 : 0;
+			c += b == 'C' ? 1 : 0;
 		}
+		gCount += g;
+		aCount += a;
+		tCount += t;
+		cCount += c;
 		
 		String qual = sequence.getQualityString();
 		int qualLen = qual.length();
-		for (int c=0;c<qualLen;c++) {
-			char ch = qual.charAt(c);
-			if (ch < lowestChar) {
-				lowestChar = ch;
-			}
+		char lowest = lowestChar;
+		for (int i=0;i<qualLen;i++) {
+			lowest = (char) Math.min(lowest, qual.charAt(i));
 		}
+		lowestChar = lowest;
 	}
 	
 	public boolean raisesError() {
