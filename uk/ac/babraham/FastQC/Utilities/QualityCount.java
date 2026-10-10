@@ -33,17 +33,22 @@ public class QualityCount {
 	/** Quality characters must be below this. */
 	public static final int MAX_CHAR = 150;
 
-	private long [] actualCounts = new long[MAX_CHAR];
+	// Counts of the characters from first on, covering only the range seen so far:
+	// there are thousands of these (per tile and position) and real qualities only
+	// span a few dozen characters
+	private long [] actualCounts = new long[0];
+	private int first = 0;
 	
 	private long totalCounts = 0;
 
 	public void addValue(char c) {
 		totalCounts++;
 		
-		if ((int)c >= actualCounts.length) {
+		if ((int)c >= MAX_CHAR) {
 			throw new IllegalArgumentException("Got character "+c+" as a quality value which has ASCII"+((int)c)+" which is higher than we can cope with");
 		}
-		actualCounts[(int)c]++;
+		include(c);
+		actualCounts[c - first]++;
 	}
 	
 	/**
@@ -52,7 +57,30 @@ public class QualityCount {
 	 */
 	public void addValue(char c, long count) {
 		totalCounts += count;
-		actualCounts[c] += count;
+		include(c);
+		actualCounts[c - first] += count;
+	}
+
+	/** Extends the counted range to include c. */
+	private void include (int c) {
+		if (actualCounts.length == 0) {
+			first = c;
+			actualCounts = new long[1];
+		}
+		else if (c < first) {
+			long [] counts = new long[actualCounts.length + first - c];
+			System.arraycopy(actualCounts, 0, counts, first - c, actualCounts.length);
+			actualCounts = counts;
+			first = c;
+		}
+		else if (c >= first + actualCounts.length) {
+			actualCounts = java.util.Arrays.copyOf(actualCounts, c - first + 1);
+		}
+	}
+
+	private long count (int c) {
+		int i = c - first;
+		return i >= 0 && i < actualCounts.length ? actualCounts[i] : 0;
 	}
 	
 	public long getTotalCount () {
@@ -61,16 +89,16 @@ public class QualityCount {
 	
 	public char getMinChar () {
 		
-		for (int i=0;i<actualCounts.length;i++) {
-			if (actualCounts[i]>0) return (char)i;
+		for (int i=0;i<MAX_CHAR;i++) {
+			if (count(i)>0) return (char)i;
 		}
 		
 		return (char)1000;
 	}
 	
 	public char getMaxChar () {
-		for (int i=actualCounts.length-1;i>=0;i--) {
-			if (actualCounts[i]>0) return (char)i;
+		for (int i=MAX_CHAR-1;i>=0;i--) {
+			if (count(i)>0) return (char)i;
 		}
 		
 		return (char)1000;
@@ -81,9 +109,9 @@ public class QualityCount {
 		long total = 0;
 		long count = 0;
 	
-		for (int i=offset;i<actualCounts.length;i++) {
-			total += actualCounts[i]*(i-offset);
-			count += actualCounts[i];
+		for (int i=offset;i<MAX_CHAR;i++) {
+			total += count(i)*(i-offset);
+			count += count(i);
 		}
 		
 		return ((double)total)/count;
@@ -97,8 +125,8 @@ public class QualityCount {
 		total /= 100;
 		
 		long count = 0;
-		for (int i=offset;i<actualCounts.length;i++) {
-			count += actualCounts[i];
+		for (int i=offset;i<MAX_CHAR;i++) {
+			count += count(i);
 			if (count >=total) {
 				return((char)(i-offset));
 			}
