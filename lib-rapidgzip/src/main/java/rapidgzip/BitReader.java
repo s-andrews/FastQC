@@ -33,11 +33,12 @@ final class BitReader {
 	private final Source source;
 	private final int segmentSize;
 
-	private byte [] data = new byte[0];
+	// Package private so that decoding loops can keep the bit buffer in locals
+	byte [] data = new byte[0];
 	// File offset of data[0]
 	private long base;
-	private int limit;
-	private int pos;
+	int limit;
+	int pos;
 	private boolean endOfData;
 	// Zero bytes supplied past the end of the data
 	private int padding;

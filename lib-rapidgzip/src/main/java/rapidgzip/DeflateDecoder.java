@@ -2,6 +2,9 @@ package rapidgzip;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -29,6 +32,12 @@ import java.util.Arrays;
 final class DeflateDecoder {
 
 	static final int WINDOW = 32768;
+
+	private static final VarHandle LONG_LE = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+	// Bits needed to decode a length/distance pair: 15 + 5 + 15 + 13
+	private static final int MAX_SYMBOL_BITS = 48;
+	// Below this, back references are copied with a loop rather than System.arraycopy
+	private static final int SHORT_COPY = 32;
 
 	// Primary table sizes (see Huffman); longer codes go through a second level.
 	// Out of range symbols for invalid bit patterns, rejected when decoded.
@@ -66,6 +75,7 @@ final class DeflateDecoder {
 	}
 
 	private final BitReader in;
+	private final Buffers buffers;
 
 	// Marker mode output, starting with the WINDOW markers for the unknown window
 	private char [] chars;
@@ -89,8 +99,9 @@ final class DeflateDecoder {
 	private final byte [] codeLengths = new byte[320];
 	private final byte [] precodeLengths = new byte[19];
 
-	DeflateDecoder (BitReader in) {
+	DeflateDecoder (BitReader in, Buffers buffers) {
 		this.in = in;
+		this.buffers = buffers;
 	}
 
 	/**
@@ -106,7 +117,7 @@ final class DeflateDecoder {
 		if (window == null) {
 			// Markers often last for the whole chunk (FASTQ), so size for it
 			markerMode = true;
-			chars = new char[this.sizeHint + WINDOW];
+			chars = buffers.chars(this.sizeHint + WINDOW);
 			for (int i = 0; i < WINDOW; i++) chars[i] = (char) (256 + i);
 			charPos = WINDOW;
 			// Until WINDOW values are output, the window still holds initial markers
@@ -114,7 +125,7 @@ final class DeflateDecoder {
 		}
 		else {
 			markerMode = false;
-			bytes = new byte[this.sizeHint + window.length];
+			bytes = buffers.bytes(this.sizeHint + window.length);
 			System.arraycopy(window, 0, bytes, 0, window.length);
 			bytePos = bytesFrom = window.length;
 		}
@@ -192,7 +203,7 @@ final class DeflateDecoder {
 	 */
 	private void switchToBytes () {
 		markerMode = false;
-		bytes = new byte[Math.max(sizeHint - (charPos - WINDOW), 1 << 16) + WINDOW];
+		bytes = buffers.bytes(Math.max(sizeHint - (charPos - WINDOW), 1 << 16) + WINDOW);
 		for (int i = 0; i < WINDOW; i++) bytes[i] = (byte) chars[charPos - WINDOW + i];
 		bytePos = bytesFrom = WINDOW;
 	}
@@ -289,11 +300,19 @@ final class DeflateDecoder {
 	}
 
 	private void ensureChars (int n) {
-		if (charPos + n > chars.length) chars = Arrays.copyOf(chars, Math.max(chars.length + (chars.length >> 1), charPos + n));
+		if (charPos + n > chars.length) {
+			char [] old = chars;
+			chars = Arrays.copyOf(old, Math.max(old.length + (old.length >> 1), charPos + n));
+			buffers.release(old);
+		}
 	}
 
 	private void ensureBytes (int n) {
-		if (bytePos + n > bytes.length) bytes = Arrays.copyOf(bytes, Math.max(bytes.length + (bytes.length >> 1), bytePos + n));
+		if (bytePos + n > bytes.length) {
+			byte [] old = bytes;
+			bytes = Arrays.copyOf(old, Math.max(old.length + (old.length >> 1), bytePos + n));
+			buffers.release(old);
+		}
 	}
 
 	/**
@@ -308,33 +327,40 @@ final class DeflateDecoder {
 	 * 1.89 s to 1.53 s on 4 threads (510 MB AVITI), FastQC CPU -7%.
 	 */
 	private boolean markersInWindow () {
-		nextMarkerCheck = charPos + MARKER_CHECK;
 		char [] out = chars;
 		int seen = 0;
 		for (int i = charPos - WINDOW; i < charPos; i++) seen |= out[i];
+		// Markers often last for the whole chunk, so check less and less often
+		markerCheckInterval = Math.min(markerCheckInterval * 2, MAX_MARKER_CHECK);
+		nextMarkerCheck = charPos + markerCheckInterval;
 		return seen >= 256;
 	}
 
-	private static final int MARKER_CHECK = 1 << 16;
+	private static final int MAX_MARKER_CHECK = 1 << 20;
+	private int markerCheckInterval = 1 << 16;
 
 	/**
 	 * Marker mode decoding. Returns true at the end of the block, or false
-	 * after switching to byte mode to continue the block there.
-	 *
-	 * Hot loop: state is kept in locals and written back in the finally block.
-	 * Markers aren't tracked per copy: markersInWindow scans the window every
-	 * MARKER_CHECK values of output instead.
-	 * Each refill gives >= 56 bits, enough for a literal/length code, its extra
-	 * bits, a distance code and its extra bits (at most 48).
+	 * after switching to byte mode to continue the block there. The WINDOW
+	 * markers at the start of the output make any distance up to 32KB valid.
 	 */
 	private boolean decodeChars (int [] lit, int [] dist) throws IOException {
 		char [] out = chars;
 		int op = charPos;
+		BitReader in = this.in;
+		long bits = in.bits;
+		int count = in.count;
+		byte [] data = in.data;
+		int pos = in.pos;
+		int limit = in.limit;
 		try {
 			while (true) {
 				if (op >= nextMarkerCheck) {
 					charPos = op;
 					if (!markersInWindow()) {
+						in.bits = bits;
+						in.count = count;
+						in.pos = pos;
 						switchToBytes();
 						return false;
 					}
@@ -344,49 +370,64 @@ final class DeflateDecoder {
 					ensureChars(MAX_MATCH);
 					out = chars;
 				}
-				in.refill();
-				long b = in.bits;
-				int e = lit[(int) b & LIT_MASK];
-				if (e < 0) e = lit[((e >>> 4) & 0x7FFFFFF) + ((int) (b >>> LIT_BITS) & ((1 << (e & 15)) - 1))];
+				if (count < MAX_SYMBOL_BITS) {
+					if (pos + 8 <= limit) {
+						bits |= (long) LONG_LE.get(data, pos) << count;
+						int bytes = (63 - count) >>> 3;
+						pos += bytes;
+						count += bytes << 3;
+						bits &= (1L << count) - 1;
+					}
+					else {
+						in.bits = bits;
+						in.count = count;
+						in.pos = pos;
+						in.refill();
+						bits = in.bits;
+						count = in.count;
+						data = in.data;
+						pos = in.pos;
+						limit = in.limit;
+					}
+				}
+				int e = lit[(int) bits & LIT_MASK];
+				if (e < 0) e = lit[((e >>> 4) & 0x7FFFFFF) + ((int) (bits >>> LIT_BITS) & ((1 << (e & 15)) - 1))];
 				int n = e & 15;
-				b >>>= n;
-				int used = n;
+				bits >>>= n;
+				count -= n;
 				int symbol = e >>> 4;
 				if (symbol < 256) {
 					out[op++] = (char) symbol;
-					in.consume(used);
 					continue;
 				}
 				if (symbol == 256) {
-					in.consume(used);
 					return true;
 				}
 				symbol -= 257;
 				if (symbol >= 29) throw new DataFormatError("Invalid literal/length code");
 				int extra = LENGTH_EXTRA[symbol];
-				int length = LENGTH_BASE[symbol] + ((int) b & ((1 << extra) - 1));
-				b >>>= extra;
-				used += extra;
+				int length = LENGTH_BASE[symbol] + ((int) bits & ((1 << extra) - 1));
+				bits >>>= extra;
+				count -= extra;
 
-				e = dist[(int) b & DIST_MASK];
-				if (e < 0) e = dist[((e >>> 4) & 0x7FFFFFF) + ((int) (b >>> DIST_BITS) & ((1 << (e & 15)) - 1))];
+				e = dist[(int) bits & DIST_MASK];
+				if (e < 0) e = dist[((e >>> 4) & 0x7FFFFFF) + ((int) (bits >>> DIST_BITS) & ((1 << (e & 15)) - 1))];
 				n = e & 15;
-				b >>>= n;
-				used += n;
+				bits >>>= n;
+				count -= n;
 				symbol = e >>> 4;
 				if (symbol >= 30) throw new DataFormatError("Invalid distance code");
 				extra = DIST_EXTRA[symbol];
-				int distance = DIST_BASE[symbol] + ((int) b & ((1 << extra) - 1));
-				used += extra;
-				in.consume(used);
+				int distance = DIST_BASE[symbol] + ((int) bits & ((1 << extra) - 1));
+				bits >>>= extra;
+				count -= extra;
 
-				// The WINDOW markers at the start of the output make any distance <= 32KB valid
 				int from = op - distance;
 				if (from < 0) throw new DataFormatError("Invalid distance too far back");
-				// Source and destination don't overlap: arraycopy (an intrinsic) is faster than
-				// the loop. Overlapping copies repeat the last distance values, which needs the
-				// forward loop (arraycopy would copy as if through a temporary buffer).
-				if (distance >= length) {
+				// Long copies whose source and destination don't overlap: arraycopy (an intrinsic)
+				// is faster than the loop. Overlapping copies repeat the last distance values, which
+				// needs the forward loop (arraycopy would copy as if through a temporary buffer).
+				if (distance >= length && length > SHORT_COPY) {
 					System.arraycopy(out, from, out, op, length);
 				}
 				else {
@@ -396,6 +437,9 @@ final class DeflateDecoder {
 			}
 		}
 		finally {
+			in.bits = bits;
+			in.count = count;
+			in.pos = pos;
 			if (markerMode) {
 				charPos = op;
 				chars = out;
@@ -404,9 +448,15 @@ final class DeflateDecoder {
 	}
 
 	/** Byte mode decoding to the end of the block: the window is known, as in a plain inflater. */
-	private void decodeBytes (int [] lit, int [] dist) throws IOException {
+	private boolean decodeBytes (int [] lit, int [] dist) throws IOException {
 		byte [] out = bytes;
 		int op = bytePos;
+		BitReader in = this.in;
+		long bits = in.bits;
+		int count = in.count;
+		byte [] data = in.data;
+		int pos = in.pos;
+		int limit = in.limit;
 		try {
 			while (true) {
 				if (op + MAX_MATCH > out.length) {
@@ -414,47 +464,63 @@ final class DeflateDecoder {
 					ensureBytes(MAX_MATCH);
 					out = bytes;
 				}
-				in.refill();
-				long b = in.bits;
-				int e = lit[(int) b & LIT_MASK];
-				if (e < 0) e = lit[((e >>> 4) & 0x7FFFFFF) + ((int) (b >>> LIT_BITS) & ((1 << (e & 15)) - 1))];
+				if (count < MAX_SYMBOL_BITS) {
+					if (pos + 8 <= limit) {
+						bits |= (long) LONG_LE.get(data, pos) << count;
+						int bytes = (63 - count) >>> 3;
+						pos += bytes;
+						count += bytes << 3;
+						bits &= (1L << count) - 1;
+					}
+					else {
+						in.bits = bits;
+						in.count = count;
+						in.pos = pos;
+						in.refill();
+						bits = in.bits;
+						count = in.count;
+						data = in.data;
+						pos = in.pos;
+						limit = in.limit;
+					}
+				}
+				int e = lit[(int) bits & LIT_MASK];
+				if (e < 0) e = lit[((e >>> 4) & 0x7FFFFFF) + ((int) (bits >>> LIT_BITS) & ((1 << (e & 15)) - 1))];
 				int n = e & 15;
-				b >>>= n;
-				int used = n;
+				bits >>>= n;
+				count -= n;
 				int symbol = e >>> 4;
 				if (symbol < 256) {
 					out[op++] = (byte) symbol;
-					in.consume(used);
 					continue;
 				}
 				if (symbol == 256) {
-					in.consume(used);
-					return;
+					return true;
 				}
 				symbol -= 257;
 				if (symbol >= 29) throw new DataFormatError("Invalid literal/length code");
 				int extra = LENGTH_EXTRA[symbol];
-				int length = LENGTH_BASE[symbol] + ((int) b & ((1 << extra) - 1));
-				b >>>= extra;
-				used += extra;
+				int length = LENGTH_BASE[symbol] + ((int) bits & ((1 << extra) - 1));
+				bits >>>= extra;
+				count -= extra;
 
-				e = dist[(int) b & DIST_MASK];
-				if (e < 0) e = dist[((e >>> 4) & 0x7FFFFFF) + ((int) (b >>> DIST_BITS) & ((1 << (e & 15)) - 1))];
+				e = dist[(int) bits & DIST_MASK];
+				if (e < 0) e = dist[((e >>> 4) & 0x7FFFFFF) + ((int) (bits >>> DIST_BITS) & ((1 << (e & 15)) - 1))];
 				n = e & 15;
-				b >>>= n;
-				used += n;
+				bits >>>= n;
+				count -= n;
 				symbol = e >>> 4;
 				if (symbol >= 30) throw new DataFormatError("Invalid distance code");
 				extra = DIST_EXTRA[symbol];
-				int distance = DIST_BASE[symbol] + ((int) b & ((1 << extra) - 1));
-				used += extra;
-				in.consume(used);
+				int distance = DIST_BASE[symbol] + ((int) bits & ((1 << extra) - 1));
+				bits >>>= extra;
+				count -= extra;
 
 				// out starts with the (up to 32KB) window, so this rejects what zlib rejects
 				int from = op - distance;
 				if (from < 0) throw new DataFormatError("Invalid distance too far back");
-				// arraycopy only when source and destination don't overlap
-				if (distance >= length) {
+				// arraycopy only for long copies whose source and destination don't overlap
+				if (distance >= length && length > SHORT_COPY) {
 					System.arraycopy(out, from, out, op, length);
 				}
 				else {
@@ -464,6 +530,9 @@ final class DeflateDecoder {
 			}
 		}
 		finally {
+			in.bits = bits;
+			in.count = count;
+			in.pos = pos;
 			bytePos = op;
 			bytes = out;
 		}

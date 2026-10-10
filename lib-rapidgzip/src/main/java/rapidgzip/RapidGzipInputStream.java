@@ -87,6 +87,7 @@ public final class RapidGzipInputStream extends InputStream {
 	// Heap for the output of the chunks in flight
 	private final long budget;
 
+	private final Buffers buffers;
 	// Speculative decodes of chunks [nextChunk, nextToSubmit), in chunk order: the
 	// head is always the result for chunk nextChunk
 	private final ArrayDeque<Future<Chunk>> inFlight = new ArrayDeque<Future<Chunk>>();
@@ -160,6 +161,7 @@ public final class RapidGzipInputStream extends InputStream {
 		long perChunk = (long) chunkSize * 20;
 		this.budget = Runtime.getRuntime().maxMemory() / 4;
 		this.maxInFlight = (int) Math.max(2, Math.min(threads + 2, budget / perChunk));
+		this.buffers = new Buffers(maxInFlight);
 
 		try {
 			if (fileSize == 0) throw new EOFException();
@@ -238,7 +240,7 @@ public final class RapidGzipInputStream extends InputStream {
 		long stopBit = chunkStartBit(k+1);
 		if (k == 0) {
 			// The first block start and its (empty) window are known: no markers
-			Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE)).decode(firstBlockBit, stopBit, new byte[0], sizeHint());
+			Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE), buffers).decode(firstBlockBit, stopBit, new byte[0], sizeHint());
 			updateRatio(chunk);
 			return chunk;
 		}
@@ -253,7 +255,7 @@ public final class RapidGzipInputStream extends InputStream {
 			long found = finder.find(data, data.length, from, (long) length * 8);
 			if (found < 0) return null;
 			try {
-				Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE)).decode(start * 8 + found, stopBit, null, sizeHint());
+				Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE), buffers).decode(start * 8 + found, stopBit, null, sizeHint());
 				updateRatio(chunk);
 				return chunk;
 			}
@@ -297,7 +299,7 @@ public final class RapidGzipInputStream extends InputStream {
 	// to the first boundary at or after stopBit
 	private Chunk decodeSequentially (long stopBit) throws IOException {
 		sequentialDecodes++;
-		return new DeflateDecoder(new BitReader(source, SEGMENT_SIZE)).decode(expectedBit, stopBit, window, sizeHint());
+		return new DeflateDecoder(new BitReader(source, SEGMENT_SIZE), buffers).decode(expectedBit, stopBit, window, sizeHint());
 	}
 
 	/** A chunk in order, with its markers being resolved. */
@@ -368,7 +370,7 @@ public final class RapidGzipInputStream extends InputStream {
 		expectedBit = chunk.endBit;
 		if (chunk.endOfData) finished = true;
 		Future<byte []> resolved = chunk.markersTo > chunk.markersFrom
-				? pool.submit(() -> chunk.resolveAndRelease(before))
+				? pool.submit(() -> chunk.resolveAndRelease(before, buffers))
 				: java.util.concurrent.CompletableFuture.completedFuture(new byte[0]);
 		ordered.add(new Ordered(chunk, resolved));
 	}
@@ -406,7 +408,7 @@ public final class RapidGzipInputStream extends InputStream {
 
 	// A chunk's output is its resolved marker part followed by its byte part
 	private void emit (Chunk chunk, byte [] resolved) throws IOException {
-		addSegment(resolved, 0, resolved.length);
+		addSegment(resolved, 0, chunk.markersLength());
 		addSegment(chunk.bytes, chunk.bytesFrom, chunk.bytesTo);
 		checkMembers(chunk, resolved);
 	}
@@ -428,7 +430,7 @@ public final class RapidGzipInputStream extends InputStream {
 		long offset = 0;
 		byte [][] parts = { resolved, chunk.bytes };
 		int [] froms = { 0, chunk.bytesFrom };
-		int [] tos = { resolved.length, chunk.bytesTo };
+		int [] tos = { chunk.markersLength(), chunk.bytesTo };
 		for (int p = 0; p < 2; p++) {
 			int pos = froms[p];
 			int length = tos[p] - froms[p];
@@ -457,6 +459,11 @@ public final class RapidGzipInputStream extends InputStream {
 	private boolean nextSegment () throws IOException {
 		if (closed) throw new IOException("Stream closed");
 		if (failure != null) throw failure;
+		// Each buffer is in one segment, so it can be reused once read
+		if (current != null) {
+			buffers.release(current);
+			current = null;
+		}
 		boolean more;
 		try {
 			more = fill();

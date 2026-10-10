@@ -58,16 +58,19 @@ final class Chunk {
 		return (markersTo - markersFrom) + (bytesTo - bytesFrom);
 	}
 
-	/** The marker part of the output as bytes, given the up to 32KB window preceding the chunk. */
-	byte [] resolve (byte [] window) throws DataFormatError {
-		byte [] out = new byte[markersTo - markersFrom];
-		resolve(window, markersFrom, markersTo, out, 0);
-		return out;
+	int markersLength () {
+		return markersTo - markersFrom;
 	}
 
-	/** Like resolve, then releases the markers, after which only the resolved output is available. */
-	byte [] resolveAndRelease (byte [] window) throws DataFormatError {
-		byte [] out = resolve(window);
+	/**
+	 * The marker part of the output as bytes, given the up to 32KB window
+	 * preceding the chunk, in the first markersLength() bytes of a buffer. The
+	 * markers are released, after which only the resolved output is available.
+	 */
+	byte [] resolveAndRelease (byte [] window, Buffers buffers) throws DataFormatError {
+		byte [] out = buffers.bytes(markersLength());
+		resolve(window, markersFrom, markersTo, out, 0);
+		buffers.release(markers);
 		markers = null;
 		return out;
 	}
@@ -86,11 +89,10 @@ final class Chunk {
 		for (int i = 0; i < 256; i++) values[i] = (byte) i;
 		int shift = DeflateDecoder.WINDOW - window.length;
 		System.arraycopy(window, 0, values, 256 + shift, window.length);
+		// Markers are below 256 + WINDOW by construction
+		char [] in = markers;
 		for (int i = from; i < to; i++) {
-			char c = markers[i];
-			// Can't happen for output of DeflateDecoder (values < 256 + WINDOW); guards the table
-			if (c >= values.length) throw new DataFormatError("Invalid marker");
-			dest[offset++] = values[c];
+			dest[offset++] = values[in[i]];
 		}
 		if (shift > 0) {
 			// Markers before the start of the data are invalid distances. Checked in a separate
