@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -62,6 +63,27 @@ public class AdapterContent extends AbstractQCModule {
 	private String [] xLabels = new String[0];
 
 	BaseGroup [] groups;
+
+	// Single pass adapter search: when all adapters share the same length k (<= 31)
+	// and only contain ACGT, each k-mer of the read is 2-bit packed into a long and
+	// looked up in a small open addressing table, instead of scanning the read once
+	// per adapter with indexOf. Null when the adapters don't qualify.
+	private long [] adapterKeys = null;
+	private int [][] adapterSlots = null;
+	private int adapterMask;
+	private int [] firstHit;
+	// Bitset over the last 8 bases (16 bits) of each adapter, to cheaply rule out most read k-mers
+	private long [] adapterFilter;
+
+	private static final byte [] BASE_CODES = new byte[256];
+	static {
+		Arrays.fill(BASE_CODES, (byte)-1);
+		BASE_CODES['A'] = 0;
+		BASE_CODES['C'] = 1;
+		BASE_CODES['G'] = 2;
+		BASE_CODES['T'] = 3;
+	}
+
 	public AdapterContent () {
 
 		Vector<Adapter>c = new Vector<Adapter>();
@@ -114,7 +136,94 @@ public class AdapterContent extends AbstractQCModule {
 		}
 
 		adapters = c.toArray(new Adapter[0]);
+		firstHit = new int[adapters.length];
+		if (!differentAdapterLengths) buildAdapterTable();
 
+	}
+
+	private static int baseCode (char c) {
+		return c < 256 ? BASE_CODES[c] : -1;
+	}
+
+	private static int slotFor (long key, int mask) {
+		long h = key * 0x9E3779B97F4A7C15L;
+		return (int)(h >>> 40) & mask;
+	}
+
+	private void buildAdapterTable () {
+		if (adapters.length == 0 || longestAdapter == 0 || longestAdapter > 31) return;
+
+		long [] keys = new long[adapters.length];
+		for (int a=0;a<adapters.length;a++) {
+			String seq = adapters[a].sequence();
+			for (int i=0;i<seq.length();i++) {
+				int code = baseCode(seq.charAt(i));
+				if (code < 0) return;
+				keys[a] = (keys[a] << 2) | code;
+			}
+		}
+
+		int size = Integer.highestOneBit(adapters.length * 4 - 1) << 1;
+		adapterMask = size-1;
+		adapterKeys = new long[size];
+		adapterSlots = new int[size][];
+		adapterFilter = new long[1 << 10];
+		for (int a=0;a<adapters.length;a++) {
+			int low = (int)(keys[a] & 0xFFFF);
+			adapterFilter[low >>> 6] |= 1L << low;
+			int slot = slotFor(keys[a], adapterMask);
+			while (adapterSlots[slot] != null && adapterKeys[slot] != keys[a]) slot = (slot+1) & adapterMask;
+			adapterKeys[slot] = keys[a];
+			// Identical adapter sequences share a slot
+			int [] ids = adapterSlots[slot] == null ? new int[0] : adapterSlots[slot];
+			ids = Arrays.copyOf(ids, ids.length+1);
+			ids[ids.length-1] = a;
+			adapterSlots[slot] = ids;
+		}
+	}
+
+	// Fills firstHit with the first index of each adapter in seq (-1 if absent),
+	// equivalent to seq.indexOf(adapter) for every adapter.
+	private void findAdapters (String seq) {
+		Arrays.fill(firstHit, -1);
+		// Latin-1 encoding maps any char that isn't a single byte to '?', which isn't a base
+		byte [] bases = seq.getBytes(StandardCharsets.ISO_8859_1);
+		int length = bases.length;
+
+		int k = longestAdapter;
+		long kmerMask = (1L << (2*k)) - 1;
+		long [] filter = adapterFilter;
+		long key = 0;
+		int valid = 0;
+		int remaining = adapters.length;
+		for (int i=0;i<length;i++) {
+			int code = BASE_CODES[bases[i] & 0xFF];
+			if (code < 0) {
+				valid = 0;
+				key = 0;
+				continue;
+			}
+			key = ((key << 2) | code) & kmerMask;
+			if (++valid < k) continue;
+
+			int low = (int)key & 0xFFFF;
+			if ((filter[low >>> 6] & (1L << low)) == 0) continue;
+
+			int slot = slotFor(key, adapterMask);
+			while (adapterSlots[slot] != null) {
+				if (adapterKeys[slot] == key) {
+					for (int a : adapterSlots[slot]) {
+						if (firstHit[a] < 0) {
+							firstHit[a] = i-k+1;
+							--remaining;
+						}
+					}
+					break;
+				}
+				slot = (slot+1) & adapterMask;
+			}
+			if (remaining == 0) return;
+		}
 	}
 
 	public boolean ignoreFilteredSequences() {
@@ -168,9 +277,11 @@ public class AdapterContent extends AbstractQCModule {
 
 		// Now we go through all of the Adapters to see where they occur
 
+		if (adapterKeys != null) findAdapters(sequence.getSequence());
+
 		for (int a=0;a<adapters.length;a++) {
 
-			int index = sequence.getSequence().indexOf(adapters[a].sequence());
+			int index = adapterKeys != null ? firstHit[a] : sequence.getSequence().indexOf(adapters[a].sequence());
 			if (index >=0) {
 				for (int i=index;i<=longestSequence-longestAdapter;i++) {
 					adapters[a].incrementCount(i);
