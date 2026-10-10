@@ -58,8 +58,23 @@ class ByteLineReader {
 		this.in = in;
 	}
 
+	/** Returned by readLineUnlessStartsWith for a line it skipped. */
+	static final byte [] SKIPPED = new byte[0];
+
 	/** The next line without its terminator, or null at the end of the stream. */
 	byte [] readLine () throws IOException {
+		return readLine(-1);
+	}
+
+	/**
+	 * Skips the next line if it starts with the given character, returning
+	 * SKIPPED, else returns it like readLine. Avoids copying lines we don't need.
+	 */
+	byte [] readLineUnlessStartsWith (char first) throws IOException {
+		return readLine(first);
+	}
+
+	private byte [] readLine (int skipIfFirst) throws IOException {
 		// Bytes from pos already known to hold no line end, so that after a
 		// fill the search resumes where it stopped instead of rescanning
 		int scanned = 0;
@@ -73,7 +88,7 @@ class ByteLineReader {
 			}
 			int end = findLineEnd(pos + scanned);
 			if (end >= 0) {
-				byte [] line = Arrays.copyOfRange(buffer, pos, end);
+				byte [] line = end > pos && buffer[pos] == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, end);
 				if (buffer[end] == '\r') skipLF = true;
 				pos = end + 1;
 				return line;
@@ -83,7 +98,7 @@ class ByteLineReader {
 			if (!fill()) {
 				if (pos == limit) return null;
 				// Last line without a terminator
-				byte [] line = Arrays.copyOfRange(buffer, pos, limit);
+				byte [] line = buffer[pos] == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, limit);
 				pos = limit;
 				return line;
 			}

@@ -204,7 +204,7 @@ public class AnalysisRunner implements Runnable {
 		final int BATCH_SIZE = 1024;
 		// Bounds the reads held in memory: a batch counts until every module
 		// has processed it.
-		final int BATCHES_IN_FLIGHT = 32;
+		final int BATCHES_IN_FLIGHT = 16;
 
 		final Semaphore inFlight = new Semaphore(BATCHES_IN_FLIGHT);
 		final LinkedBlockingQueue<ModuleWork> ready = new LinkedBlockingQueue<ModuleWork>();
