@@ -19,11 +19,17 @@
  */
 package uk.ac.babraham.FastQC.Sequence;
 
+import java.nio.charset.StandardCharsets;
+
 public class Sequence {
 
-	private String sequence;
-	private String quality;
-	private String id;
+	// Bases (upper case) and qualities, one byte per position
+	private final byte [] bases;
+	private final byte [] qualities;
+	// The strings this was created from, if it was
+	private final String sequence;
+	private final String quality;
+	private final String id;
 	private SequenceFile file;
 	private String colorspace;
 	private boolean isFiltered;
@@ -33,6 +39,8 @@ public class Sequence {
 		this.file = file;
 		this.sequence = sequence.toUpperCase();
 		this.quality = quality;
+		this.bases = toBytes(this.sequence);
+		this.qualities = toBytes(quality);
 		this.colorspace = null;
 		this.isFiltered = false;
 	}
@@ -42,7 +50,29 @@ public class Sequence {
 		this.file = file;
 		this.sequence = sequence;
 		this.quality = quality;
+		this.bases = toBytes(sequence);
+		this.qualities = toBytes(quality);
 		this.colorspace = colorspace;
+	}
+
+	/**
+	 * Creates a sequence from bytes, one per position, which it then owns.
+	 * Bases must already be upper case.
+	 */
+	public Sequence (SequenceFile file, byte [] bases, byte [] qualities, String id) {
+		this.id = id;
+		this.file = file;
+		this.bases = bases;
+		this.qualities = qualities;
+		this.sequence = null;
+		this.quality = null;
+		this.colorspace = null;
+		this.isFiltered = false;
+	}
+
+	// Characters beyond Latin-1 become '?', they're only kept in the strings
+	private static byte [] toBytes (String s) {
+		return s.getBytes(StandardCharsets.ISO_8859_1);
 	}
 	
 	public void setIsFiltered (boolean isFiltered) {
@@ -56,9 +86,23 @@ public class Sequence {
 	public SequenceFile file () {
 		return file;
 	}
+
+	public int length () {
+		return bases.length;
+	}
+
+	/** The bases, upper case, one byte each. Must not be modified. */
+	public byte [] getSequenceBytes () {
+		return bases;
+	}
+
+	/** The quality characters, one byte each. Must not be modified. */
+	public byte [] getQualityBytes () {
+		return qualities;
+	}
 	
 	public String getSequence () {
-		return sequence;
+		return sequence != null ? sequence : new String(bases, StandardCharsets.ISO_8859_1);
 	}
 	
 	public String getColorspace () {
@@ -66,7 +110,7 @@ public class Sequence {
 	}
 	
 	public String getQualityString () {
-		return quality;
+		return quality != null ? quality : new String(qualities, StandardCharsets.ISO_8859_1);
 	}
 	
 	public String getID () {

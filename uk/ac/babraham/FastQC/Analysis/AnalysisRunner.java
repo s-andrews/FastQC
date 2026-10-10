@@ -131,12 +131,12 @@ public class AnalysisRunner implements Runnable {
 				
 				if (filterLengths) {
 					if (minLengthFilter) {
-						if (seq.getSequence().length() < minLength) {
+						if (seq.length() < minLength) {
 							continue;
 						}
 					}
 					if (maxLengthFilter) {
-						if (seq.getSequence().length() > maxLength) {
+						if (seq.length() > maxLength) {
 							continue;
 						}
 					}
@@ -388,12 +388,12 @@ public class AnalysisRunner implements Runnable {
 			// We need to apply length filters here if we have them.
 			if (filterLengths) {
 				if (minLengthFilter) {
-					if (seq.getSequence().length() < minLength) {
+					if (seq.length() < minLength) {
 						continue;
 					}
 				}
 				if (maxLengthFilter) {
-					if (seq.getSequence().length() > maxLength) {
+					if (seq.length() > maxLength) {
 						continue;
 					}
 				}

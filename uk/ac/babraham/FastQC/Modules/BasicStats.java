@@ -98,7 +98,7 @@ public class BasicStats extends AbstractQCModule {
 				
 		actualCount++;
 		
-		totalBases += sequence.getSequence().length();
+		totalBases += sequence.length();
 		
 		if (fileType == null) {
 			if (sequence.getColorspace() != null) {
@@ -110,12 +110,12 @@ public class BasicStats extends AbstractQCModule {
 		}
 		
 		if (actualCount == 1) {
-			minLength = sequence.getSequence().length();
-			maxLength = sequence.getSequence().length();
+			minLength = sequence.length();
+			maxLength = sequence.length();
 		}
 		else {
-			if (sequence.getSequence().length() < minLength) minLength = sequence.getSequence().length();
-			if (sequence.getSequence().length() > maxLength) maxLength = sequence.getSequence().length();
+			if (sequence.length() < minLength) minLength = sequence.length();
+			if (sequence.length() > maxLength) maxLength = sequence.length();
 		}
 
 		// Bases are random, so count without branches which would mostly be mispredicted:
@@ -123,11 +123,10 @@ public class BasicStats extends AbstractQCModule {
 		// locals keeps the fields out of the loop. These modules bounded wall time on WES,
 		// each running on one thread: WES 4M reads wall -46% (3.69 s -> 2.00 s), CPU -25%.
 		// Characters other than GATC are still not counted, as before.
-		String seq = sequence.getSequence();
-		int seqLen = seq.length();
+		byte [] seq = sequence.getSequenceBytes();
 		int g = 0, a = 0, t = 0, c = 0;
-		for (int i=0;i<seqLen;i++) {
-			char b = seq.charAt(i);
+		for (int i=0;i<seq.length;i++) {
+			byte b = seq[i];
 			g += b == 'G' ? 1 : 0;
 			a += b == 'A' ? 1 : 0;
 			t += b == 'T' ? 1 : 0;
@@ -138,14 +137,13 @@ public class BasicStats extends AbstractQCModule {
 		tCount += t;
 		cCount += c;
 		
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
+		byte [] qual = sequence.getQualityBytes();
 		// Same idea for the minimum: Math.min is a JIT intrinsic, typically a cmov
-		char lowest = lowestChar;
-		for (int i=0;i<qualLen;i++) {
-			lowest = (char) Math.min(lowest, qual.charAt(i));
+		int lowest = lowestChar;
+		for (int i=0;i<qual.length;i++) {
+			lowest = Math.min(lowest, qual[i] & 0xFF);
 		}
-		lowestChar = lowest;
+		lowestChar = (char) lowest;
 	}
 	
 	public boolean raisesError() {

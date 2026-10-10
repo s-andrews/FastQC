@@ -129,8 +129,8 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	public void processSequence(Sequence sequence) {
 		
 		calculated = false;
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
+		byte [] qual = sequence.getQualityBytes();
+		int qualLen = qual.length;
 		if (qualityCounts.length < qualLen) {
 
 			QualityCount [] qualityCountsNew = new QualityCount[qualLen];
@@ -146,7 +146,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 		}
 		
 		for (int i=0;i<qualLen;i++) {
-			qualityCounts[i].addValue(qual.charAt(i));
+			qualityCounts[i].addValue((char) (qual[i] & 0xFF));
 		}
 		
 	}

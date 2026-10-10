@@ -188,7 +188,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 		
 		// Don't bother with sequences with zero length as they don't have any 
 		// quality information anyway.
-		if (sequence.getQualityString().length() == 0) {
+		if (sequence.getQualityBytes().length == 0) {
 			return;
 		}
 				
@@ -256,8 +256,8 @@ public class PerTileQualityScores extends AbstractQCModule {
 			return;
 		}
 
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
+		byte [] qual = sequence.getQualityBytes();
+		int qualLen = qual.length;
 		if (currentLength < qualLen) {
 
 			Iterator<Integer> tiles = perTileQualityCounts.keySet().iterator();
@@ -302,7 +302,7 @@ public class PerTileQualityScores extends AbstractQCModule {
 		QualityCount [] qualityCounts = perTileQualityCounts.get(tile);
 
 		for (int i=0;i<qualLen;i++) {
-			qualityCounts[i].addValue(qual.charAt(i));
+			qualityCounts[i].addValue((char) (qual[i] & 0xFF));
 		}
 
 	}

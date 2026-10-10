@@ -113,8 +113,8 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 	
 	public void processSequence(Sequence sequence) {
 		calculated = false;
-		String seq = sequence.getSequence();
-		int seqLen = seq.length();
+		byte [] seq = sequence.getSequenceBytes();
+		int seqLen = seq.length;
 		if (gCounts.length < seqLen) {
 
 			long [] gCountsNew = new long [seqLen];
@@ -141,7 +141,7 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 		// avoid re-reading the fields on every iteration.
 		long [] g = gCounts, a = aCounts, t = tCounts, c = cCounts;
 		for (int i=0;i<seqLen;i++) {
-			char b = seq.charAt(i);
+			byte b = seq[i];
 			g[i] += b == 'G' ? 1 : 0;
 			a[i] += b == 'A' ? 1 : 0;
 			t[i] += b == 'T' ? 1 : 0;

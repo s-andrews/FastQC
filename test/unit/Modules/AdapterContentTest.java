@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -23,9 +24,10 @@ public class AdapterContentTest {
     private final AdapterContent module = new AdapterContent();
 
     private int [] findAdapters (String seq) throws Exception {
-        Method find = AdapterContent.class.getDeclaredMethod("findAdapters", String.class);
+        Method find = AdapterContent.class.getDeclaredMethod("findAdapters", byte [].class);
         find.setAccessible(true);
-        find.invoke(module, seq);
+        // Sequences hold their bases as Latin-1 bytes
+        find.invoke(module, (Object) seq.getBytes(StandardCharsets.ISO_8859_1));
         Field hits = AdapterContent.class.getDeclaredField("firstHit");
         hits.setAccessible(true);
         return ((int []) hits.get(module)).clone();

@@ -19,12 +19,11 @@
  */
 package uk.ac.babraham.FastQC.Sequence;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,7 +46,9 @@ public class FastQFile implements SequenceFile {
 	private boolean nofilter = false;
 
 	// We actually read our final data from this buffered reader
-	private BufferedReader br;
+	private ByteLineReader br;
+	// Lines are read as bytes; the id line is decoded as the platform charset, as it was read before
+	private static final Charset CHARSET = Charset.defaultCharset();
 	// We'll keep count of the number of lines read for the error message
 	private long lineNumber = 0;
 
@@ -85,7 +86,7 @@ public class FastQFile implements SequenceFile {
 		}
 				
 		if (file.getName().startsWith("stdin")) {
-			br = new BufferedReader(new InputStreamReader(System.in));
+			br = new ByteLineReader(System.in);
 		}
 		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
 			// RapidGzipInputStream splits the compressed file into chunks and decodes
@@ -96,11 +97,11 @@ public class FastQFile implements SequenceFile {
 			// one native read per 512 compressed bytes (wall -2% on 2M AVITI reads).
 			if (!Files.isRegularFile(file.toPath())) {
 				// Eg a named pipe (process substitution), which can only be read sequentially
-				br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024))));
+				br = new ByteLineReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024)));
 			}
 			else if (config.threads != null && config.threads <= 1) {
 				// Single-threaded as requested: decompress inline on the reading thread
-				br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis, 64 * 1024)));
+				br = new ByteLineReader(new MultiMemberGZIPInputStream(fis, 64 * 1024));
 			}
 			else {
 				// Decompress on several threads; the decoded output is still read in
@@ -109,15 +110,15 @@ public class FastQFile implements SequenceFile {
 				fis.close();
 				fis = null;
 				gzipStream = new RapidGzipInputStream(file.toPath(), gzipThreads(config));
-				br = new BufferedReader(new InputStreamReader(gzipStream));
+				br = new ByteLineReader(gzipStream);
 			}
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
-			br = new BufferedReader(new InputStreamReader(decompressor(config, new BZip2CompressorInputStream(fis,true))));
+			br = new ByteLineReader(decompressor(config, new BZip2CompressorInputStream(fis,true)));
 		} 
 
 		else {
-			br = new BufferedReader(new InputStreamReader(fis));
+			br = new ByteLineReader(fis);
 		}
 		readNext();
 	}
@@ -212,13 +213,13 @@ public class FastQFile implements SequenceFile {
 
 			// We might have blank lines between entries or at the end
 			// so allow for this
-			String id;
+			byte [] idLine;
 
 			while (true) {
-				id = br.readLine();
+				idLine = br.readLine();
 				++lineNumber;
 
-				if (id == null) {
+				if (idLine == null) {
 					nextSequence = null;
 					br.close();
 					if (fis != null) {
@@ -226,22 +227,23 @@ public class FastQFile implements SequenceFile {
 					}
 					return;
 				}
-				if (id.length()==0) {
+				if (idLine.length==0) {
 					continue;
 				}				
 
 				break;
 			}
 
+			String id = new String(idLine, CHARSET);
 
 			if (!id.startsWith("@")) {
 				nextSequence = null;
 				throw new SequenceFormatException("ID line didn't start with '@' at line "+lineNumber);
 			}
 
-			String seq;
-			String midLine;
-			String quality;
+			byte [] seq;
+			byte [] midLine;
+			byte [] quality;
 			try {
 				// Then the sequence
 				seq = br.readLine();
@@ -251,8 +253,8 @@ public class FastQFile implements SequenceFile {
 				midLine = br.readLine();
 				if (midLine == null) throw new IOException("No more data, expected midline, at line "+lineNumber);
 				++lineNumber;
-				if (!midLine.startsWith("+")) {
-					throw new SequenceFormatException("Midline '"+midLine+"' didn't start with '+' at "+lineNumber);
+				if (midLine.length == 0 || midLine[0] != '+') {
+					throw new SequenceFormatException("Midline '"+new String(midLine, CHARSET)+"' didn't start with '+' at "+lineNumber);
 				}
 				// Then the quality string
 				quality = br.readLine();
@@ -268,14 +270,15 @@ public class FastQFile implements SequenceFile {
 			// the rest of the file is the same.  For the first entry the nextSequence
 			// will be null, but we'll have real data in seq
 			if (nextSequence == null && seq != null) {
-				checkColorspace(seq);
+				checkColorspace(new String(seq, CHARSET));
 			}
 
 			if (isColorspace()) {
-				nextSequence = new Sequence(this,convertColorspaceToBases(seq.toUpperCase()), seq.toUpperCase(), quality, id);
+				String seqString = new String(seq, CHARSET);
+				nextSequence = new Sequence(this,convertColorspaceToBases(seqString.toUpperCase()), seqString.toUpperCase(), new String(quality, CHARSET), id);
 			} 
 			else {
-				nextSequence = new Sequence(this, seq.toUpperCase(),quality, id);
+				nextSequence = new Sequence(this, toUpperCase(seq), quality, id);
 			}
 
 			// If we're running in --casava mode then we will flag any sequences which
@@ -297,6 +300,15 @@ public class FastQFile implements SequenceFile {
 		catch (IOException ioe) {
 			throw new SequenceFormatException(ioe.getLocalizedMessage());
 		}
+	}
+
+	/** Upper cases ASCII letters in place. */
+	private static byte [] toUpperCase(byte [] seq) {
+		for (int i=0;i<seq.length;i++) {
+			byte b = seq[i];
+			if (b >= 'a' && b <= 'z') seq[i] = (byte) (b - 32);
+		}
+		return seq;
 	}
 
 	private void checkColorspace(String seq) {

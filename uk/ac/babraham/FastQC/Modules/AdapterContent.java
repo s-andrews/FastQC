@@ -26,7 +26,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -204,17 +203,15 @@ public class AdapterContent extends AbstractQCModule {
 	}
 
 	/**
-	 * Fills firstHit with the first index of each adapter in seq (-1 if absent),
-	 * equivalent to seq.indexOf(adapter) for every adapter.
+	 * Fills firstHit with the first index of each adapter in the bases (-1 if
+	 * absent), equivalent to indexOf(adapter) on them for every adapter.
 	 * Keeps a rolling 2-bit key of the last k bases; a non-ACGT base resets it, so
 	 * only windows of k valid bases are looked up. Positions are visited in order,
 	 * so the first time an adapter's key is seen is its indexOf position. Stops
 	 * early once every adapter has been found.
 	 */
-	private void findAdapters (String seq) {
+	private void findAdapters (byte [] bases) {
 		Arrays.fill(firstHit, -1);
-		// Latin-1 encoding maps any char that isn't a single byte to '?', which isn't a base
-		byte [] bases = seq.getBytes(StandardCharsets.ISO_8859_1);
 		int length = bases.length;
 
 		int k = longestAdapter;
@@ -295,8 +292,8 @@ public class AdapterContent extends AbstractQCModule {
 		// If the sequence is longer than it was then we need to expand the storage in
 		// all of the adapter objects to account for this.
 		
-		if (sequence.getSequence().length() > longestSequence && sequence.getSequence().length() - longestAdapter > 0) {
-			longestSequence = sequence.getSequence().length();
+		if (sequence.length() > longestSequence && sequence.length() - longestAdapter > 0) {
+			longestSequence = sequence.length();
 			for (int a=0;a<adapters.length;a++) {
 				adapters[a].expandLengthTo((longestSequence-longestAdapter)+1);
 			}
@@ -306,7 +303,7 @@ public class AdapterContent extends AbstractQCModule {
 
 		// One pass over the read finds all adapters at once (see findAdapters);
 		// otherwise each adapter is searched with its own indexOf scan.
-		if (adapterKeys != null) findAdapters(sequence.getSequence());
+		if (adapterKeys != null) findAdapters(sequence.getSequenceBytes());
 
 		for (int a=0;a<adapters.length;a++) {
 
