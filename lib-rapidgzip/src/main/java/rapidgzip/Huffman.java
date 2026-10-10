@@ -48,6 +48,11 @@ final class Huffman {
 	 * @throws DataFormatError if the lengths aren't a valid code (see isValid)
 	 */
 	static int [] build (byte [] lengths, int offset, int n, int primaryBits, int invalidSymbol, boolean allowEmpty) throws DataFormatError {
+		return build(lengths, offset, n, primaryBits, invalidSymbol, allowEmpty, null);
+	}
+
+	/** Builds the table into reuse if it's large enough, else into a new array. */
+	static int [] build (byte [] lengths, int offset, int n, int primaryBits, int invalidSymbol, boolean allowEmpty, int [] reuse) throws DataFormatError {
 		int [] counts = new int[MAX_BITS+1];
 		for (int i = 0; i < n; i++) counts[lengths[offset+i]]++;
 		counts[0] = 0;
@@ -91,8 +96,8 @@ final class Huffman {
 			}
 		}
 
-		int [] table = new int[size];
-		java.util.Arrays.fill(table, invalidSymbol << 4 | 1);
+		int [] table = reuse != null && reuse.length >= size ? reuse : new int[size];
+		java.util.Arrays.fill(table, 0, size, invalidSymbol << 4 | 1);
 		for (int s = 0; s < n; s++) {
 			int len = lengths[offset+s];
 			if (len == 0) continue;

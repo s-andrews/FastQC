@@ -154,7 +154,7 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 		this.chunkSize = chunkSize;
 		this.chunkCount = (int) Math.max(1, (fileSize + chunkSize - 1) / chunkSize);
-		this.source = this::readAt;
+		this.source = this::readInto;
 		// Each chunk in flight holds its output, often all as 16 bit values: for FASTQ ~6x the chunk
 		// size as 16 bit values, then as bytes. Use up to a quarter of the heap for them.
 		// (A 2MB chunk, 2 per thread, ran a 512MB heap out of memory.) The 20x estimate assumes a
@@ -187,17 +187,21 @@ public final class RapidGzipInputStream extends InputStream {
 	}
 
 	/**
-	 * Positional read, safe to call from several threads at once as it doesn't
-	 * use the channel position. Returns fewer bytes only at the end of the file.
+	 * Positional read into dest, safe to call from several threads at once as it
+	 * doesn't use the channel position. Returns the number of bytes read, fewer
+	 * than length only at the end of the file.
 	 */
-	private byte [] readAt (long offset, int length) throws IOException {
+	private int readInto (long offset, byte [] dest, int destOffset, int length) throws IOException {
 		int n = (int) Math.max(0, Math.min(length, fileSize - offset));
-		ByteBuffer buffer = ByteBuffer.allocate(n);
+		ByteBuffer buffer = ByteBuffer.wrap(dest, destOffset, n);
 		while (buffer.hasRemaining()) {
-			if (channel.read(buffer, offset + buffer.position()) < 0) break;
+			if (channel.read(buffer, offset + (buffer.position() - destOffset)) < 0) break;
 		}
-		return buffer.position() == n ? buffer.array() : java.util.Arrays.copyOf(buffer.array(), buffer.position());
+		return buffer.position() - destOffset;
 	}
+
+	// Compressed data of the chunk a worker thread is looking for a block start in
+	private final ThreadLocal<byte []> chunkData = new ThreadLocal<byte []>();
 
 	/** Bit where chunk k's range starts, which is where chunk k-1 stops decoding (at the next boundary). */
 	private long chunkStartBit (int k) {
@@ -249,11 +253,16 @@ public final class RapidGzipInputStream extends InputStream {
 		long start = (long) k * chunkSize;
 		int length = (int) Math.min(chunkSize, fileSize - start);
 		// Candidates are searched in this chunk only; the slack lets headers starting near its end be checked
-		byte [] data = readAt(start, length + HEADER_SLACK);
+		byte [] data = chunkData.get();
+		if (data == null || data.length < chunkSize + HEADER_SLACK) {
+			data = new byte[chunkSize + HEADER_SLACK];
+			chunkData.set(data);
+		}
+		int read = readInto(start, data, 0, length + HEADER_SLACK);
 		BlockFinder finder = new BlockFinder();
 		long from = 0;
 		while (true) {
-			long found = finder.find(data, data.length, from, (long) length * 8);
+			long found = finder.find(data, read, from, (long) length * 8);
 			if (found < 0) return null;
 			try {
 				Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE), buffers).decode(start * 8 + found, stopBit, null, sizeHint());
