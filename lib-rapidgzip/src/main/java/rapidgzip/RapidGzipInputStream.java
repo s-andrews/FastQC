@@ -59,7 +59,7 @@ public final class RapidGzipInputStream extends InputStream {
 	private final AtomicInteger ratio = new AtomicInteger(4);
 
 	// Bit offset of the next block boundary to decode, and the output preceding it
-	private long expectedBit;
+	private volatile long expectedBit;
 	private byte [] window = new byte[0];
 	private boolean finished = false;
 
@@ -357,6 +357,16 @@ public final class RapidGzipInputStream extends InputStream {
 		System.arraycopy(current, currentPos, b, off, n);
 		currentPos += n;
 		return n;
+	}
+
+	/** How far decompression has got through the compressed file, in bytes, for progress reporting. */
+	public long compressedPosition () {
+		return Math.min(fileSize, expectedBit >>> 3);
+	}
+
+	/** Size of the compressed file in bytes. */
+	public long compressedSize () {
+		return fileSize;
 	}
 
 	@Override
