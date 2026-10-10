@@ -23,7 +23,6 @@ import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,9 +66,9 @@ public class FontManager {
 				System.err.println("Warning: bundled font not found: " + resourcePath);
 				return new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 			}
-			Font font = Font.createFont(Font.TRUETYPE_FONT, is);
-			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-			return font;
+			// Not registered with the GraphicsEnvironment: that would first enumerate every
+			// installed font (~150ms), and fonts are always used through this class anyway
+			return Font.createFont(Font.TRUETYPE_FONT, is);
 		} catch (FontFormatException | IOException e) {
 			System.err.println("Warning: failed to load bundled font: " + resourcePath + " (" + e.getMessage() + ")");
 			return new Font(Font.SANS_SERIF, Font.PLAIN, 12);
