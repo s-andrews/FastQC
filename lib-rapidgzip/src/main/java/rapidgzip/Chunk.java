@@ -74,18 +74,24 @@ final class Chunk {
 
 	/** Resolves markers[from, to) into dest. */
 	void resolve (byte [] window, int from, int to, byte [] dest, int offset) throws DataFormatError {
-		// Markers index the last 32KB of output before the chunk; a shorter window is right aligned.
-		// A marker before the start of a short window is a distance a sequential decoder rejects too.
+		// A table from any 16 bit value to its byte: values are as often bytes as markers, so
+		// a lookup avoids a mispredicted branch for each. Markers index the last 32KB of output
+		// before the chunk; a shorter window is right aligned. A marker before the start of a
+		// short window is a distance a sequential decoder rejects too.
+		byte [] values = new byte[256 + DeflateDecoder.WINDOW];
+		for (int i = 0; i < 256; i++) values[i] = (byte) i;
 		int shift = DeflateDecoder.WINDOW - window.length;
+		System.arraycopy(window, 0, values, 256 + shift, window.length);
 		for (int i = from; i < to; i++) {
 			char c = markers[i];
-			if (c < 256) {
-				dest[offset++] = (byte) c;
-			}
-			else {
-				int w = c - 256 - shift;
-				if (w < 0) throw new DataFormatError("Invalid distance too far back");
-				dest[offset++] = window[w];
+			if (c >= values.length) throw new DataFormatError("Invalid marker");
+			dest[offset++] = values[c];
+		}
+		if (shift > 0) {
+			// Markers before the start of the data are invalid distances
+			for (int i = from; i < to; i++) {
+				char c = markers[i];
+				if (c >= 256 && c < 256 + shift) throw new DataFormatError("Invalid distance too far back");
 			}
 		}
 	}

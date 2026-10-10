@@ -69,9 +69,9 @@ final class DeflateDecoder {
 	// Marker mode output, starting with the WINDOW markers for the unknown window
 	private char [] chars;
 	private int charPos;
-	// Output before this position may contain markers
-	private int lastMarker;
 	private boolean markerMode;
+	// Output position at which to next check whether markers are gone
+	private int nextMarkerCheck;
 
 	// Byte mode output, starting with the known window
 	private byte [] bytes;
@@ -108,7 +108,7 @@ final class DeflateDecoder {
 			chars = new char[this.sizeHint + WINDOW];
 			for (int i = 0; i < WINDOW; i++) chars[i] = (char) (256 + i);
 			charPos = WINDOW;
-			lastMarker = WINDOW;
+			nextMarkerCheck = 2 * WINDOW;
 		}
 		else {
 			markerMode = false;
@@ -206,7 +206,7 @@ final class DeflateDecoder {
 			ensureChars(length);
 			for (int i = 0; i < length; i++) chars[charPos++] = (char) (data[i] & 0xFF);
 			// Stored data is literal, so it can push the markers out of the window
-			if (charPos - lastMarker >= WINDOW) switchToBytes();
+			if (charPos >= nextMarkerCheck && !markersInWindow()) switchToBytes();
 		}
 		else {
 			ensureBytes(length);
@@ -295,6 +295,20 @@ final class DeflateDecoder {
 	}
 
 	/**
+	 * True if the last WINDOW values of output contain a marker. Checked every
+	 * MARKER_CHECK values of output rather than tracking markers through copies.
+	 */
+	private boolean markersInWindow () {
+		nextMarkerCheck = charPos + MARKER_CHECK;
+		char [] out = chars;
+		int seen = 0;
+		for (int i = charPos - WINDOW; i < charPos; i++) seen |= out[i];
+		return seen >= 256;
+	}
+
+	private static final int MARKER_CHECK = 1 << 16;
+
+	/**
 	 * Marker mode decoding. Returns true at the end of the block, or false
 	 * after switching to byte mode to continue the block there.
 	 *
@@ -307,15 +321,14 @@ final class DeflateDecoder {
 	private boolean decodeChars (int [] lit, int [] dist) throws IOException {
 		char [] out = chars;
 		int op = charPos;
-		int marker = lastMarker;
 		try {
 			while (true) {
-				if (op - marker >= WINDOW) {
+				if (op >= nextMarkerCheck) {
 					charPos = op;
-					lastMarker = marker;
-					chars = out;
-					switchToBytes();
-					return false;
+					if (!markersInWindow()) {
+						switchToBytes();
+						return false;
+					}
 				}
 				if (op + MAX_MATCH > out.length) {
 					charPos = op;
@@ -361,21 +374,19 @@ final class DeflateDecoder {
 				// The WINDOW markers at the start of the output make any distance <= 32KB valid
 				int from = op - distance;
 				if (from < 0) throw new DataFormatError("Invalid distance too far back");
-				// Element by element, as overlapping copies (distance < length) must repeat the pattern
-				int seen = 0;
-				for (int k = 0; k < length; k++) {
-					char c = out[from + k];
-					out[op + k] = c;
-					seen |= c;
+				if (distance >= length) {
+					System.arraycopy(out, from, out, op, length);
+				}
+				else {
+					// Element by element, as overlapping copies (distance < length) must repeat the pattern
+					for (int k = 0; k < length; k++) out[op + k] = out[from + k];
 				}
 				op += length;
-				if (seen >= 256) marker = op;
 			}
 		}
 		finally {
 			if (markerMode) {
 				charPos = op;
-				lastMarker = marker;
 				chars = out;
 			}
 		}
