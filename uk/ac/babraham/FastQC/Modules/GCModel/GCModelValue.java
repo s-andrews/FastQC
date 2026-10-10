@@ -21,8 +21,8 @@ package uk.ac.babraham.FastQC.Modules.GCModel;
 
 public class GCModelValue {
 
-	private int percentage;
-	private double increment;
+	private final int percentage;
+	private final double increment;
 	
 	public GCModelValue (int percentage,double increment) {
 		this.percentage = percentage;
