@@ -82,7 +82,7 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
 		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
-			br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis))));
+			br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024))));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
 			br = new BufferedReader(new InputStreamReader(decompressor(config, new BZip2CompressorInputStream(fis,true))));
