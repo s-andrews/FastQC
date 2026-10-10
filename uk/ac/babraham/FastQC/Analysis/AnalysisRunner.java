@@ -23,8 +23,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.BasicStats;
@@ -187,31 +193,30 @@ public class AnalysisRunner implements Runnable {
 			i.next().analysisStarted(file);
 		}
 
-		// Reader fills batches; numProcessors threads drain them, each running
-		// a disjoint subset of modules.
+		// Reader fills batches of sequences, which are queued for each module.
+		// A module processes its batches in order, one thread at a time, but
+		// any of the numProcessors threads picks up whichever module has work
+		// pending, so the load balances itself whatever each module costs.
 		final int BATCH_SIZE = 1024;
-		final int QUEUE_CAPACITY = 32;
+		final int BATCHES_IN_FLIGHT = 32;
 
-		@SuppressWarnings("unchecked")
-		ArrayBlockingQueue<Sequence[]>[] procQueues = new ArrayBlockingQueue[numProcessors];
-		for (int p = 0; p < numProcessors; p++) {
-			procQueues[p] = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+		final Semaphore inFlight = new Semaphore(BATCHES_IN_FLIGHT);
+		final LinkedBlockingQueue<ModuleWork> ready = new LinkedBlockingQueue<ModuleWork>();
+		final ModuleWork POISON = new ModuleWork(null);
+		final ModuleWork[] work = new ModuleWork[modules.length];
+		for (int m = 0; m < modules.length; m++) {
+			work[m] = new ModuleWork(modules[m]);
 		}
-		final Sequence[] POISON = new Sequence[0];
+		// One count per batch not yet processed by every module, plus one held
+		// by the reader until it's done; whoever takes it to zero stops the processors.
+		final AtomicInteger pending = new AtomicInteger(1);
+		final Runnable finishIfDone = () -> {
+			if (pending.decrementAndGet() == 0) {
+				for (int p = 0; p < numProcessors; p++) ready.add(POISON);
+			}
+		};
 		final SequenceFormatException[] readerError = { null };
-		final Throwable[] processorError = { null };
-
-		QCModule[][] moduleSplits = new QCModule[numProcessors][];
-		int splitSize = (modules.length + numProcessors - 1) / numProcessors;
-		for (int p = 0; p < numProcessors; p++) {
-			int from = p * splitSize;
-			int to = Math.min(from + splitSize, modules.length);
-			moduleSplits[p] = Arrays.copyOfRange(modules, from, to);
-		}
-
-		// Same Sequence[] reference is shared across processor queues; safe
-		// because each Sequence is fully populated before put() and modules
-		// only read from it.
+		final AtomicReference<Throwable> processorError = new AtomicReference<Throwable>();
 		final int[] seqCountHolder = { 0 };
 
 		Thread reader = new Thread(() -> {
@@ -223,9 +228,7 @@ public class AnalysisRunner implements Runnable {
 					batch[idx++] = file.next();
 					++readerSeqCount;
 					if (idx == BATCH_SIZE) {
-						for (int p = 0; p < numProcessors; p++) {
-							procQueues[p].put(batch);
-						}
+						dispatch(new Batch(batch, work.length), work, ready, inFlight, pending);
 						batch = new Sequence[BATCH_SIZE];
 						idx = 0;
 
@@ -239,10 +242,7 @@ public class AnalysisRunner implements Runnable {
 					}
 				}
 				if (idx > 0) {
-					Sequence[] partial = Arrays.copyOf(batch, idx);
-					for (int p = 0; p < numProcessors; p++) {
-						procQueues[p].put(partial);
-					}
+					dispatch(new Batch(Arrays.copyOf(batch, idx), work.length), work, ready, inFlight, pending);
 				}
 			}
 			catch (SequenceFormatException e) {
@@ -253,12 +253,8 @@ public class AnalysisRunner implements Runnable {
 			}
 			finally {
 				seqCountHolder[0] = readerSeqCount;
-				// POISON must always be delivered or processors block on take() forever.
-				for (int p = 0; p < numProcessors; p++) {
-					try { procQueues[p].put(POISON); } catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
-				}
+				// Must always release the reader's count or processors block on take() forever.
+				finishIfDone.run();
 			}
 		}, "fastqc-reader");
 		reader.setDaemon(true);
@@ -267,52 +263,35 @@ public class AnalysisRunner implements Runnable {
 		CountDownLatch processorsDone = new CountDownLatch(numProcessors);
 
 		for (int p = 0; p < numProcessors; p++) {
-			final QCModule[] myModules = moduleSplits[p];
-			final ArrayBlockingQueue<Sequence[]> myQueue = procQueues[p];
-
 			Thread processor = new Thread(() -> {
 				try {
 					while (true) {
-						Sequence[] batch = myQueue.take();
-						if (batch == POISON) break;
+						ModuleWork w = ready.take();
+						if (w == POISON) break;
 
-						for (int b = 0; b < batch.length; b++) {
-							Sequence seq = batch[b];
-							
-							// We need to apply length filters here if we have them.
-							if (filterLengths) {
-								if (minLengthFilter) {
-									if (seq.getSequence().length() < minLength) {
-										continue;
-									}
-								}
-								if (maxLengthFilter) {
-									if (seq.getSequence().length() > maxLength) {
-										continue;
-									}
-								}
-							}	
-							
-							for (int m = 0; m < myModules.length; m++) {
-								if (seq.isFiltered() && myModules[m].ignoreFilteredSequences()) continue;
-								myModules[m].processSequence(seq);
+						// Only the thread which scheduled the module polls its queue
+						Batch batch = w.batches.poll();
+						if (processorError.get() == null) {
+							try {
+								processBatch(w.module, batch.sequences);
 							}
+							catch (RuntimeException e) {
+								// Keep consuming batches so the reader doesn't block, and
+								// surface the failure to listeners after join().
+								processorError.compareAndSet(null, e);
+							}
+						}
+						w.scheduled.set(false);
+						w.schedule(ready);
+
+						if (batch.modulesRemaining.decrementAndGet() == 0) {
+							inFlight.release();
+							finishIfDone.run();
 						}
 					}
 				}
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
-				}
-				catch (RuntimeException e) {
-					// Drain so the reader doesn't block on put(); surface the
-					// failure to listeners after join().
-					processorError[0] = e;
-					try {
-						while (myQueue.take() != POISON) { /* drain */ }
-					}
-					catch (InterruptedException ie) {
-						Thread.currentThread().interrupt();
-					}
 				}
 				finally {
 					processorsDone.countDown();
@@ -339,10 +318,10 @@ public class AnalysisRunner implements Runnable {
 			}
 			return;
 		}
-		if (processorError[0] != null) {
+		if (processorError.get() != null) {
 			SequenceFormatException sfe = new SequenceFormatException(
-					"Module processing failed: " + processorError[0].getMessage());
-			sfe.initCause(processorError[0]);
+					"Module processing failed: " + processorError.get().getMessage());
+			sfe.initCause(processorError.get());
 			i = listeners.iterator();
 			while (i.hasNext()) {
 				i.next().analysisExceptionReceived(file, sfe);
@@ -371,4 +350,66 @@ public class AnalysisRunner implements Runnable {
 
 	}
 	
+	private void processBatch (QCModule module, Sequence[] batch) {
+		for (int b = 0; b < batch.length; b++) {
+			Sequence seq = batch[b];
+
+			// We need to apply length filters here if we have them.
+			if (filterLengths) {
+				if (minLengthFilter) {
+					if (seq.getSequence().length() < minLength) {
+						continue;
+					}
+				}
+				if (maxLengthFilter) {
+					if (seq.getSequence().length() > maxLength) {
+						continue;
+					}
+				}
+			}
+
+			if (seq.isFiltered() && module.ignoreFilteredSequences()) continue;
+			module.processSequence(seq);
+		}
+	}
+
+	private static void dispatch (Batch batch, ModuleWork[] work, BlockingQueue<ModuleWork> ready, Semaphore inFlight, AtomicInteger pending) throws InterruptedException {
+		inFlight.acquire();
+		pending.incrementAndGet();
+		for (int m = 0; m < work.length; m++) {
+			work[m].batches.add(batch);
+			work[m].schedule(ready);
+		}
+	}
+
+	private static class Batch {
+		final Sequence[] sequences;
+		final AtomicInteger modulesRemaining;
+
+		Batch (Sequence[] sequences, int modules) {
+			this.sequences = sequences;
+			this.modulesRemaining = new AtomicInteger(modules);
+		}
+	}
+
+	/**
+	 * The batches waiting for a module. The module is on the ready queue, or
+	 * being processed, while scheduled is set, so only one thread runs it at a time.
+	 */
+	private static class ModuleWork {
+		final QCModule module;
+		final ConcurrentLinkedQueue<Batch> batches = new ConcurrentLinkedQueue<Batch>();
+		final AtomicBoolean scheduled = new AtomicBoolean(false);
+
+		ModuleWork (QCModule module) {
+			this.module = module;
+		}
+
+		void schedule (BlockingQueue<ModuleWork> ready) {
+			if (!batches.isEmpty() && scheduled.compareAndSet(false, true)) {
+				ready.add(this);
+			}
+		}
+	}
+
 }
