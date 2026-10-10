@@ -22,8 +22,8 @@ FastQC is an application which takes a FastQ file and runs a series of tests on 
 
 FastQC can be run either as an interactive graphical application which allows you to view results for multiple files in a single application.  Alternatively you can run the program in a non interactive way (say as part of a pipeline) which will generate an HTML report for each file you process.
 
-FastQC is a cross-platform application, written in java. In theory it should run on any platform which has a suitable java runtime environment.
-Having said that we've only tested in on Windows, MacOSX and Linux running the Oracle v1.6 to 1.8 JREs.  Please let us know what happened if you try running it on other platforms / JREs.  Please see the detailed instructions in the INSTALL.txt document to tell you how to get a suitable java version to run FastQC on your system.
+FastQC is a cross-platform application, written in java. It requires Java 21 or later and should run on any platform which has a suitable java runtime environment.
+It is tested on Windows, MacOSX and Linux.  Please let us know what happened if you try running it on other platforms / JREs.  Please see the detailed instructions in the INSTALL.txt document to tell you how to get a suitable java version to run FastQC on your system.
 
 ## Installation
 
