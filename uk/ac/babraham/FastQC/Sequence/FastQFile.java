@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
+import rapidgzip.RapidGzipInputStream;
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream;
 import uk.ac.babraham.FastQC.Utilities.ThreadedInputStream;
@@ -53,6 +54,8 @@ public class FastQFile implements SequenceFile {
 	// the file we've got.  We don't read from this directly, but it's the
 	// only way to access the file pointer.
 	private FileInputStream fis;
+	// Reading a gzip file in parallel, which then reports progress
+	private RapidGzipInputStream gzipStream = null;
 
 	private String name;
 	private boolean isColorspace = false;
@@ -82,9 +85,20 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
 		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
-			// 64 KB input buffer: the 512 byte default means one native read of
+			// 64 KB input buffer for GZIPInputStream: the 512 byte default means one native read of
 			// the file per 512 compressed bytes (wall -2% on 2M AVITI reads).
-			br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024))));
+			if (!Files.isRegularFile(file.toPath())) {
+				// Eg a named pipe, which can only be read sequentially
+				br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024))));
+			}
+			else if (config.threads != null && config.threads <= 1) {
+				br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis, 64 * 1024)));
+			}
+			else {
+				// Decompress on several threads
+				gzipStream = new RapidGzipInputStream(file.toPath(), gzipThreads(config));
+				br = new BufferedReader(new InputStreamReader(gzipStream));
+			}
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
 			br = new BufferedReader(new InputStreamReader(decompressor(config, new BZip2CompressorInputStream(fis,true))));
@@ -94,6 +108,15 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(fis));
 		}
 		readNext();
+	}
+
+	/**
+	 * Threads to decompress a gzip file with: half of the thread budget if one
+	 * was given, else 4, as beyond that decompression is no longer the bottleneck.
+	 */
+	private static int gzipThreads(FastQCConfig config) {
+		if (config.threads != null) return Math.max(1, config.threads / 2);
+		return 4;
 	}
 
 	/**
@@ -117,6 +140,9 @@ public class FastQFile implements SequenceFile {
 		if (! hasNext()) return 100;
 		if (file.getName().startsWith("stdin")) {
 			return 0;
+		}
+		if (gzipStream != null) {
+			return (int) (((double)gzipStream.compressedPosition()/ fileSize)*100);
 		}
 		try {
 			int percent = (int) (((double)fis.getChannel().position()/ fileSize)*100);

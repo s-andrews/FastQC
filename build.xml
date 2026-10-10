@@ -56,6 +56,7 @@
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false"
             release="${release}">
             <src path="." />
+            <src path="lib-rapidgzip/src/main/java" />
             <exclude name="lib-rapidgzip/**" />
             <classpath refid="FastQC.classpath" />
         </javac>
