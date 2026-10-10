@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -63,24 +64,18 @@ public class AdapterContent extends AbstractQCModule {
 
 	BaseGroup [] groups;
 
-	// Single pass adapter search: when all adapters share the same length k (<= 31)
-	// and only contain ACGT, each k-mer of the read is 2-bit packed into a long and
-	// looked up in a small open addressing table, instead of scanning the read once
-	// per adapter with indexOf. Null when the adapters don't qualify.
-	// Reads are walked once whatever the number of adapters (6 by default), which
-	// cut total CPU by 11% (AVITI 2M reads) and 14% (WES 4M reads). The hit
-	// positions are exactly those of indexOf, so the report is unchanged.
-	private long [] adapterKeys = null;
-	private int [][] adapterSlots = null;
-	private int adapterMask;
+	// Single pass adapter search, when all adapters have the same length k >= 8 and
+	// only contain ACGT (null otherwise). An adapter at position p contains the 8
+	// bases starting at the first multiple of k-7 from p, so we only look up the 8
+	// bases at each multiple of k-7 in a bitset of the 8-mers at offsets 0 to k-8 of
+	// the adapters, and check the possible starts of an adapter on a hit.
+	private byte [][] adapterBytes = null;
+	private long [] adapterFilter;
+	private int adapterStep;
 	// First match position of each adapter in the current read (-1 if none),
 	// filled by findAdapters(). Per instance scratch: a module only ever sees one
 	// read at a time, from a single thread.
 	private int [] firstHit;
-	// Bitset over the last 8 bases (16 bits) of each adapter, to cheaply rule out most read k-mers.
-	// With 6 adapters only ~6 of the 65536 bits are set, so nearly every k-mer of a read is
-	// rejected by a single bit test, without hashing or probing the table.
-	private long [] adapterFilter;
 
 	// 2-bit code of each byte: A=0 C=1 G=2 T=3, -1 for anything else (N, lowercase, '.').
 	// Only exact uppercase ACGT can match, as with indexOf on ACGT-only adapters.
@@ -150,56 +145,27 @@ public class AdapterContent extends AbstractQCModule {
 
 	}
 
-	private static int baseCode (char c) {
-		return c < 256 ? BASE_CODES[c] : -1;
-	}
-
-	// Fibonacci hashing: multiply by 2^64/phi and keep high bits, which are well mixed
-	// even for keys differing only in their low bits (e.g. PolyA vs PolyG).
-	private static int slotFor (long key, int mask) {
-		long h = key * 0x9E3779B97F4A7C15L;
-		return (int)(h >>> 40) & mask;
-	}
-
-	/**
-	 * Builds the k-mer lookup table and the 8-base filter used by findAdapters().
-	 * Leaves adapterKeys null, so processSequence falls back to indexOf, when there
-	 * are no adapters, they are longer than 31 bases (k-mer doesn't fit in 62 bits)
-	 * or any of them contains a non-ACGT character. Called only when all adapters
-	 * have the same length.
-	 * The table has at least twice as many slots as adapters, so linear probing
-	 * always reaches an empty slot and lookups of absent keys terminate.
-	 */
 	private void buildAdapterTable () {
-		if (adapters.length == 0 || longestAdapter == 0 || longestAdapter > 31) return;
+		if (adapters.length == 0 || longestAdapter < 8) return;
 
-		long [] keys = new long[adapters.length];
+		byte [][] bytes = new byte[adapters.length][];
 		for (int a=0;a<adapters.length;a++) {
-			String seq = adapters[a].sequence();
-			for (int i=0;i<seq.length();i++) {
-				int code = baseCode(seq.charAt(i));
-				if (code < 0) return;
-				keys[a] = (keys[a] << 2) | code;
+			bytes[a] = adapters[a].sequence().getBytes(StandardCharsets.ISO_8859_1);
+			for (byte b : bytes[a]) {
+				if (BASE_CODES[b & 0xFF] < 0) return;
 			}
 		}
 
-		int size = Integer.highestOneBit(adapters.length * 4 - 1) << 1;
-		adapterMask = size-1;
-		adapterKeys = new long[size];
-		adapterSlots = new int[size][];
+		adapterStep = longestAdapter - 7;
 		adapterFilter = new long[1 << 10];
 		for (int a=0;a<adapters.length;a++) {
-			int low = (int)(keys[a] & 0xFFFF);
-			adapterFilter[low >>> 6] |= 1L << low;
-			int slot = slotFor(keys[a], adapterMask);
-			while (adapterSlots[slot] != null && adapterKeys[slot] != keys[a]) slot = (slot+1) & adapterMask;
-			adapterKeys[slot] = keys[a];
-			// Identical adapter sequences share a slot
-			int [] ids = adapterSlots[slot] == null ? new int[0] : adapterSlots[slot];
-			ids = Arrays.copyOf(ids, ids.length+1);
-			ids[ids.length-1] = a;
-			adapterSlots[slot] = ids;
+			for (int offset=0;offset<adapterStep;offset++) {
+				int key = 0;
+				for (int i=0;i<8;i++) key = key << 2 | BASE_CODES[bytes[a][offset+i]];
+				adapterFilter[key >>> 6] |= 1L << key;
+			}
 		}
+		adapterBytes = bytes;
 	}
 
 	/**
@@ -213,41 +179,41 @@ public class AdapterContent extends AbstractQCModule {
 	private void findAdapters (byte [] bases) {
 		Arrays.fill(firstHit, -1);
 		int length = bases.length;
-
 		int k = longestAdapter;
-		long kmerMask = (1L << (2*k)) - 1;
+		if (length < k) return;
+
+		int step = adapterStep;
 		long [] filter = adapterFilter;
-		long key = 0;
-		int valid = 0;
 		int remaining = adapters.length;
-		for (int i=0;i<length;i++) {
-			int code = BASE_CODES[bases[i] & 0xFF];
-			if (code < 0) {
-				valid = 0;
-				key = 0;
-				continue;
-			}
-			key = ((key << 2) | code) & kmerMask;
-			if (++valid < k) continue;
+		// The last 8 bases, 2 bits each. Anything but ACGT counts as T, as on a hit
+		// the bases are compared with the adapters anyway.
+		int key = 0;
+		int nextCheck = 7;
+		for (int end=0;end<length;end++) {
+			key = (key << 2 | (BASE_CODES[bases[end] & 0xFF] & 3)) & 0xFFFF;
+			if (end != nextCheck) continue;
+			nextCheck += step;
+			if ((filter[key >>> 6] & (1L << key)) == 0) continue;
 
-			int low = (int)key & 0xFFFF;
-			if ((filter[low >>> 6] & (1L << low)) == 0) continue;
-
-			int slot = slotFor(key, adapterMask);
-			while (adapterSlots[slot] != null) {
-				if (adapterKeys[slot] == key) {
-					for (int a : adapterSlots[slot]) {
-						if (firstHit[a] < 0) {
-							firstHit[a] = i-k+1;
-							--remaining;
-						}
+			// An adapter starting at one of these positions would contain these 8 bases
+			int start = end - 7;
+			for (int p=Math.max(0, start-step+1);p<=start && p+k<=length;p++) {
+				for (int a=0;a<adapterBytes.length;a++) {
+					if (firstHit[a] < 0 && matches(bases, p, adapterBytes[a])) {
+						firstHit[a] = p;
+						--remaining;
 					}
-					break;
 				}
-				slot = (slot+1) & adapterMask;
 			}
 			if (remaining == 0) return;
 		}
+	}
+
+	private static boolean matches (byte [] bases, int position, byte [] adapter) {
+		for (int i=0;i<adapter.length;i++) {
+			if (bases[position+i] != adapter[i]) return false;
+		}
+		return true;
 	}
 
 	public boolean ignoreFilteredSequences() {
@@ -303,13 +269,13 @@ public class AdapterContent extends AbstractQCModule {
 
 		// One pass over the read finds all adapters at once (see findAdapters);
 		// otherwise each adapter is searched with its own indexOf scan.
-		if (adapterKeys != null) findAdapters(sequence.getSequenceBytes());
+		if (adapterBytes != null) findAdapters(sequence.getSequenceBytes());
 
 		// The indexOf fallback needs the read as a String: build it once, not per adapter
-		String seqString = adapterKeys != null ? null : sequence.getSequence();
+		String seqString = adapterBytes != null ? null : sequence.getSequence();
 		for (int a=0;a<adapters.length;a++) {
 
-			int index = adapterKeys != null ? firstHit[a] : seqString.indexOf(adapters[a].sequence());
+			int index = adapterBytes != null ? firstHit[a] : seqString.indexOf(adapters[a].sequence());
 			if (index >=0) {
 				for (int i=index;i<=longestSequence-longestAdapter;i++) {
 					adapters[a].incrementCount(i);
