@@ -31,6 +31,19 @@ import uk.ac.babraham.FastQC.Sequence.Sequence;
 
 public class PerBaseSequenceContent extends AbstractQCModule {
 
+	// Count of each base at each position: index position * 5 + BASE_INDEX of the base
+	private long [] baseCounts = new long [0];
+	private int maxLength = 0;
+	private static final byte [] BASE_INDEX = new byte[256];
+	static {
+		java.util.Arrays.fill(BASE_INDEX, (byte) 4);
+		BASE_INDEX['G'] = 0;
+		BASE_INDEX['A'] = 1;
+		BASE_INDEX['T'] = 2;
+		BASE_INDEX['C'] = 3;
+	}
+
+	// Filled from baseCounts when the results are calculated
 	public long [] gCounts = new long [0];
 	public long [] aCounts = new long [0];
 	public long [] cCounts = new long [0];
@@ -59,6 +72,17 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 	}
 
 	private synchronized void getPercentages () {
+
+		gCounts = new long[maxLength];
+		aCounts = new long[maxLength];
+		tCounts = new long[maxLength];
+		cCounts = new long[maxLength];
+		for (int i=0;i<maxLength;i++) {
+			gCounts[i] = baseCounts[i*5];
+			aCounts[i] = baseCounts[i*5+1];
+			tCounts[i] = baseCounts[i*5+2];
+			cCounts[i] = baseCounts[i*5+3];
+		}
 
 		BaseGroup [] groups = BaseGroup.makeBaseGroups(gCounts.length);
 		
@@ -115,42 +139,22 @@ public class PerBaseSequenceContent extends AbstractQCModule {
 		calculated = false;
 		byte [] seq = sequence.getSequenceBytes();
 		int seqLen = seq.length;
-		if (gCounts.length < seqLen) {
-
-			long [] gCountsNew = new long [seqLen];
-			long [] aCountsNew = new long [seqLen];
-			long [] cCountsNew = new long [seqLen];
-			long [] tCountsNew = new long [seqLen];
-
-			for (int i=0;i<gCounts.length;i++) {
-				gCountsNew[i] = gCounts[i];
-				aCountsNew[i] = aCounts[i];
-				tCountsNew[i] = tCounts[i];
-				cCountsNew[i] = cCounts[i];
-			}		
-
-			gCounts = gCountsNew;
-			aCounts = aCountsNew;
-			tCounts = tCountsNew;
-			cCounts = cCountsNew;
+		if (maxLength < seqLen) {
+			baseCounts = java.util.Arrays.copyOf(baseCounts, seqLen * 5);
+			maxLength = seqLen;
 		}
 		
-		// Bases are random, so count without branches which would mostly be mispredicted:
-		// each base adds 0 or 1 to all four arrays (one G/A/T/C match at most, so the
-		// counts are the same as the old if/else chain). Local copies of the arrays
-		// avoid re-reading the fields on every iteration.
-		long [] g = gCounts, a = aCounts, t = tCounts, c = cCounts;
+		// One increment per base, without branching on the (random) bases
+		long [] counts = baseCounts;
 		for (int i=0;i<seqLen;i++) {
-			byte b = seq[i];
-			g[i] += b == 'G' ? 1 : 0;
-			a[i] += b == 'A' ? 1 : 0;
-			t[i] += b == 'T' ? 1 : 0;
-			c[i] += b == 'C' ? 1 : 0;
+			++counts[i*5 + BASE_INDEX[seq[i] & 0xFF]];
 		}
 		
 	}
 	
 	public void reset () {
+		baseCounts = new long[0];
+		maxLength = 0;
 		gCounts = new long[0];
 		aCounts = new long[0];
 		tCounts = new long[0];

@@ -33,7 +33,11 @@ import uk.ac.babraham.FastQC.Utilities.QualityCount;
 
 public class PerBaseQualityScores extends AbstractQCModule {
 
+	// Filled from qualities when the results are calculated
 	public QualityCount [] qualityCounts = new QualityCount[0];
+	// Count of each quality character at each position: index position * QualityCount.MAX_CHAR + char
+	private long [] qualities = new long[0];
+	private int maxLength = 0;
 	double [] means = null;
 	double [] medians = null;
 	double [] lowerQuartile = null;
@@ -59,13 +63,22 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	
 	public boolean ignoreInReport () {
 		// We don't show this if there is no quality data.
-		if (ModuleConfig.getParam("quality_base", "ignore") > 0 || qualityCounts.length == 0) {
+		if (ModuleConfig.getParam("quality_base", "ignore") > 0 || maxLength == 0) {
 			return true;
 		}
 		return false;
 	}
 
 	private synchronized void getPercentages () {
+
+		qualityCounts = new QualityCount[maxLength];
+		for (int i=0;i<maxLength;i++) {
+			qualityCounts[i] = new QualityCount();
+			for (int c=0;c<QualityCount.MAX_CHAR;c++) {
+				long count = qualities[i * QualityCount.MAX_CHAR + c];
+				if (count > 0) qualityCounts[i].addValue((char) c, count);
+			}
+		}
 		
 		char [] range = calculateOffsets();
 		encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
@@ -131,29 +144,26 @@ public class PerBaseQualityScores extends AbstractQCModule {
 		calculated = false;
 		byte [] qual = sequence.getQualityBytes();
 		int qualLen = qual.length;
-		if (qualityCounts.length < qualLen) {
-
-			QualityCount [] qualityCountsNew = new QualityCount[qualLen];
-			
-			for (int i=0;i<qualityCounts.length;i++) {
-				qualityCountsNew[i] = qualityCounts[i];
-			}
-			for (int i=qualityCounts.length;i<qualityCountsNew.length;i++) {
-				qualityCountsNew[i] = new QualityCount();				
-			}
-			qualityCounts = qualityCountsNew;
-			
+		if (maxLength < qualLen) {
+			qualities = java.util.Arrays.copyOf(qualities, qualLen * QualityCount.MAX_CHAR);
+			maxLength = qualLen;
 		}
 		
+		long [] counts = qualities;
 		// Bytes are signed: mask them to get the same char values as before
 		for (int i=0;i<qualLen;i++) {
-			qualityCounts[i].addValue((char) (qual[i] & 0xFF));
+			int c = qual[i] & 0xFF;
+			// Fails as QualityCount does on characters it can't count
+			if (c >= QualityCount.MAX_CHAR) new QualityCount().addValue((char) c);
+			++counts[i * QualityCount.MAX_CHAR + c];
 		}
 		
 	}
 	
 	public void reset () {
 		qualityCounts = new QualityCount[0];
+		qualities = new long[0];
+		maxLength = 0;
 	}
 
 	public String description() {

@@ -41,10 +41,9 @@ public class BasicStats extends AbstractQCModule {
 	private int minLength = 0;
 	private int maxLength = 0;
 	private long totalBases = 0;
-	private long gCount = 0;
-	private long cCount = 0;
-	private long aCount = 0;
-	private long tCount = 0;
+	// Count of each byte in the sequences, in 4 interleaved copies so that
+	// consecutive bases don't wait on each other's increment
+	private long [] byteCounts = new long[4 * 256];
 	private char lowestChar = 1000;
 	private String fileType = null;
 	private SequenceLengthDistribution lengthDist = null;
@@ -76,10 +75,7 @@ public class BasicStats extends AbstractQCModule {
 	public void reset () {
 		minLength = 0;
 		maxLength = 0;
-		gCount = 0;
-		cCount = 0;
-		aCount = 0;
-		tCount = 0;
+		byteCounts = new long[4 * 256];
 	}
 
 	public String name() {
@@ -118,24 +114,12 @@ public class BasicStats extends AbstractQCModule {
 			if (sequence.length() > maxLength) maxLength = sequence.length();
 		}
 
-		// Bases are random, so count without branches which would mostly be mispredicted:
-		// adding each comparison's 0/1 lets the JIT emit setcc/cmov instead. Counting into
-		// locals keeps the fields out of the loop. These modules bounded wall time on WES,
-		// each running on one thread: WES 4M reads wall -46% (3.69 s -> 2.00 s), CPU -25%.
-		// Characters other than GATC are still not counted, as before.
+		// Bases are random, so count them without branching on them
 		byte [] seq = sequence.getSequenceBytes();
-		int g = 0, a = 0, t = 0, c = 0;
+		long [] counts = byteCounts;
 		for (int i=0;i<seq.length;i++) {
-			byte b = seq[i];
-			g += b == 'G' ? 1 : 0;
-			a += b == 'A' ? 1 : 0;
-			t += b == 'T' ? 1 : 0;
-			c += b == 'C' ? 1 : 0;
+			++counts[(i & 3) << 8 | (seq[i] & 0xFF)];
 		}
-		gCount += g;
-		aCount += a;
-		tCount += t;
-		cCount += c;
 		
 		byte [] qual = sequence.getQualityBytes();
 		// Same idea for the minimum: Math.min is a JIT intrinsic, typically a cmov.
@@ -159,6 +143,10 @@ public class BasicStats extends AbstractQCModule {
 		return false;
 	}
 	
+	private long count (char base) {
+		return byteCounts[base] + byteCounts[256 + base] + byteCounts[512 + base] + byteCounts[768 + base];
+	}
+
 	public static String formatLength (long originalLength) {
 		
 		double length = originalLength;
@@ -269,6 +257,7 @@ public class BasicStats extends AbstractQCModule {
 							return ""+lengthDist.medianLength();
 						}
 					case 8 : 
+						long gCount = count('G'), cCount = count('C'), aCount = count('A'), tCount = count('T');
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}
