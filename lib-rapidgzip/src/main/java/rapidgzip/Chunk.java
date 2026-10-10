@@ -18,7 +18,8 @@ final class Chunk {
 	/** True if decoding stopped at the end of the data. */
 	final boolean endOfData;
 
-	final char [] markers;
+	// Released once resolved, as it's the bulk of the memory in use
+	private char [] markers;
 	final int markersFrom;
 	final int markersTo;
 
@@ -55,6 +56,13 @@ final class Chunk {
 	byte [] resolve (byte [] window) throws DataFormatError {
 		byte [] out = new byte[markersTo - markersFrom];
 		resolve(window, markersFrom, markersTo, out, 0);
+		return out;
+	}
+
+	/** Like resolve, then releases the markers, after which only the resolved output is available. */
+	byte [] resolveAndRelease (byte [] window) throws DataFormatError {
+		byte [] out = resolve(window);
+		markers = null;
 		return out;
 	}
 

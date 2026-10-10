@@ -86,9 +86,9 @@ final class DeflateDecoder {
 	Chunk decode (long startBit, long stopBit, byte [] window, int sizeHint) throws IOException {
 		this.sizeHint = Math.max(sizeHint, 1 << 16);
 		if (window == null) {
-			// Markers usually disappear early, so start small
+			// Markers often last for the whole chunk (FASTQ), so size for it
 			markerMode = true;
-			chars = new char[Math.min(this.sizeHint, 1 << 18) + WINDOW];
+			chars = new char[this.sizeHint + WINDOW];
 			for (int i = 0; i < WINDOW; i++) chars[i] = (char) (256 + i);
 			charPos = WINDOW;
 			lastMarker = WINDOW;

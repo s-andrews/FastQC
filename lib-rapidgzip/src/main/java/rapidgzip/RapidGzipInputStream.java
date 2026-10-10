@@ -36,7 +36,7 @@ import java.util.zip.ZipException;
  */
 public final class RapidGzipInputStream extends InputStream {
 
-	public static final int DEFAULT_CHUNK_SIZE = 2 << 20;
+	public static final int DEFAULT_CHUNK_SIZE = 1 << 20;
 
 	private static final int SEGMENT_SIZE = 256 << 10;
 	// Max size of a block header, so the finder can check headers near the end of a chunk
@@ -90,7 +90,11 @@ public final class RapidGzipInputStream extends InputStream {
 		this.chunkSize = chunkSize;
 		this.chunkCount = (int) Math.max(1, (fileSize + chunkSize - 1) / chunkSize);
 		this.source = this::readAt;
-		this.maxInFlight = threads * 2;
+		// Each chunk in flight holds its output, often all as 16 bit values: for FASTQ ~6x the chunk
+		// size as 16 bit values, then as bytes. Use up to a quarter of the heap for them.
+		long perChunk = (long) chunkSize * 20;
+		long budget = Runtime.getRuntime().maxMemory() / 4;
+		this.maxInFlight = (int) Math.max(2, Math.min(threads + 2, budget / perChunk));
 
 		try {
 			if (fileSize == 0) throw new EOFException();
@@ -131,7 +135,7 @@ public final class RapidGzipInputStream extends InputStream {
 	}
 
 	private void submitChunks () {
-		while (nextToSubmit < chunkCount && inFlight.size() < maxInFlight) {
+		while (nextToSubmit < chunkCount && inFlight.size() + ordered.size() < maxInFlight) {
 			final int k = nextToSubmit++;
 			inFlight.add(pool.submit(() -> decodeChunk(k)));
 		}
@@ -172,6 +176,7 @@ public final class RapidGzipInputStream extends InputStream {
 	}
 
 	private Chunk nextResult () throws IOException {
+		if (inFlight.isEmpty()) submitChunks();
 		Future<Chunk> future = inFlight.poll();
 		submitChunks();
 		try {
@@ -248,7 +253,7 @@ public final class RapidGzipInputStream extends InputStream {
 		expectedBit = chunk.endBit;
 		if (chunk.endOfData) finished = true;
 		Future<byte []> resolved = chunk.markersTo > chunk.markersFrom
-				? pool.submit(() -> chunk.resolve(before))
+				? pool.submit(() -> chunk.resolveAndRelease(before))
 				: java.util.concurrent.CompletableFuture.completedFuture(new byte[0]);
 		ordered.add(new Ordered(chunk, resolved));
 	}
@@ -263,6 +268,7 @@ public final class RapidGzipInputStream extends InputStream {
 			}
 			Ordered next = ordered.poll();
 			if (next == null) return false;
+			submitChunks();
 			emit(next.chunk, get(next.resolved));
 		}
 		return true;
