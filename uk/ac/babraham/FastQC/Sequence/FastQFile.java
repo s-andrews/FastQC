@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.regex.Matcher;
@@ -32,6 +33,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream;
+import uk.ac.babraham.FastQC.Utilities.ThreadedInputStream;
 
 public class FastQFile implements SequenceFile {
 
@@ -80,16 +82,25 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
 		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
-			br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis)));
+			br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis))));
 		} 
 		else if (file.getName().toLowerCase().endsWith(".bz2")) {
-			br = new BufferedReader(new InputStreamReader(new BZip2CompressorInputStream(fis,true)));
+			br = new BufferedReader(new InputStreamReader(decompressor(config, new BZip2CompressorInputStream(fis,true))));
 		} 
 
 		else {
 			br = new BufferedReader(new InputStreamReader(fis));
 		}
 		readNext();
+	}
+
+	/**
+	 * Decompression is as expensive as parsing, so unless we're limited to a
+	 * single thread run it on its own thread, overlapping with the parsing.
+	 */
+	private InputStream decompressor(FastQCConfig config, InputStream in) {
+		if (config.threads != null && config.threads <= 1) return in;
+		return new ThreadedInputStream(in, "fastqc-decompress");
 	}
 
 	public String name() {
