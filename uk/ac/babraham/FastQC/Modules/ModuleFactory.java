@@ -19,6 +19,9 @@
  */
 package uk.ac.babraham.FastQC.Modules;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ModuleFactory {
 
 	public static QCModule [] getStandardModuleList () {
@@ -28,22 +31,31 @@ public class ModuleFactory {
 		BasicStats bs = new BasicStats();
 		bs.addLengthDistribution(ld);
 		
-		QCModule [] module_list = new QCModule [] {
-				bs,
-				new PerBaseQualityScores(),
-				new PerTileQualityScores(),
-				new PerSequenceQualityScores(),
-				new PerBaseSequenceContent(),
-				new PerSequenceGCContent(),
-				new NContent(),
-				ld,
-				os.duplicationLevelModule(),
-				os,
-				new AdapterContent(),
-				new KmerContent(),
-			};
+		// Modules disabled in the limits file are never shown in the report, so we
+		// don't create them at all rather than paying to process every sequence.
+		// Length distribution, overrepresented seqs and duplication are always kept
+		// as other modules depend on their data.
+		List<QCModule> modules = new ArrayList<QCModule>();
+		modules.add(bs);
+		if (enabled("quality_base")) modules.add(new PerBaseQualityScores());
+		if (enabled("tile")) modules.add(new PerTileQualityScores());
+		if (enabled("quality_sequence")) modules.add(new PerSequenceQualityScores());
+		if (enabled("sequence")) modules.add(new PerBaseSequenceContent());
+		if (enabled("gc_sequence")) modules.add(new PerSequenceGCContent());
+		if (enabled("n_content")) modules.add(new NContent());
+		modules.add(ld);
+		modules.add(os.duplicationLevelModule());
+		modules.add(os);
+		if (enabled("adapter")) modules.add(new AdapterContent());
+		if (enabled("kmer")) modules.add(new KmerContent());
+
+		QCModule [] module_list = modules.toArray(new QCModule[0]);
 	
 		return (module_list);
+	}
+
+	private static boolean enabled (String module) {
+		return ModuleConfig.getParam(module, "ignore") == 0;
 	}
 	
 }
