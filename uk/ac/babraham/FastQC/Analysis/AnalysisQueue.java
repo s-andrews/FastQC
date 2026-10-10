@@ -44,8 +44,9 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	private volatile int processorsPerFile = 0;
 
 	// Per-file pipeline = 1 reader + up to MAX_PROCESSORS_PER_FILE processor
-	// threads. Past 3 processors gains plateau as the reader becomes the bottleneck.
-	private static final int MAX_PROCESSORS_PER_FILE = 3;
+	// threads. Past 6 processors gains plateau: work is balanced across them, and
+	// the largest modules then bound the time.
+	private static final int MAX_PROCESSORS_PER_FILE = 6;
 	private static final int THREADS_PER_FILE = 1 + MAX_PROCESSORS_PER_FILE;
 
 	public static AnalysisQueue getInstance () {
