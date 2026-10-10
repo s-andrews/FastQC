@@ -37,6 +37,7 @@
                 <exclude name=".settings/**" />
                 <exclude name=".project" />
                 <exclude name="lib/**" />
+                <exclude name="lib-rapidgzip/**" />
                 <exclude name="build.xml" />
             </fileset>
         </copy>
@@ -55,6 +56,7 @@
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false"
             release="${release}">
             <src path="." />
+            <exclude name="lib-rapidgzip/**" />
             <classpath refid="FastQC.classpath" />
         </javac>
     </target>
