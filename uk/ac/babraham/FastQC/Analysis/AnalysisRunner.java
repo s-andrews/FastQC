@@ -269,8 +269,15 @@ public class AnalysisRunner implements Runnable {
 						ModuleWork w = ready.take();
 						if (w == POISON) break;
 
-						// Only the thread which scheduled the module polls its queue
+						// Only the thread holding the module polls its queue. It can be
+						// empty: a thread finishing the module may find a batch queued, and
+						// schedule it again after another thread has processed that batch.
 						Batch batch = w.batches.poll();
+						if (batch == null) {
+							w.scheduled.set(false);
+							w.schedule(ready);
+							continue;
+						}
 						if (processorError.get() == null) {
 							try {
 								processBatch(w.module, batch.sequences);
