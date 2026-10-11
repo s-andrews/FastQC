@@ -148,7 +148,14 @@ public class PerBaseQualityScores extends AbstractQCModule {
 		byte [] qual = sequence.getQualityBytes();
 		int qualLen = qual.length;
 		if (maxLength < qualLen) {
-			qualities = java.util.Arrays.copyOf(qualities, qualLen * QualityCount.MAX_CHAR);
+			// Grow by at least half: each position is MAX_CHAR counts, so growing to each
+			// new longest read made reads sorted by length copy the table quadratically.
+			// Positions past maxLength stay zero and aren't reported.
+			int capacity = qualities.length / QualityCount.MAX_CHAR;
+			if (capacity < qualLen) {
+				int grown = (int) Math.min(Integer.MAX_VALUE / QualityCount.MAX_CHAR, Math.max(qualLen, capacity + (capacity >> 1)));
+				qualities = java.util.Arrays.copyOf(qualities, grown * QualityCount.MAX_CHAR);
+			}
 			maxLength = qualLen;
 		}
 		

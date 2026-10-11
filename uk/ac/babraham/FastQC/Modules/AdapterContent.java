@@ -175,10 +175,10 @@ public class AdapterContent extends AbstractQCModule {
 	/**
 	 * Fills firstHit with the first index of each adapter in the bases (-1 if
 	 * absent), equivalent to indexOf(adapter) on them for every adapter.
-	 * Keeps a rolling 2-bit key of the last k bases; a non-ACGT base resets it, so
-	 * only windows of k valid bases are looked up. Positions are visited in order,
-	 * so the first time an adapter's key is seen is its indexOf position. Stops
-	 * early once every adapter has been found.
+	 * Keeps the last 8 bases as a 16 bit key (a non-ACGT base counts as T) and,
+	 * every k-7 bases, looks it up in adapterFilter; on a hit, the adapter starts
+	 * that could contain those 8 bases are compared exactly. Stops early once every
+	 * adapter has been found.
 	 */
 	private void findAdapters (byte [] bases) {
 		Arrays.fill(firstHit, -1);
