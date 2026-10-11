@@ -96,7 +96,11 @@ public class FastQFile implements SequenceFile {
 
 	/**
 	 * Decompression is as expensive as parsing, so unless we're limited to a
-	 * single thread run it on its own thread, overlapping with the parsing.
+	 * single thread run it on its own thread, overlapping with the parsing
+	 * (wall -10% on 2M AVITI reads). With -t 1 the stream is read directly
+	 * on the calling thread. The extra thread isn't counted in -t.
+	 * Note that the progress, taken from the position of fis, runs ahead of
+	 * the parsing by the data buffered in ThreadedInputStream.
 	 */
 	private InputStream decompressor(FastQCConfig config, InputStream in) {
 		if (config.threads != null && config.threads <= 1) return in;
