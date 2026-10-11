@@ -51,7 +51,11 @@ final class Huffman {
 		return build(lengths, offset, n, primaryBits, invalidSymbol, allowEmpty, null);
 	}
 
-	/** Builds the table into reuse if it's large enough, else into a new array. */
+	/**
+	 * Builds the table into reuse if it's large enough, else into a new array. Only
+	 * the first size entries are filled and looked up, so a longer reused array's stale
+	 * tail is never read.
+	 */
 	static int [] build (byte [] lengths, int offset, int n, int primaryBits, int invalidSymbol, boolean allowEmpty, int [] reuse) throws DataFormatError {
 		int [] counts = new int[MAX_BITS+1];
 		for (int i = 0; i < n; i++) counts[lengths[offset+i]]++;

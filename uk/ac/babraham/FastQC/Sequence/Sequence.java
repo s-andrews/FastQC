@@ -120,7 +120,10 @@ public class Sequence {
 		return sequence != null ? sequence : new String(bases, StandardCharsets.ISO_8859_1);
 	}
 
-	/** The first length bases, like getSequence().substring(0, length). */
+	/**
+	 * The first length bases, like getSequence().substring(0, length), without
+	 * making a String of the whole sequence first.
+	 */
 	public String getSequence (int length) {
 		return sequence != null ? sequence.substring(0, length) : new String(bases, 0, length, StandardCharsets.ISO_8859_1);
 	}
@@ -133,6 +136,11 @@ public class Sequence {
 		return quality != null ? quality : new String(qualities, StandardCharsets.ISO_8859_1);
 	}
 	
+	/**
+	 * The id, decoded from its bytes on first use with the charset FastQFile used to
+	 * decode it before (the platform default). Not synchronized: Strings are immutable,
+	 * so racing threads at worst both decode it and see equal values.
+	 */
 	public String getID () {
 		String s = id;
 		if (s == null) {

@@ -187,9 +187,10 @@ public final class RapidGzipInputStream extends InputStream {
 	}
 
 	/**
-	 * Positional read into dest, safe to call from several threads at once as it
-	 * doesn't use the channel position. Returns the number of bytes read, fewer
-	 * than length only at the end of the file.
+	 * The Source: a positional read into the caller's buffer, so that readers can reuse
+	 * theirs. Safe to call from several threads at once as it doesn't use the channel
+	 * position. Returns the number of bytes read, fewer than length only at the end of
+	 * the file.
 	 */
 	private int readInto (long offset, byte [] dest, int destOffset, int length) throws IOException {
 		int n = (int) Math.max(0, Math.min(length, fileSize - offset));
@@ -200,7 +201,9 @@ public final class RapidGzipInputStream extends InputStream {
 		return buffer.position() - destOffset;
 	}
 
-	// Compressed data of the chunk a worker thread is looking for a block start in
+	// Compressed data of the chunk a worker thread is looking for a block start in. One
+	// buffer per pool thread, reused for every chunk it scans rather than one per chunk;
+	// it goes away with the pool's threads.
 	private final ThreadLocal<byte []> chunkData = new ThreadLocal<byte []>();
 
 	/** Bit where chunk k's range starts, which is where chunk k-1 stops decoding (at the next boundary). */
@@ -262,6 +265,7 @@ public final class RapidGzipInputStream extends InputStream {
 		BlockFinder finder = new BlockFinder();
 		long from = 0;
 		while (true) {
+			// Only the first read bytes are this chunk's, past them may be an earlier chunk's
 			long found = finder.find(data, read, from, (long) length * 8);
 			if (found < 0) return null;
 			try {

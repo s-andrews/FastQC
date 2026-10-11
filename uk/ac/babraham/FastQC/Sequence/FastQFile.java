@@ -234,6 +234,7 @@ public class FastQFile implements SequenceFile {
 				break;
 			}
 
+			// Not empty, as blank lines were skipped above
 			if (idLine[0] != '@') {
 				nextSequence = null;
 				throw new SequenceFormatException("ID line didn't start with '@' at line "+lineNumber);
@@ -251,6 +252,7 @@ public class FastQFile implements SequenceFile {
 				midLine = br.readLineUnlessStartsWith('+');
 				if (midLine == null) throw new IOException("No more data, expected midline, at line "+lineNumber);
 				++lineNumber;
+				// Skipped (not copied) if it starts with '+'; anything else, empty included, is an error
 				if (midLine != ByteLineReader.SKIPPED) {
 					throw new SequenceFormatException("Midline '"+new String(midLine, CHARSET)+"' didn't start with '+' at "+lineNumber);
 				}
@@ -276,7 +278,9 @@ public class FastQFile implements SequenceFile {
 				nextSequence = new Sequence(this,convertColorspaceToBases(seqString.toUpperCase()), seqString.toUpperCase(), new String(quality, CHARSET), new String(idLine, CHARSET));
 			} 
 			else {
-				// The lines are fresh copies, so they can be upper cased in place and handed over
+				// The lines are fresh copies, so they can be upper cased in place and handed over.
+				// The id stays bytes until needed (sampled reads of the per tile module,
+				// casava mode), saving a String per read
 				nextSequence = new Sequence(this, toUpperCase(seq), quality, idLine);
 			}
 

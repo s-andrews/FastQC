@@ -203,7 +203,9 @@ public class AnalysisRunner implements Runnable {
 		// in file order, so the results are unchanged.
 		final int BATCH_SIZE = 1024;
 		// Bounds the reads held in memory: a batch counts until every module
-		// has processed it.
+		// has processed it. Enough to keep all threads busy; more only keeps more
+		// reads (and their arrays) live, which costs GC time. 16 rather than 32
+		// had no time cost.
 		final int BATCHES_IN_FLIGHT = 16;
 
 		final Semaphore inFlight = new Semaphore(BATCHES_IN_FLIGHT);

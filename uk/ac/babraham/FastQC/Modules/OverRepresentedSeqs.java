@@ -156,6 +156,8 @@ public class OverRepresentedSeqs extends AbstractQCModule {
 		// specify a shorter truncation length on the command line in the 
 		// dup_length option.
 		
+		// Only the bases kept are made into a String, rather than the whole read and
+		// then a copy of its first bases: the same key, one allocation less per read.
 		int length = sequence.length();
 		if (FastQCConfig.getInstance().dupLength != 0) {
 			length = Math.min(FastQCConfig.getInstance().dupLength, length);

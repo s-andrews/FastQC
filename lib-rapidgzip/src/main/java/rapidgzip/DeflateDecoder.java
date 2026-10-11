@@ -101,7 +101,9 @@ final class DeflateDecoder {
 	private int sizeHint;
 
 	private final byte [] codeLengths = new byte[320];
-	// Tables of dynamic blocks, reused from block to block
+	// Tables of dynamic blocks, reused from block to block instead of allocated for each:
+	// a block's table isn't used any more once the next block's header is read. The
+	// static fixed tables are never passed for reuse.
 	private int [] litTable;
 	private int [] distTable;
 	private final byte [] precodeLengths = new byte[19];

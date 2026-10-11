@@ -21,7 +21,11 @@ final class BitReader {
 
 	/** Random access to the compressed bytes. */
 	interface Source {
-		/** Reads up to {@code length} bytes at {@code offset} into dest, fewer only at the end of the data. */
+		/**
+		 * Reads up to {@code length} bytes at {@code offset} into dest, fewer only at the end
+		 * of the data, and returns how many. Filling the caller's buffer rather than returning
+		 * a new array lets readers reuse one buffer for all their reads.
+		 */
 		int read (long offset, byte [] dest, int destOffset, int length) throws IOException;
 	}
 
@@ -74,6 +78,7 @@ final class BitReader {
 			pos = (int) (byteOffset - base);
 		}
 		else {
+			// The buffer is reused for every seek and segment of this reader
 			if (data.length < segmentSize) data = new byte[segmentSize];
 			base = byteOffset;
 			limit = source.read(byteOffset, data, 0, segmentSize);
@@ -119,7 +124,13 @@ final class BitReader {
 		}
 	}
 
-	/** Reads the next segment into the buffer, keeping the unread bytes (earlier bytes are dropped). */
+	/**
+	 * Reads the next segment into the buffer, keeping the unread bytes (earlier bytes are
+	 * dropped): they move to the front of the same array (grown only if needed) instead of
+	 * joining both into a new array each time. The content of data changes in place, so
+	 * callers holding it in locals (DeflateDecoder) must reload data, pos and limit after
+	 * a refill.
+	 */
 	private boolean loadMore () throws IOException {
 		if (endOfData) return false;
 		int keep = limit - pos;
