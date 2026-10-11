@@ -138,7 +138,8 @@ public class BasicStats extends AbstractQCModule {
 		cCount += c;
 		
 		byte [] qual = sequence.getQualityBytes();
-		// Same idea for the minimum: Math.min is a JIT intrinsic, typically a cmov
+		// Same idea for the minimum: Math.min is a JIT intrinsic, typically a cmov.
+		// Bytes are signed: mask them to get the same char values as before
 		int lowest = lowestChar;
 		for (int i=0;i<qual.length;i++) {
 			lowest = Math.min(lowest, qual[i] & 0xFF);

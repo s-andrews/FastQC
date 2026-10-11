@@ -145,6 +145,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 			
 		}
 		
+		// Bytes are signed: mask them to get the same char values as before
 		for (int i=0;i<qualLen;i++) {
 			qualityCounts[i].addValue((char) (qual[i] & 0xFF));
 		}

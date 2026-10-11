@@ -278,6 +278,7 @@ public class FastQFile implements SequenceFile {
 				nextSequence = new Sequence(this,convertColorspaceToBases(seqString.toUpperCase()), seqString.toUpperCase(), new String(quality, CHARSET), id);
 			} 
 			else {
+				// The lines are fresh copies, so they can be upper cased in place and handed over
 				nextSequence = new Sequence(this, toUpperCase(seq), quality, id);
 			}
 
@@ -302,7 +303,10 @@ public class FastQFile implements SequenceFile {
 		}
 	}
 
-	/** Upper cases ASCII letters in place. */
+	/**
+	 * Upper cases ASCII letters in place. Same as String.toUpperCase for the
+	 * ASCII bases of a valid FASTQ file (and, unlike it, independent of locale).
+	 */
 	private static byte [] toUpperCase(byte [] seq) {
 		for (int i=0;i<seq.length;i++) {
 			byte b = seq[i];

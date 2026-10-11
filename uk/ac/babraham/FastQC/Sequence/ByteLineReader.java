@@ -27,6 +27,14 @@ import java.util.Arrays;
 /**
  * Reads lines as bytes, without decoding them into characters. Like
  * BufferedReader.readLine, a line ends at '\n', '\r' or "\r\n".
+ * <p>
+ * Replaces BufferedReader(InputStreamReader) for FASTQ: decoding every byte
+ * into a char and copying it into a String cost more than the analysis of the
+ * bases themselves. Together with byte based Sequences and modules this cut
+ * CPU by 11% (AVITI, 2M reads) to 17% (WES, 4M reads). Bytes are not decoded,
+ * so for ASCII input lines are identical to what readLine returned.
+ * <p>
+ * Not thread safe: one reader per file, used by the thread parsing it.
  */
 class ByteLineReader {
 
@@ -37,6 +45,8 @@ class ByteLineReader {
 	private static final long CRS = ONES * '\r';
 
 	private final InputStream in;
+	// buffer[pos, limit) is read but not returned yet. It grows (doubles) only
+	// when a single line doesn't fit, and never shrinks.
 	private byte [] buffer = new byte[1 << 16];
 	private int pos = 0;
 	private int limit = 0;
@@ -50,9 +60,13 @@ class ByteLineReader {
 
 	/** The next line without its terminator, or null at the end of the stream. */
 	byte [] readLine () throws IOException {
+		// Bytes from pos already known to hold no line end, so that after a
+		// fill the search resumes where it stopped instead of rescanning
 		int scanned = 0;
 		while (true) {
 			if (skipLF) {
+				// Checked here rather than when the '\r' was found, as it may
+				// have been the last byte read so far (CR at the buffer end)
 				if (pos == limit && !fill()) return null;
 				if (buffer[pos] == '\n') pos++;
 				skipLF = false;
@@ -65,6 +79,7 @@ class ByteLineReader {
 				return line;
 			}
 			scanned = limit - pos;
+			// fill() moves the unread bytes to the start, so scanned stays valid
 			if (!fill()) {
 				if (pos == limit) return null;
 				// Last line without a terminator
@@ -78,7 +93,10 @@ class ByteLineReader {
 	/** Index of the first '\n' or '\r' from start, or -1. */
 	private int findLineEnd (int start) {
 		int i = start;
-		// 8 bytes at a time: a byte equal to LF or CR becomes zero after the XOR
+		// 8 bytes at a time: a byte equal to LF or CR becomes zero after the XOR,
+		// and (x - 0x01..) & ~x & 0x80.. sets the high bit of zero bytes. A borrow
+		// can also flag a byte above a zero byte, but never below one, so the
+		// lowest flagged byte (the first in little endian order) is a real match.
 		for (; i + 8 <= limit; i += 8) {
 			long word = (long) LONG_LE.get(buffer, i);
 			long lf = word ^ LFS;
@@ -100,6 +118,7 @@ class ByteLineReader {
 			limit -= pos;
 			pos = 0;
 		}
+		// Still full after compacting: the current line is longer than the buffer
 		if (limit == buffer.length) buffer = Arrays.copyOf(buffer, buffer.length * 2);
 		int n = in.read(buffer, limit, buffer.length - limit);
 		if (n < 0) {

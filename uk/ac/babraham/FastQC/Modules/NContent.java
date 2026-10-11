@@ -104,6 +104,8 @@ public class NContent extends AbstractQCModule {
 			notNCounts = notNCountsNew;
 		}
 		
+		// Without a branch, like the other per-base loops: a straight loop over
+		// the bytes, with the arrays in locals rather than reloaded fields
 		long [] n = nCounts, notN = notNCounts;
 		for (int i=0;i<seqLen;i++) {
 			int isN = seq[i] == 'N' ? 1 : 0;

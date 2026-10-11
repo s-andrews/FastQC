@@ -21,6 +21,13 @@ package uk.ac.babraham.FastQC.Sequence;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * One read. Bases and qualities are held as byte arrays, which the per-base
+ * modules read directly: indexing a byte[] is cheaper than String.charAt and
+ * FASTQ records need no decoding into Strings at all (see ByteLineReader).
+ * Strings are only built when a module asks for them. A Sequence is not
+ * modified once created, so modules on several threads can share it.
+ */
 public class Sequence {
 
 	// Bases (upper case) and qualities, one byte per position
@@ -101,6 +108,7 @@ public class Sequence {
 		return qualities;
 	}
 	
+	/** Built on every call when this was created from bytes; prefer getSequenceBytes in per-read loops. */
 	public String getSequence () {
 		return sequence != null ? sequence : new String(bases, StandardCharsets.ISO_8859_1);
 	}

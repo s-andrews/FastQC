@@ -171,6 +171,7 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		// encounter we need to reduce the number of models.  We can do this by
 		// rounding off the sequence once we get above a certain size
 		
+		// Count over the first seqLen bytes instead of copying them into a substring
 		byte [] seq = sequence.getSequenceBytes();
 		int seqLen = truncatedLength(seq.length);
 
