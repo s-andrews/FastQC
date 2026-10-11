@@ -6,7 +6,7 @@ package rapidgzip;
  * Decoded without knowing the preceding 32KB of output, the start of the
  * output is in {@link #markers}: values below 256 are bytes, and 256+i stands
  * for byte i of that unknown window. Once the window is known
- * {@link #resolve(byte[])} turns them into bytes. The rest of the output, once
+ * {@link #resolveAndRelease(byte[], Buffers)} turns them into bytes. The rest of the output, once
  * no marker can be referenced any more, is in {@link #bytes}.
  *
  * Built by a worker, then read by the reader thread (windowAfter) and resolved
@@ -66,6 +66,8 @@ final class Chunk {
 	 * The marker part of the output as bytes, given the up to 32KB window
 	 * preceding the chunk, in the first markersLength() bytes of a buffer. The
 	 * markers are released, after which only the resolved output is available.
+	 * Both arrays come from and go back to the pool: the next window must have been
+	 * taken (windowAfter) before, as the markers may be reused right away.
 	 */
 	byte [] resolveAndRelease (byte [] window, Buffers buffers) throws DataFormatError {
 		byte [] out = buffers.bytes(markersLength());
@@ -89,7 +91,8 @@ final class Chunk {
 		for (int i = 0; i < 256; i++) values[i] = (byte) i;
 		int shift = DeflateDecoder.WINDOW - window.length;
 		System.arraycopy(window, 0, values, 256 + shift, window.length);
-		// Markers are below 256 + WINDOW by construction
+		// Markers are below 256 + WINDOW by construction, so there's no check in the
+		// loop (an invalid one would throw ArrayIndexOutOfBoundsException)
 		char [] in = markers;
 		for (int i = from; i < to; i++) {
 			dest[offset++] = values[in[i]];

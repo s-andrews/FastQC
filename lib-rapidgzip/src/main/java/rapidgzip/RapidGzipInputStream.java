@@ -87,6 +87,7 @@ public final class RapidGzipInputStream extends InputStream {
 	// Heap for the output of the chunks in flight
 	private final long budget;
 
+	// Chunk output buffers, reused across the decoders, the resolving tasks and the reader
 	private final Buffers buffers;
 	// Speculative decodes of chunks [nextChunk, nextToSubmit), in chunk order: the
 	// head is always the result for chunk nextChunk
@@ -406,7 +407,8 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
-	// A chunk's output is its resolved marker part followed by its byte part
+	// A chunk's output is its resolved marker part followed by its byte part.
+	// The resolved buffer comes from the pool, so may be longer than the markers
 	private void emit (Chunk chunk, byte [] resolved) throws IOException {
 		addSegment(resolved, 0, chunk.markersLength());
 		addSegment(chunk.bytes, chunk.bytesFrom, chunk.bytesTo);
@@ -459,7 +461,8 @@ public final class RapidGzipInputStream extends InputStream {
 	private boolean nextSegment () throws IOException {
 		if (closed) throw new IOException("Stream closed");
 		if (failure != null) throw failure;
-		// Each buffer is in one segment, so it can be reused once read
+		// Each buffer is in one segment, so it can be reused once read: its CRC was
+		// checked in emit, and the window after it taken in addOrdered
 		if (current != null) {
 			buffers.release(current);
 			current = null;

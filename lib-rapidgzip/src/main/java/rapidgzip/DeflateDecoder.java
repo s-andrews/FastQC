@@ -34,9 +34,12 @@ final class DeflateDecoder {
 	static final int WINDOW = 32768;
 
 	private static final VarHandle LONG_LE = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
-	// Bits needed to decode a length/distance pair: 15 + 5 + 15 + 13
+	// Bits needed to decode a length/distance pair: 15 + 5 + 15 + 13. The decoding
+	// loops refill only below this, to 56-63 bits, so a whole symbol decodes without
+	// further checks and several literals share one refill.
 	private static final int MAX_SYMBOL_BITS = 48;
-	// Below this, back references are copied with a loop rather than System.arraycopy
+	// Below this, back references are copied with a loop rather than System.arraycopy:
+	// for the short matches common in FASTQ the call costs more than the copy
 	private static final int SHORT_COPY = 32;
 
 	// Primary table sizes (see Huffman); longer codes go through a second level.
@@ -75,6 +78,7 @@ final class DeflateDecoder {
 	}
 
 	private final BitReader in;
+	// Output buffers come from, and outgrown ones go back to, the stream's pool
 	private final Buffers buffers;
 
 	// Marker mode output, starting with the WINDOW markers for the unknown window
@@ -316,15 +320,12 @@ final class DeflateDecoder {
 	}
 
 	/**
-	 * True if the last WINDOW values of output contain a marker. Checked every
-	 * MARKER_CHECK values of output rather than tracking markers through copies:
-	 * OR-ing each copied value into a flag kept back references from being plain
-	 * array copies. A scan of WINDOW values per MARKER_CHECK of output costs at most
-	 * half a read per value, and in FASTQ markers mostly last the whole chunk anyway.
-	 * Switching to bytes up to MARKER_CHECK values later than possible leaves the
-	 * output unchanged (the same values, just resolved later), only uses more memory.
-	 * With the lookup in Chunk.resolve and arraycopy, decompression alone went from
-	 * 1.89 s to 1.53 s on 4 threads (510 MB AVITI), FastQC CPU -7%.
+	 * True if the last WINDOW values of output contain a marker. Checked at intervals
+	 * of output rather than tracking markers through copies, which kept back references
+	 * from being plain array copies. The interval doubles at each check, from 128K up
+	 * to MAX_MARKER_CHECK values, as in FASTQ markers mostly last the whole chunk.
+	 * Switching to bytes later than possible leaves the output unchanged (the same
+	 * values, resolved later), only holds more output as 16 bit values.
 	 */
 	private boolean markersInWindow () {
 		char [] out = chars;
@@ -343,6 +344,12 @@ final class DeflateDecoder {
 	 * Marker mode decoding. Returns true at the end of the block, or false
 	 * after switching to byte mode to continue the block there. The WINDOW
 	 * markers at the start of the output make any distance up to 32KB valid.
+	 *
+	 * The bit buffer is kept in locals (see BitReader) rather than refilled and
+	 * consumed through the reader for each symbol, and written back on the way out.
+	 * With the short copies, marker check backoff and pooled buffers, decompression
+	 * alone went from 1.53 s to 1.31 s on 4 threads (510 MB AVITI), FastQC CPU -6%
+	 * (AVITI) / -2% (WES).
 	 */
 	private boolean decodeChars (int [] lit, int [] dist) throws IOException {
 		char [] out = chars;
@@ -447,7 +454,10 @@ final class DeflateDecoder {
 		}
 	}
 
-	/** Byte mode decoding to the end of the block: the window is known, as in a plain inflater. */
+	/**
+	 * Byte mode decoding to the end of the block, as decodeChars: the window is known,
+	 * as in a plain inflater. Always returns true, at the end of the block.
+	 */
 	private boolean decodeBytes (int [] lit, int [] dist) throws IOException {
 		byte [] out = bytes;
 		int op = bytePos;
