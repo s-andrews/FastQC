@@ -50,9 +50,9 @@ import java.util.zip.ZipException;
  *
  * Threading: one caller thread reads, orders chunks, decodes sequentially when
  * needed and checks CRCs; a fixed pool of {@code threads} daemon workers finds
- * blocks, decodes chunks and resolves markers. Only {@link #ratio} and
- * {@link #expectedBit} are shared with other threads. Workers exit only on
- * {@link #close()}, so the stream must be closed.
+ * blocks, decodes chunks and resolves markers. Only {@link #ratio},
+ * {@link #expectedBit} and the {@link Buffers} pool are shared with other
+ * threads. Workers stop at the end of the data, or on {@link #close()}.
  *
  * Memory: in FASTQ ~55% of a speculatively decoded chunk refers back to its
  * unknown window, so chunks usually stay in marker mode (2 bytes per output

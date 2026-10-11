@@ -46,8 +46,7 @@ final class BitReader {
 	// Zero bytes supplied past the end of the data
 	private int padding;
 
-	// Bit buffer, the next bit to read is the lowest. Package private so the decoder's
-	// hot loops can read it directly after a refill.
+	// Bit buffer, the next bit to read is the lowest
 	long bits;
 	int count;
 
