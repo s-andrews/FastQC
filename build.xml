@@ -56,6 +56,9 @@
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false"
             release="${release}">
             <src path="." />
+            <!-- The parallel gzip decoder FastQFile uses. Excludes are relative to each
+                 src root, so the exclude below only skips the library's own tree (tests,
+                 build files) under "." and not these sources. -->
             <src path="lib-rapidgzip/src/main/java" />
             <exclude name="lib-rapidgzip/**" />
             <classpath refid="FastQC.classpath" />

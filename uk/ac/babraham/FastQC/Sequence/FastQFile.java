@@ -54,7 +54,9 @@ public class FastQFile implements SequenceFile {
 	// the file we've got.  We don't read from this directly, but it's the
 	// only way to access the file pointer.
 	private FileInputStream fis;
-	// Reading a gzip file in parallel, which then reports progress
+	// Set when a gzip file is decompressed in parallel. fis is then never read
+	// (RapidGzipInputStream opens its own channel), so progress comes from how
+	// far decompression got through the compressed file instead.
 	private RapidGzipInputStream gzipStream = null;
 
 	private String name;
@@ -85,17 +87,23 @@ public class FastQFile implements SequenceFile {
 			br = new BufferedReader(new InputStreamReader(System.in));
 		}
 		else if (file.getName().toLowerCase().endsWith(".gz") || (Files.probeContentType(file.toPath()) != null && (Files.probeContentType(file.toPath()).equals("application/x-gzip") || Files.probeContentType(file.toPath()).equals("application/gzip")))) {
-			// 64 KB input buffer for GZIPInputStream: the 512 byte default means one native read of
-			// the file per 512 compressed bytes (wall -2% on 2M AVITI reads).
+			// RapidGzipInputStream splits the compressed file into chunks and decodes
+			// them speculatively on a thread pool, which needs random access to the
+			// file and spare cores. Decompression was the reader's bottleneck: wall
+			// -5% on AVITI 2M reads, and it lets more processor threads pay off.
+			// The sequential paths use a 64 KB input buffer: the 512 byte default means
+			// one native read per 512 compressed bytes (wall -2% on 2M AVITI reads).
 			if (!Files.isRegularFile(file.toPath())) {
-				// Eg a named pipe, which can only be read sequentially
+				// Eg a named pipe (process substitution), which can only be read sequentially
 				br = new BufferedReader(new InputStreamReader(decompressor(config, new MultiMemberGZIPInputStream(fis, 64 * 1024))));
 			}
 			else if (config.threads != null && config.threads <= 1) {
+				// Single-threaded as requested: decompress inline on the reading thread
 				br = new BufferedReader(new InputStreamReader(new MultiMemberGZIPInputStream(fis, 64 * 1024)));
 			}
 			else {
-				// Decompress on several threads
+				// Decompress on several threads; the decoded output is still read in
+				// order, so the sequences and the report are identical
 				gzipStream = new RapidGzipInputStream(file.toPath(), gzipThreads(config));
 				br = new BufferedReader(new InputStreamReader(gzipStream));
 			}
@@ -112,7 +120,10 @@ public class FastQFile implements SequenceFile {
 
 	/**
 	 * Threads to decompress a gzip file with: half of the thread budget if one
-	 * was given, else 4, as beyond that decompression is no longer the bottleneck.
+	 * was given, else 4, as beyond that decompression is no longer the bottleneck
+	 * (decompressing AVITI alone: 3.6 s with GZIPInputStream, 1.9 s with 4 threads,
+	 * 1.4 s with 8 for more CPU). These threads come on top of the per-file
+	 * reader and processor threads sized by AnalysisQueue.
 	 */
 	private static int gzipThreads(FastQCConfig config) {
 		if (config.threads != null) return Math.max(1, config.threads / 2);
@@ -142,6 +153,7 @@ public class FastQFile implements SequenceFile {
 			return 0;
 		}
 		if (gzipStream != null) {
+			// Backed by a volatile field the consumer advances, so a cheap, safe poll
 			return (int) (((double)gzipStream.compressedPosition()/ fileSize)*100);
 		}
 		try {
