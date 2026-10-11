@@ -7,6 +7,8 @@
 <project basedir="." default="build" name="FastQC">
     <property environment="env" />
     <property name="debuglevel" value="source,lines,vars" />
+    <!-- javac release (not source/target): compiles against the JDK 21 API, so use of
+         newer APIs is rejected. Building needs JDK 21+, running needs Java 21+. -->
     <property name="release" value="21" />
     <path id="FastQC.classpath">
         <pathelement location="bin" />
