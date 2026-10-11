@@ -197,11 +197,18 @@ public class AnalysisRunner implements Runnable {
 		// A module processes its batches in order, one thread at a time, but
 		// any of the numProcessors threads picks up whichever module has work
 		// pending, so the load balances itself whatever each module costs.
+		// A static split of the modules into one group per thread left the
+		// threads very uneven (5.2 s vs 1.8 s of work): wall -9% on 2M AVITI
+		// reads, -27% on 4M WES reads. Each module still sees every sequence
+		// in file order, so the results are unchanged.
 		final int BATCH_SIZE = 1024;
+		// Bounds the reads held in memory: a batch counts until every module
+		// has processed it.
 		final int BATCHES_IN_FLIGHT = 32;
 
 		final Semaphore inFlight = new Semaphore(BATCHES_IN_FLIGHT);
 		final LinkedBlockingQueue<ModuleWork> ready = new LinkedBlockingQueue<ModuleWork>();
+		// Queued once per processor thread when all the work is done.
 		final ModuleWork POISON = new ModuleWork(null);
 		final ModuleWork[] work = new ModuleWork[modules.length];
 		for (int m = 0; m < modules.length; m++) {
@@ -288,9 +295,13 @@ public class AnalysisRunner implements Runnable {
 								processorError.compareAndSet(null, e);
 							}
 						}
+						// Release the module before counting the batch done, then requeue
+						// it if more batches arrived. Clearing scheduled also publishes
+						// the module's state to whichever thread runs it next.
 						w.scheduled.set(false);
 						w.schedule(ready);
 
+						// The last module to finish a batch frees its slot for the reader.
 						if (batch.modulesRemaining.decrementAndGet() == 0) {
 							inFlight.release();
 							finishIfDone.run();
@@ -357,6 +368,10 @@ public class AnalysisRunner implements Runnable {
 
 	}
 	
+	/**
+	 * Runs one module over a batch, applying the length filters as the
+	 * sequential path does. Called by one thread at a time per module.
+	 */
 	private void processBatch (QCModule module, Sequence[] batch) {
 		for (int b = 0; b < batch.length; b++) {
 			Sequence seq = batch[b];
@@ -380,6 +395,12 @@ public class AnalysisRunner implements Runnable {
 		}
 	}
 
+	/**
+	 * Called by the reader thread only: waits for a free batch slot, then
+	 * queues the batch for every module and schedules the idle ones. The
+	 * pending count is raised before any module can see the batch, so it
+	 * can't reach zero while the batch is still being processed.
+	 */
 	private static void dispatch (Batch batch, ModuleWork[] work, BlockingQueue<ModuleWork> ready, Semaphore inFlight, AtomicInteger pending) throws InterruptedException {
 		inFlight.acquire();
 		pending.incrementAndGet();
@@ -389,6 +410,10 @@ public class AnalysisRunner implements Runnable {
 		}
 	}
 
+	/**
+	 * Sequences shared read-only by all modules; modulesRemaining counts the
+	 * modules that haven't processed it yet.
+	 */
 	private static class Batch {
 		final Sequence[] sequences;
 		final AtomicInteger modulesRemaining;
@@ -402,6 +427,12 @@ public class AnalysisRunner implements Runnable {
 	/**
 	 * The batches waiting for a module. The module is on the ready queue, or
 	 * being processed, while scheduled is set, so only one thread runs it at a time.
+	 * <p>
+	 * Only the reader adds batches, so they're queued in file order, and only
+	 * the thread holding the module polls them. schedule() is called after
+	 * every add and after every release, so a batch is never left queued with
+	 * the module unscheduled: whichever of the two sees the other's change
+	 * wins the compareAndSet and queues the module.
 	 */
 	private static class ModuleWork {
 		final QCModule module;
