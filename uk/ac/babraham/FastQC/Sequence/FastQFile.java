@@ -33,6 +33,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import rapidgzip.RapidGzipInputStream;
 import uk.ac.babraham.FastQC.FastQCConfig;
+import uk.ac.babraham.FastQC.Analysis.AnalysisQueue;
 import uk.ac.babraham.FastQC.Utilities.MultiMemberGZIPInputStream;
 import uk.ac.babraham.FastQC.Utilities.ThreadedInputStream;
 
@@ -103,7 +104,10 @@ public class FastQFile implements SequenceFile {
 			}
 			else {
 				// Decompress on several threads; the decoded output is still read in
-				// order, so the sequences and the report are identical
+				// order, so the sequences and the report are identical. It reads the
+				// file itself, so fis isn't needed (and can't leak if this throws).
+				fis.close();
+				fis = null;
 				gzipStream = new RapidGzipInputStream(file.toPath(), gzipThreads(config));
 				br = new BufferedReader(new InputStreamReader(gzipStream));
 			}
@@ -119,14 +123,15 @@ public class FastQFile implements SequenceFile {
 	}
 
 	/**
-	 * Threads to decompress a gzip file with: half of the thread budget if one
-	 * was given, else 4, as beyond that decompression is no longer the bottleneck
+	 * Threads to decompress a gzip file with: half of this file's share of the
+	 * thread budget if one was given (-t is shared by the files processed in
+	 * parallel), else 4, as beyond that decompression is no longer the bottleneck
 	 * (decompressing AVITI alone: 3.6 s with GZIPInputStream, 1.9 s with 4 threads,
 	 * 1.4 s with 8 for more CPU). These threads come on top of the per-file
 	 * reader and processor threads sized by AnalysisQueue.
 	 */
 	private static int gzipThreads(FastQCConfig config) {
-		if (config.threads != null) return Math.max(1, config.threads / 2);
+		if (config.threads != null) return Math.max(1, config.threads / AnalysisQueue.getInstance().getFilesInParallel() / 2);
 		return 4;
 	}
 

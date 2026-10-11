@@ -88,6 +88,11 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	int getProcessorsPerFile() {
 		return processorsPerFile;
 	}
+
+	/** How many files are processed at once, sharing the thread budget. */
+	public int getFilesInParallel() {
+		return availableSlots.intValue();
+	}
 	
 	// Wakes the dispatcher so the run starts at once if a slot is free.
 	public synchronized void addToQueue (AnalysisRunner runner) {
