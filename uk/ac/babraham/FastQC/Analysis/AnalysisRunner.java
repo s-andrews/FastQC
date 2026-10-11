@@ -87,13 +87,26 @@ public class AnalysisRunner implements Runnable {
 	}
 
 	public void run() {
-
-		int numProcessors = AnalysisQueue.getInstance().getProcessorsPerFile();
-		if (numProcessors == 0) {
-			runSequential();
-			return;
+		try {
+			int numProcessors = AnalysisQueue.getInstance().getProcessorsPerFile();
+			if (numProcessors == 0) {
+				runSequential();
+				return;
+			}
+			runParallel(numProcessors);
 		}
-		runParallel(numProcessors);
+		catch (Throwable t) {
+			// Anything escaping the run (a module failing on the -t 1 path, an Error
+			// such as OutOfMemoryError) would end this thread without telling the
+			// listeners: the slot would never be freed and OfflineRunner would wait
+			// for this file forever. Report it as a failure of the file instead.
+			SequenceFormatException sfe = new SequenceFormatException("Analysis failed: " + t);
+			sfe.initCause(t);
+			Iterator<AnalysisListener> i = listeners.iterator();
+			while (i.hasNext()) {
+				i.next().analysisExceptionReceived(file, sfe);
+			}
+		}
 	}
 
 	private void runSequential() {
@@ -145,10 +158,6 @@ public class AnalysisRunner implements Runnable {
 					while (i.hasNext()) {
 						i.next().analysisUpdated(file,seqCount,percentComplete);
 					}
-					try {
-						Thread.sleep(10);
-					}
-					catch (InterruptedException e) {}
 			}
 			}
 		}

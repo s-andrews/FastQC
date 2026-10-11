@@ -66,9 +66,10 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	 * concurrency (per-file pipeline). Unset defaults to
 	 * <code>min(THREADS_PER_FILE * max(1, expectedFiles), availableProcessors)</code>.
 	 * A budget of 1 makes AnalysisRunner take its single-threaded path.
-	 * Call before submitting any AnalysisRunner.
+	 * Call before submitting any AnalysisRunner. Wakes the dispatcher, as a
+	 * larger budget may let waiting runs start.
 	 */
-	void configure (int expectedFiles) {
+	synchronized void configure (int expectedFiles) {
 		int totalThreads;
 		if (FastQCConfig.getInstance().threads != null) {
 			totalThreads = FastQCConfig.getInstance().threads;
@@ -81,6 +82,7 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 		processorsPerFile = totalThreads <= 1 ? 0 : Math.min(MAX_PROCESSORS_PER_FILE, totalThreads - 1);
 		int actualThreadsPerFile = processorsPerFile == 0 ? 1 : 1 + processorsPerFile;
 		availableSlots.set(Math.max(1, totalThreads / actualThreadsPerFile));
+		notifyAll();
 	}
 
 	int getProcessorsPerFile() {
