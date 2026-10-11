@@ -119,7 +119,11 @@ class ByteLineReader {
 			pos = 0;
 		}
 		// Still full after compacting: the current line is longer than the buffer
-		if (limit == buffer.length) buffer = Arrays.copyOf(buffer, buffer.length * 2);
+		if (limit == buffer.length) {
+			// Doubling past 1 GiB would overflow the array size
+			if (buffer.length >= 1 << 30) throw new IOException("Line longer than " + buffer.length + " bytes");
+			buffer = Arrays.copyOf(buffer, buffer.length * 2);
+		}
 		int n = in.read(buffer, limit, buffer.length - limit);
 		if (n < 0) {
 			endOfStream = true;

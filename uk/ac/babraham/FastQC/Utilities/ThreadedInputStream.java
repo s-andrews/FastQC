@@ -131,7 +131,7 @@ public class ThreadedInputStream extends InputStream {
 	}
 
 	// Returns at most what's left of the current chunk, which is allowed by
-	// the InputStream contract; callers like InputStreamReader loop as needed.
+	// the InputStream contract; callers (ByteLineReader) loop as needed.
 	public int read (byte [] b, int off, int len) throws IOException {
 		if (len == 0) return 0;
 		if (position == chunkLength && !nextChunk()) return -1;

@@ -305,9 +305,11 @@ public class AdapterContent extends AbstractQCModule {
 		// otherwise each adapter is searched with its own indexOf scan.
 		if (adapterKeys != null) findAdapters(sequence.getSequenceBytes());
 
+		// The indexOf fallback needs the read as a String: build it once, not per adapter
+		String seqString = adapterKeys != null ? null : sequence.getSequence();
 		for (int a=0;a<adapters.length;a++) {
 
-			int index = adapterKeys != null ? firstHit[a] : sequence.getSequence().indexOf(adapters[a].sequence());
+			int index = adapterKeys != null ? firstHit[a] : seqString.indexOf(adapters[a].sequence());
 			if (index >=0) {
 				for (int i=index;i<=longestSequence-longestAdapter;i++) {
 					adapters[a].incrementCount(i);
