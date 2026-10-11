@@ -76,6 +76,11 @@ public class ThreadedInputStream extends InputStream {
 				catch (IOException e) {
 					error = e;
 				}
+				catch (RuntimeException | Error e) {
+					// Eg a corrupt bzip2 file, or OutOfMemoryError: still queue EOF and
+					// hand the failure to the reader, which would otherwise wait forever
+					error = new IOException("Decompression failed: " + e, e);
+				}
 				catch (InterruptedException e) {
 					// The reader was closed: nobody will take EOF, so don't queue it
 					return;

@@ -146,6 +146,23 @@ public class FastQFile implements SequenceFile {
 
 	private void readNext() throws SequenceFormatException {
 		try {
+			readNextRecord();
+		}
+		catch (SequenceFormatException | RuntimeException e) {
+			// The file can't be read any further and nothing else closes it: release
+			// the file and the decompression thread, which would otherwise stay
+			// blocked for the rest of the run with its buffered chunks
+			try {
+				br.close();
+				if (fis != null) fis.close();
+			}
+			catch (IOException ignored) {}
+			throw e;
+		}
+	}
+
+	private void readNextRecord() throws SequenceFormatException {
+		try {
 			// First line should be the id
 
 			// We might have blank lines between entries or at the end
