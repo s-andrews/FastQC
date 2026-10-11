@@ -26,6 +26,13 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
 
+/**
+ * Singleton dispatcher: one thread takes queued AnalysisRunners and starts each
+ * on its own thread while fewer than availableSlots runs are in progress.
+ * Queue and slot changes are signalled on this object's monitor (wait/notifyAll)
+ * instead of polling every 500 ms, which could delay the start of each file by
+ * up to half a second.
+ */
 public class AnalysisQueue implements Runnable, AnalysisListener{
 
 	private static AnalysisQueue instance = new AnalysisQueue();
@@ -37,8 +44,12 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	private volatile int processorsPerFile = 0;
 
 	// Per-file pipeline = 1 reader + up to MAX_PROCESSORS_PER_FILE processor
-	// threads. Past 3 processors gains plateau as the reader becomes the bottleneck.
-	private static final int MAX_PROCESSORS_PER_FILE = 3;
+	// threads. Past 6 processors gains plateau: work is balanced across them, and
+	// the largest modules then bound the time. 3 was the limit while gzip
+	// decompression bounded the reader; with parallel decompression the processors
+	// became the critical path, and 6 gives wall -15% on AVITI, -5% on WES 4M reads.
+	// Parallel gzip threads (FastQFile) are not counted in this budget.
+	private static final int MAX_PROCESSORS_PER_FILE = 6;
 	private static final int THREADS_PER_FILE = 1 + MAX_PROCESSORS_PER_FILE;
 
 	public static AnalysisQueue getInstance () {
@@ -59,9 +70,10 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 	 * concurrency (per-file pipeline). Unset defaults to
 	 * <code>min(THREADS_PER_FILE * max(1, expectedFiles), availableProcessors)</code>.
 	 * A budget of 1 makes AnalysisRunner take its single-threaded path.
-	 * Call before submitting any AnalysisRunner.
+	 * Call before submitting any AnalysisRunner. Wakes the dispatcher, as a
+	 * larger budget may let waiting runs start.
 	 */
-	void configure (int expectedFiles) {
+	synchronized void configure (int expectedFiles) {
 		int totalThreads;
 		if (FastQCConfig.getInstance().threads != null) {
 			totalThreads = FastQCConfig.getInstance().threads;
@@ -74,43 +86,60 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 		processorsPerFile = totalThreads <= 1 ? 0 : Math.min(MAX_PROCESSORS_PER_FILE, totalThreads - 1);
 		int actualThreadsPerFile = processorsPerFile == 0 ? 1 : 1 + processorsPerFile;
 		availableSlots.set(Math.max(1, totalThreads / actualThreadsPerFile));
+		notifyAll();
 	}
 
 	int getProcessorsPerFile() {
 		return processorsPerFile;
 	}
+
+	/** How many files are processed at once, sharing the thread budget. */
+	public int getFilesInParallel() {
+		return availableSlots.intValue();
+	}
 	
-	public void addToQueue (AnalysisRunner runner) {
+	// Wakes the dispatcher so the run starts at once if a slot is free.
+	public synchronized void addToQueue (AnalysisRunner runner) {
 		queue.add(runner);
+		notifyAll();
 	}
 
 	public void run() {
 
 		while (true) {
-//			System.err.println("Status available="+availableSlots+" used="+usedSlots+" queue="+queue.size());
-			if (availableSlots.intValue() > usedSlots.intValue() && queue.size() > 0) {
+			AnalysisRunner currentRun;
+			// Wait for a queued run and a free slot, we're notified when either changes.
+			// The condition is rechecked after each wakeup (spurious wakeups, or a
+			// notify for a change that doesn't free a slot). configure() doesn't
+			// notify, which is fine as it's called before any run is queued.
+			synchronized (this) {
+				while (availableSlots.intValue() <= usedSlots.intValue() || queue.isEmpty()) {
+					try {
+						wait();
+					} catch (InterruptedException e) {}
+				}
 				usedSlots.incrementAndGet();
-				AnalysisRunner currentRun = queue.getFirst();
-				queue.removeFirst();
-				currentRun.addAnalysisListener(this);
-				Thread t = new Thread(currentRun);
-				t.start();
+				currentRun = queue.removeFirst();
 			}
-			
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {}
+			// The lock only covers the handoff; the run (and its callbacks to
+			// analysisComplete, which take the lock) proceeds without it.
+			currentRun.addAnalysisListener(this);
+			Thread t = new Thread(currentRun);
+			t.start();
 		}
 	}
 
-	public void analysisComplete(SequenceFile file, QCModule[] results) {
+	// A run finished (or failed, below): free its slot and wake the dispatcher.
+	public synchronized void analysisComplete(SequenceFile file, QCModule[] results) {
 		usedSlots.decrementAndGet();
+		notifyAll();
 	}
 
 	public void analysisUpdated(SequenceFile file, int sequencesProcessed, int percentComplete) {}
 
-	public void analysisExceptionReceived(SequenceFile file, Exception e) {
+	public synchronized void analysisExceptionReceived(SequenceFile file, Exception e) {
 		usedSlots.decrementAndGet();
+		notifyAll();
 	}
 
 	public void analysisStarted(SequenceFile file) {}

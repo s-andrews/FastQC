@@ -32,7 +32,11 @@ import uk.ac.babraham.FastQC.Sequence.Sequence;
 public class NContent extends AbstractQCModule {
 
 	public long [] nCounts = new long [0];
+	// Filled when the results are calculated, from the read lengths
 	public long [] notNCounts = new long [0];
+	// Number of reads of each length (index 0 to nCounts.length, so it's always
+	// one longer than nCounts)
+	private long [] lengthCounts = new long [1];
 	public boolean calculated = false;
 	public double [] percentages = null;
 	public String [] xCategories = new String[0];
@@ -55,6 +59,16 @@ public class NContent extends AbstractQCModule {
 	}
 	
 	private synchronized void getPercentages () {
+
+		// Bases at a position are those of the reads longer than it, so the
+		// non-N count is that minus the Ns: the same as counting every non-N
+		// base, without a second increment per base while reading
+		notNCounts = new long[nCounts.length];
+		long longer = 0;
+		for (int i=nCounts.length-1;i>=0;i--) {
+			longer += lengthCounts[i+1];
+			notNCounts[i] = longer - nCounts[i];
+		}
 		
 		BaseGroup [] groups = BaseGroup.makeBaseGroups(nCounts.length);
 		
@@ -87,30 +101,20 @@ public class NContent extends AbstractQCModule {
 		
 	public void processSequence(Sequence sequence) {
 		calculated = false;
-		String seq = sequence.getSequence();
-		int seqLen = seq.length();
+		byte [] seq = sequence.getSequenceBytes();
+		int seqLen = seq.length;
 		if (nCounts.length < seqLen) {
 			// We need to expand the size of the data structures
-			
-			long [] nCountsNew = new long [seqLen];
-			long [] notNCountsNew = new long [seqLen];
-
-			for (int i=0;i<nCounts.length;i++) {
-				nCountsNew[i] = nCounts[i];
-				notNCountsNew[i] = notNCounts[i];
-			}
-			
-			nCounts = nCountsNew;
-			notNCounts = notNCountsNew;
+			nCounts = java.util.Arrays.copyOf(nCounts, seqLen);
+			lengthCounts = java.util.Arrays.copyOf(lengthCounts, seqLen + 1);
 		}
+		++lengthCounts[seqLen];
 		
+		// Ns are rare, so only count those: the branch is well predicted and
+		// most bases cost a compare, where the old loop did two increments
+		long [] n = nCounts;
 		for (int i=0;i<seqLen;i++) {
-			if (seq.charAt(i) == 'N') {
-				++nCounts[i];
-			}
-			else {
-				++notNCounts[i];
-			}
+			if (seq[i] == 'N') ++n[i];
 		}
 		
 	}
@@ -118,6 +122,7 @@ public class NContent extends AbstractQCModule {
 	public void reset () {
 		nCounts = new long[0];
 		notNCounts = new long[0];
+		lengthCounts = new long[1];
 	}
 
 	public String description() {

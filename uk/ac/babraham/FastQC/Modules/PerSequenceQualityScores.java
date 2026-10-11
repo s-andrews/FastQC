@@ -88,12 +88,12 @@ public class PerSequenceQualityScores extends AbstractQCModule {
 
 	public void processSequence(Sequence sequence) {
 				
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
+		byte [] qual = sequence.getQualityBytes();
+		int qualLen = qual.length;
 		int averageQuality = 0;
 		
 		for (int i=0;i<qualLen;i++) {
-			char ch = qual.charAt(i);
+			char ch = (char) (qual[i] & 0xFF);
 			if (ch < lowestChar) {
 				lowestChar = ch;
 			}

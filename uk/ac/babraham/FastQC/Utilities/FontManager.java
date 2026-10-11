@@ -23,7 +23,6 @@ import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +45,8 @@ public class FontManager {
 	private static boolean initialized = false;
 
 	/**
-	 * Load and register the bundled Liberation Sans font variants.
+	 * Load the bundled Liberation Sans font variants. They are not registered
+	 * with the GraphicsEnvironment, so they're only reachable through this class.
 	 * Safe to call multiple times; only loads once.
 	 */
 	public static synchronized void initialize() {
@@ -67,9 +67,12 @@ public class FontManager {
 				System.err.println("Warning: bundled font not found: " + resourcePath);
 				return new Font(Font.SANS_SERIF, Font.PLAIN, 12);
 			}
-			Font font = Font.createFont(Font.TRUETYPE_FONT, is);
-			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-			return font;
+			// Not registered with the GraphicsEnvironment: that would first enumerate every
+			// installed font (~150-180 ms of every run, wall -10% on 2M/4M-read samples), and
+			// nothing looks the font up by family name: charts draw with these Font objects
+			// (and their derived fonts), and SVG output names the family in CSS. Reports
+			// stay byte-identical.
+			return Font.createFont(Font.TRUETYPE_FONT, is);
 		} catch (FontFormatException | IOException e) {
 			System.err.println("Warning: failed to load bundled font: " + resourcePath + " (" + e.getMessage() + ")");
 			return new Font(Font.SANS_SERIF, Font.PLAIN, 12);

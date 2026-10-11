@@ -171,18 +171,19 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		// encounter we need to reduce the number of models.  We can do this by
 		// rounding off the sequence once we get above a certain size
 		
-		String seq = truncateSequence(sequence);
-		int seqLen = seq.length();
+		// Count over the first seqLen bytes instead of copying them into a substring
+		byte [] seq = sequence.getSequenceBytes();
+		int seqLen = truncatedLength(seq.length);
 
 		if (seqLen == 0) return; // Ignore empty sequences
 		
 		
 		int thisSeqGCCount = 0;
+		// Bases are random, so count without branches which would mostly be mispredicted.
+		// The non-short-circuit '|' is deliberate: '||' would reintroduce a branch.
 		for (int i=0;i<seqLen;i++) {
-			char b = seq.charAt(i);
-			if (b == 'G' || b == 'C') {
-				++thisSeqGCCount;
-			}
+			byte b = seq[i];
+			thisSeqGCCount += (b == 'G' | b == 'C') ? 1 : 0;
 		}
 
 		if (seqLen >= cachedModels.length) {
@@ -208,23 +209,20 @@ public class PerSequenceGCContent extends AbstractQCModule {
 		
 	}
 	
-	private String truncateSequence (Sequence sequence) {
+	/** The length of the start of the sequence we use. */
+	private static int truncatedLength (int length) {
 		
-		String seq = sequence.getSequence();
-		
-		// TODO: We should return a random chunk of sequence, rather
+		// TODO: We should use a random chunk of sequence, rather
 		// than the start.
 		
-		if (seq.length() > 1000) {
-			int length = (seq.length()/1000)*1000;
-			return seq.substring(0, length);
+		if (length > 1000) {
+			return (length/1000)*1000;
 		}
-		if (seq.length() > 100) {
-			int length = (seq.length()/100)*100;
-			return seq.substring(0, length);
+		if (length > 100) {
+			return (length/100)*100;
 		}
 
-		return seq;
+		return length;
 		
 	}
 	

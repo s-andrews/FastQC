@@ -150,7 +150,7 @@ public class SequenceLengthDistribution extends AbstractQCModule {
 	}
 
 	public void processSequence(Sequence sequence) {
-		int seqLen = sequence.getSequence().length();
+		int seqLen = sequence.length();
 
 		if (seqLen+2 > lengthCounts.length) {
 			long [] newLengthCounts = new long[seqLen+2];

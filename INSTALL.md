@@ -17,18 +17,19 @@ should be remembered by OSX.
 ## Windows and Linux
 
 FastQC is a java application.  In order to run it needs your system to have a suitable
-Java Runtime Environment (JRE) installed.  Before you try to run FastQC you should
+Java Runtime Environment (JRE) installed, version 21 or later (an older java fails
+with an `UnsupportedClassVersionError`).  Before you try to run FastQC you should
 therefore ensure that you have a suitable JRE.  There are a number of different JREs
 available however the ones we have tested are the latest Oracle runtime environments
-and those from the [adoptOpenJDK project](https://adoptopenjdk.net/).  You need to
+and those from the [Eclipse Adoptium project](https://adoptium.net/).  You need to
 download and install a suitable 64-bit JRE and make sure that the java application
 is in your path (most installers will take care of this for you).
 
 On linux most distributions will have java installed already so you might not need to
 do anything.  If java isn't installed then you can add it by doing:
 
-* Ubuntu / Mint: `sudo apt install default-jre`
-* CentOS / Redhat: `sudo yum install java-1.8.0-openjdk`
+* Ubuntu / Mint: `sudo apt install openjdk-21-jre`
+* CentOS / Redhat: `sudo yum install java-21-openjdk`
 
 You can check whether java is installed by opening the 'cmd' program on windows, or
 any shell on linux and typing:
@@ -41,9 +42,9 @@ You should see something like:
 
 ```console
 $ java -version
-openjdk version "11.0.2" 2019-01-15
-OpenJDK Runtime Environment AdoptOpenJDK (build 11.0.2+9)
-OpenJDK 64-Bit Server VM AdoptOpenJDK (build 11.0.2+9, mixed mode)
+openjdk version "21.0.8" 2025-07-15 LTS
+OpenJDK Runtime Environment Temurin-21.0.8+9 (build 21.0.8+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.8+9 (build 21.0.8+9-LTS, mixed mode, sharing)
 ```
 
 On unix type OSs FastQC uses a small Python script to start the program so you will need to have

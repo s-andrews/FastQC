@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Vector;
 
@@ -62,6 +63,33 @@ public class AdapterContent extends AbstractQCModule {
 	private String [] xLabels = new String[0];
 
 	BaseGroup [] groups;
+
+	// Single pass adapter search, when all adapters have the same length k >= 8 and
+	// only contain ACGT (null otherwise). An adapter at position p contains the 8
+	// bases starting at the first multiple of k-7 from p, so we only look up the 8
+	// bases at each multiple of k-7 in a bitset of the 8-mers at offsets 0 to k-8 of
+	// the adapters, and check the possible starts of an adapter on a hit.
+	// For the default 12 bp adapters that's one lookup every 5 bases instead of one
+	// per base, and few 8-mers in the filter so hits are rare.
+	private byte [][] adapterBytes = null;
+	private long [] adapterFilter;
+	private int adapterStep;
+	// First match position of each adapter in the current read (-1 if none),
+	// filled by findAdapters(). Per instance scratch: a module only ever sees one
+	// read at a time, from a single thread.
+	private int [] firstHit;
+
+	// 2-bit code of each byte: A=0 C=1 G=2 T=3, -1 for anything else (N, lowercase, '.').
+	// Only exact uppercase ACGT can match, as with indexOf on ACGT-only adapters.
+	private static final byte [] BASE_CODES = new byte[256];
+	static {
+		Arrays.fill(BASE_CODES, (byte)-1);
+		BASE_CODES['A'] = 0;
+		BASE_CODES['C'] = 1;
+		BASE_CODES['G'] = 2;
+		BASE_CODES['T'] = 3;
+	}
+
 	public AdapterContent () {
 
 		Vector<Adapter>c = new Vector<Adapter>();
@@ -114,7 +142,84 @@ public class AdapterContent extends AbstractQCModule {
 		}
 
 		adapters = c.toArray(new Adapter[0]);
+		firstHit = new int[adapters.length];
+		if (!differentAdapterLengths) buildAdapterTable();
 
+	}
+
+	// The constructor only calls this when all adapters have the same length, so
+	// every adapter has the k-7 offsets added to the filter below.
+	private void buildAdapterTable () {
+		if (adapters.length == 0 || longestAdapter < 8) return;
+
+		byte [][] bytes = new byte[adapters.length][];
+		for (int a=0;a<adapters.length;a++) {
+			bytes[a] = adapters[a].sequence().getBytes(StandardCharsets.ISO_8859_1);
+			for (byte b : bytes[a]) {
+				if (BASE_CODES[b & 0xFF] < 0) return;
+			}
+		}
+
+		adapterStep = longestAdapter - 7;
+		adapterFilter = new long[1 << 10];
+		for (int a=0;a<adapters.length;a++) {
+			for (int offset=0;offset<adapterStep;offset++) {
+				int key = 0;
+				for (int i=0;i<8;i++) key = key << 2 | BASE_CODES[bytes[a][offset+i]];
+				adapterFilter[key >>> 6] |= 1L << key;
+			}
+		}
+		adapterBytes = bytes;
+	}
+
+	/**
+	 * Fills firstHit with the first index of each adapter in the bases (-1 if
+	 * absent), equivalent to indexOf(adapter) on them for every adapter.
+	 * Keeps the last 8 bases as a 16 bit key (a non-ACGT base counts as T) and,
+	 * every k-7 bases, looks it up in adapterFilter; on a hit, the adapter starts
+	 * that could contain those 8 bases are compared exactly. Stops early once every
+	 * adapter has been found.
+	 */
+	private void findAdapters (byte [] bases) {
+		Arrays.fill(firstHit, -1);
+		int length = bases.length;
+		int k = longestAdapter;
+		if (length < k) return;
+
+		int step = adapterStep;
+		long [] filter = adapterFilter;
+		int remaining = adapters.length;
+		// The last 8 bases, 2 bits each. Anything but ACGT counts as T, as on a hit
+		// the bases are compared with the adapters anyway.
+		int key = 0;
+		int nextCheck = 7;
+		for (int end=0;end<length;end++) {
+			key = (key << 2 | (BASE_CODES[bases[end] & 0xFF] & 3)) & 0xFFFF;
+			if (end != nextCheck) continue;
+			nextCheck += step;
+			if ((filter[key >>> 6] & (1L << key)) == 0) continue;
+
+			// An adapter starting at one of these positions would contain these 8 bases.
+			// Windows and the starts in each are visited in increasing order, and the
+			// windows of later starts never come first, so firstHit gets the first index.
+			int start = end - 7;
+			for (int p=Math.max(0, start-step+1);p<=start && p+k<=length;p++) {
+				for (int a=0;a<adapterBytes.length;a++) {
+					if (firstHit[a] < 0 && matches(bases, p, adapterBytes[a])) {
+						firstHit[a] = p;
+						--remaining;
+					}
+				}
+			}
+			if (remaining == 0) return;
+		}
+	}
+
+	private static boolean matches (byte [] bases, int position, byte [] adapter) {
+		for (int i=0;i<adapter.length;i++) {
+			if (bases[position+i] != adapter[i]) return false;
+		}
+		return true;
 	}
 
 	public boolean ignoreFilteredSequences() {
@@ -159,8 +264,8 @@ public class AdapterContent extends AbstractQCModule {
 		// If the sequence is longer than it was then we need to expand the storage in
 		// all of the adapter objects to account for this.
 		
-		if (sequence.getSequence().length() > longestSequence && sequence.getSequence().length() - longestAdapter > 0) {
-			longestSequence = sequence.getSequence().length();
+		if (sequence.length() > longestSequence && sequence.length() - longestAdapter > 0) {
+			longestSequence = sequence.length();
 			for (int a=0;a<adapters.length;a++) {
 				adapters[a].expandLengthTo((longestSequence-longestAdapter)+1);
 			}
@@ -168,9 +273,15 @@ public class AdapterContent extends AbstractQCModule {
 
 		// Now we go through all of the Adapters to see where they occur
 
+		// One pass over the read finds all adapters at once (see findAdapters);
+		// otherwise each adapter is searched with its own indexOf scan.
+		if (adapterBytes != null) findAdapters(sequence.getSequenceBytes());
+
+		// The indexOf fallback needs the read as a String: build it once, not per adapter
+		String seqString = adapterBytes != null ? null : sequence.getSequence();
 		for (int a=0;a<adapters.length;a++) {
 
-			int index = sequence.getSequence().indexOf(adapters[a].sequence());
+			int index = adapterBytes != null ? firstHit[a] : seqString.indexOf(adapters[a].sequence());
 			if (index >=0) {
 				for (int i=index;i<=longestSequence-longestAdapter;i++) {
 					adapters[a].incrementCount(i);

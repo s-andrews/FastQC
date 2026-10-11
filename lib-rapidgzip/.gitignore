@@ -1,0 +1,4 @@
+.gradle/
+build/
+# The repository ignores jars, but the wrapper is needed to build
+!gradle/wrapper/gradle-wrapper.jar

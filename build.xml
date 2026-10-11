@@ -7,8 +7,9 @@
 <project basedir="." default="build" name="FastQC">
     <property environment="env" />
     <property name="debuglevel" value="source,lines,vars" />
-    <property name="target" value="1.8" />
-    <property name="source" value="1.8" />
+    <!-- javac release (not source/target): compiles against the JDK 21 API, so use of
+         newer APIs is rejected. Building needs JDK 21+, running needs Java 21+. -->
+    <property name="release" value="21" />
     <path id="FastQC.classpath">
         <pathelement location="bin" />
         <pathelement location="commons-compress-1.28.0.jar" />
@@ -36,6 +37,7 @@
                 <exclude name=".settings/**" />
                 <exclude name=".project" />
                 <exclude name="lib/**" />
+                <exclude name="lib-rapidgzip/**" />
                 <exclude name="build.xml" />
             </fileset>
         </copy>
@@ -52,8 +54,13 @@
     <target depends="init" name="build-project">
         <echo message="${ant.project.name}: ${ant.file}" />
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false"
-            source="${source}" target="${target}">
+            release="${release}">
             <src path="." />
+            <!-- The parallel gzip decoder FastQFile uses. Excludes are relative to each
+                 src root, so the exclude below only skips the library's own tree (tests,
+                 build files) under "." and not these sources. -->
+            <src path="lib-rapidgzip/src/main/java" />
+            <exclude name="lib-rapidgzip/**" />
             <classpath refid="FastQC.classpath" />
         </javac>
     </target>
@@ -88,7 +95,7 @@
 
     <target name="compile-tests" depends="build,init-test">
         <javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false"
-            source="${source}" target="${target}">
+            release="${release}">
             <src path="test" />
             <classpath refid="test.classpath" />
         </javac>

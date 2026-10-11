@@ -33,7 +33,14 @@ import uk.ac.babraham.FastQC.Utilities.QualityCount;
 
 public class PerBaseQualityScores extends AbstractQCModule {
 
+	// Filled from qualities when the results are calculated
 	public QualityCount [] qualityCounts = new QualityCount[0];
+	// Count of each quality character at each position: index position * QualityCount.MAX_CHAR + char.
+	// A single increment into one array per base, instead of a call on a separate
+	// QualityCount object per position. Takes MAX_CHAR counts per position, more
+	// than QualityCount's range of characters seen, for one table instead of many.
+	private long [] qualities = new long[0];
+	private int maxLength = 0;
 	double [] means = null;
 	double [] medians = null;
 	double [] lowerQuartile = null;
@@ -59,13 +66,23 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	
 	public boolean ignoreInReport () {
 		// We don't show this if there is no quality data.
-		if (ModuleConfig.getParam("quality_base", "ignore") > 0 || qualityCounts.length == 0) {
+		if (ModuleConfig.getParam("quality_base", "ignore") > 0 || maxLength == 0) {
 			return true;
 		}
 		return false;
 	}
 
 	private synchronized void getPercentages () {
+
+		// Same totals as adding the values one by one, so the report is unchanged
+		qualityCounts = new QualityCount[maxLength];
+		for (int i=0;i<maxLength;i++) {
+			qualityCounts[i] = new QualityCount();
+			for (int c=0;c<QualityCount.MAX_CHAR;c++) {
+				long count = qualities[i * QualityCount.MAX_CHAR + c];
+				if (count > 0) qualityCounts[i].addValue((char) c, count);
+			}
+		}
 		
 		char [] range = calculateOffsets();
 		encodingScheme = PhredEncoding.getFastQEncodingOffset(range[0]);
@@ -129,30 +146,35 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	public void processSequence(Sequence sequence) {
 		
 		calculated = false;
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
-		if (qualityCounts.length < qualLen) {
-
-			QualityCount [] qualityCountsNew = new QualityCount[qualLen];
-			
-			for (int i=0;i<qualityCounts.length;i++) {
-				qualityCountsNew[i] = qualityCounts[i];
+		byte [] qual = sequence.getQualityBytes();
+		int qualLen = qual.length;
+		if (maxLength < qualLen) {
+			// Grow by at least half: each position is MAX_CHAR counts, so growing to each
+			// new longest read made reads sorted by length copy the table quadratically.
+			// Positions past maxLength stay zero and aren't reported.
+			int capacity = qualities.length / QualityCount.MAX_CHAR;
+			if (capacity < qualLen) {
+				int grown = (int) Math.min(Integer.MAX_VALUE / QualityCount.MAX_CHAR, Math.max(qualLen, capacity + (capacity >> 1)));
+				qualities = java.util.Arrays.copyOf(qualities, grown * QualityCount.MAX_CHAR);
 			}
-			for (int i=qualityCounts.length;i<qualityCountsNew.length;i++) {
-				qualityCountsNew[i] = new QualityCount();				
-			}
-			qualityCounts = qualityCountsNew;
-			
+			maxLength = qualLen;
 		}
 		
+		long [] counts = qualities;
+		// Bytes are signed: mask them to get the same char values as before
 		for (int i=0;i<qualLen;i++) {
-			qualityCounts[i].addValue(qual.charAt(i));
+			int c = qual[i] & 0xFF;
+			// Fails as QualityCount does on characters it can't count
+			if (c >= QualityCount.MAX_CHAR) new QualityCount().addValue((char) c);
+			++counts[i * QualityCount.MAX_CHAR + c];
 		}
 		
 	}
 	
 	public void reset () {
 		qualityCounts = new QualityCount[0];
+		qualities = new long[0];
+		maxLength = 0;
 	}
 
 	public String description() {

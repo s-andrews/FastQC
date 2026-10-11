@@ -41,10 +41,11 @@ public class BasicStats extends AbstractQCModule {
 	private int minLength = 0;
 	private int maxLength = 0;
 	private long totalBases = 0;
-	private long gCount = 0;
-	private long cCount = 0;
-	private long aCount = 0;
-	private long tCount = 0;
+	// Count of each byte in the sequences, in 4 interleaved copies so that
+	// consecutive bases don't wait on each other's increment (runs of the same
+	// base would otherwise chain load-add-store on one slot). One increment per
+	// base replaces 4 compare-and-adds; only G, A, T and C are read back.
+	private long [] byteCounts = new long[4 * 256];
 	private char lowestChar = 1000;
 	private String fileType = null;
 	private SequenceLengthDistribution lengthDist = null;
@@ -76,10 +77,7 @@ public class BasicStats extends AbstractQCModule {
 	public void reset () {
 		minLength = 0;
 		maxLength = 0;
-		gCount = 0;
-		cCount = 0;
-		aCount = 0;
-		tCount = 0;
+		byteCounts = new long[4 * 256];
 	}
 
 	public String name() {
@@ -98,7 +96,7 @@ public class BasicStats extends AbstractQCModule {
 				
 		actualCount++;
 		
-		totalBases += sequence.getSequence().length();
+		totalBases += sequence.length();
 		
 		if (fileType == null) {
 			if (sequence.getColorspace() != null) {
@@ -110,33 +108,29 @@ public class BasicStats extends AbstractQCModule {
 		}
 		
 		if (actualCount == 1) {
-			minLength = sequence.getSequence().length();
-			maxLength = sequence.getSequence().length();
+			minLength = sequence.length();
+			maxLength = sequence.length();
 		}
 		else {
-			if (sequence.getSequence().length() < minLength) minLength = sequence.getSequence().length();
-			if (sequence.getSequence().length() > maxLength) maxLength = sequence.getSequence().length();
+			if (sequence.length() < minLength) minLength = sequence.length();
+			if (sequence.length() > maxLength) maxLength = sequence.length();
 		}
 
-		String seq = sequence.getSequence();
-		int seqLen = seq.length();
-		for (int c=0;c<seqLen;c++) {
-			switch (seq.charAt(c)) {
-				case 'G': ++gCount;break;
-				case 'A': ++aCount;break;
-				case 'T': ++tCount;break;
-				case 'C': ++cCount;break;
-			}
+		// Bases are random, so count them without branching on them
+		byte [] seq = sequence.getSequenceBytes();
+		long [] counts = byteCounts;
+		for (int i=0;i<seq.length;i++) {
+			++counts[(i & 3) << 8 | (seq[i] & 0xFF)];
 		}
 		
-		String qual = sequence.getQualityString();
-		int qualLen = qual.length();
-		for (int c=0;c<qualLen;c++) {
-			char ch = qual.charAt(c);
-			if (ch < lowestChar) {
-				lowestChar = ch;
-			}
+		byte [] qual = sequence.getQualityBytes();
+		// Same idea for the minimum: Math.min is a JIT intrinsic, typically a cmov.
+		// Bytes are signed: mask them to get the same char values as before
+		int lowest = lowestChar;
+		for (int i=0;i<qual.length;i++) {
+			lowest = Math.min(lowest, qual[i] & 0xFF);
 		}
+		lowestChar = (char) lowest;
 	}
 	
 	public boolean raisesError() {
@@ -151,6 +145,11 @@ public class BasicStats extends AbstractQCModule {
 		return false;
 	}
 	
+	/** Total count of a base byte, summed over the 4 interleaved copies. */
+	private long count (char base) {
+		return byteCounts[base] + byteCounts[256 + base] + byteCounts[512 + base] + byteCounts[768 + base];
+	}
+
 	public static String formatLength (long originalLength) {
 		
 		double length = originalLength;
@@ -261,6 +260,7 @@ public class BasicStats extends AbstractQCModule {
 							return ""+lengthDist.medianLength();
 						}
 					case 8 : 
+						long gCount = count('G'), cCount = count('C'), aCount = count('A'), tCount = count('T');
 						if (aCount+tCount+gCount+cCount > 0) {
 							return ""+(((gCount+cCount)*100)/(aCount+tCount+gCount+cCount));
 						}
