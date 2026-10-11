@@ -317,12 +317,11 @@ if ($java_bin ne 'java') {
 
 # We've found that on systems with large numbers of CPUs, and especially on systems
 # where IO contention can occur, that the program can consume large amounts of CPU
-# during parallel garbage collection.  Since interactive performance isn't really
-# important when running non-interactively we'll limit the GC to using only a single
-# thread if running with a list of filenames
+# during parallel garbage collection.  When running with a list of filenames we
+# limit the GC to 4 threads, which keeps up with the analysis threads of a file.
 
 if (@ARGV) {
-	push @java_args,"-XX:ParallelGCThreads=1";
+	push @java_args,"-XX:ParallelGCThreads=4";
 }
 
 
@@ -451,7 +450,7 @@ DESCRIPTION
     --png			Save the graphs in PNG format
 
     -t --threads    Total number of CPU threads to use.  Each file uses up to
-                    4 threads.  Defaults to 4 x number of files, capped at
+                    7 threads.  Defaults to 7 x number of files, capped at
                     the number of available CPUs.
                   
     -c              Specifies a non-default file which contains the list of
