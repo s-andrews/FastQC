@@ -6,18 +6,19 @@ while producing byte-identical results.
 
 ## Achieved so far
 
-Through the `fastqc` launcher at its defaults (`report.sh`, one run per file, Apple M5 Pro),
+Through the `fastqc` launcher at its defaults (`report.sh`, Apple M5 Pro; optimised Java and
+Rust median of 3 runs per file, Java 0.12.1 and master one run per file),
 with `fastqc_data.txt` identical to FastQC-Rust v1.1 and Java 0.13.0 on every file:
 
 | Data set | Java 0.12.1 | Java 0.13.0 (master) | Optimised Java | Rust v1.1 |
 |---|---|---|---|---|
-| WES, 4 files (29.3 GB) | 19m 47s | 7m 00s | **1m 16s** | 1m 32s |
-| AVITI, 4 files (2.3 GB) | 1m 21s | 33.3 s | **10.6 s** | 9.1 s |
+| WES, 4 files (29.3 GB) | 19m 47s | 7m 00s | **1m 18s** | 1m 32s |
+| AVITI, 4 files (2.3 GB) | 1m 21s | 33.3 s | **10.6 s** | 9.0 s |
 
-- **WES**: 15.6× faster than 0.12.1 and 5.5× faster than master; 17% faster than Rust on every
-  file. Java uses ~2.1× Rust's CPU and ~10× its memory (~570 MB vs ~55 MB).
-- **AVITI**: 7.7× faster than 0.12.1; within 5% of Rust on the larger files, ~30% behind on the
-  smaller ones, mostly the ~0.7 s fixed cost of a JVM run and report generation.
+- **WES**: 15.2× faster than 0.12.1 and 5.4× faster than master; 15% faster than Rust, and faster
+  on every file. Java uses ~2.1× Rust's CPU and ~10× its memory (~570 MB vs ~50 MB).
+- **AVITI**: 7.6× faster than 0.12.1; 4–10% behind Rust on the larger files, 24–39% behind on the
+  smaller ones (18% overall), mostly the ~0.7 s fixed cost of a JVM run and report generation.
 - **lib-rapidgzip**: a pure-Java parallel gzip decompressor, as a separate module with its own
   build and tests, verified identical to `gzip -dc` on the AVITI and WES files.
 - Every change is a branch of a stack (see below), opened as stacked PRs, each benchmarked step
@@ -28,11 +29,11 @@ with `fastqc_data.txt` identical to FastQC-Rust v1.1 and Java 0.13.0 on every fi
 The [FastQC-Rust report](https://ewels.github.io/FastQC-Rust/about/performance/report/) ran on an
 M1 Pro (8+2 cores) with Java 21. Speed-ups over Java 0.12.1 carry over between the machines: the
 report has 2.7× (WES) / 2.5× (AVITI) for Java 0.13.0 and 12.4× / 9.7× for Rust v1.1; here they
-are 2.8× / 2.4× and 12.9× / 8.9×. Optimised Java is 15.6× / 7.7×.
+are 2.8× / 2.4× and 12.9× / 9.0×. Optimised Java is 15.2× / 7.6×.
 
-Caveats: one run per file; Java uses more threads than Rust (up to 7 per file plus decompression,
-vs 6), so on a machine with fewer cores its relative position would likely be worse. Not run:
-the report's 57.6 GB ONT file and its BAM (source not published).
+Caveats: Java 0.12.1 and master one run per file; Java uses more threads than Rust (up to 7 per
+file plus decompression, vs 6), so on a machine with fewer cores its relative position would
+likely be worse. Not run: the report's 57.6 GB ONT file and its BAM (source not published).
 
 ## Benchmark setup
 
@@ -148,7 +149,8 @@ the first 2M reads of ERR16944282_1 (AVITI), `wes-small` the first 4M reads of S
 of those steps was clean and in line with the neighbouring rows. Wall times before
 no-sleep-polling are quantized to whole seconds by the polling. `launcher-threads` only changes
 the launchers, which `bench.sh` doesn't use: through the launcher it takes WES tumor_1 from
-42.2 s to 19.4 s (Rust 24.8 s).
+42.2 s to 19.4 s (Rust 24.8 s); a later A/B of the stack before and after the review fixes gave
+medians of 20.3 s and 20.2 s on the same file.
 
 ## lib-rapidgzip
 
