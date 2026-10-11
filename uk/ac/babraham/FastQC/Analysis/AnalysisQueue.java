@@ -26,6 +26,13 @@ import uk.ac.babraham.FastQC.FastQCConfig;
 import uk.ac.babraham.FastQC.Modules.QCModule;
 import uk.ac.babraham.FastQC.Sequence.SequenceFile;
 
+/**
+ * Singleton dispatcher: one thread takes queued AnalysisRunners and starts each
+ * on its own thread while fewer than availableSlots runs are in progress.
+ * Queue and slot changes are signalled on this object's monitor (wait/notifyAll)
+ * instead of polling every 500 ms, which could delay the start of each file by
+ * up to half a second.
+ */
 public class AnalysisQueue implements Runnable, AnalysisListener{
 
 	private static AnalysisQueue instance = new AnalysisQueue();
@@ -80,6 +87,7 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 		return processorsPerFile;
 	}
 	
+	// Wakes the dispatcher so the run starts at once if a slot is free.
 	public synchronized void addToQueue (AnalysisRunner runner) {
 		queue.add(runner);
 		notifyAll();
@@ -89,7 +97,10 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 
 		while (true) {
 			AnalysisRunner currentRun;
-			// Wait for a queued run and a free slot, we're notified when either changes
+			// Wait for a queued run and a free slot, we're notified when either changes.
+			// The condition is rechecked after each wakeup (spurious wakeups, or a
+			// notify for a change that doesn't free a slot). configure() doesn't
+			// notify, which is fine as it's called before any run is queued.
 			synchronized (this) {
 				while (availableSlots.intValue() <= usedSlots.intValue() || queue.isEmpty()) {
 					try {
@@ -99,12 +110,15 @@ public class AnalysisQueue implements Runnable, AnalysisListener{
 				usedSlots.incrementAndGet();
 				currentRun = queue.removeFirst();
 			}
+			// The lock only covers the handoff; the run (and its callbacks to
+			// analysisComplete, which take the lock) proceeds without it.
 			currentRun.addAnalysisListener(this);
 			Thread t = new Thread(currentRun);
 			t.start();
 		}
 	}
 
+	// A run finished (or failed, below): free its slot and wake the dispatcher.
 	public synchronized void analysisComplete(SequenceFile file, QCModule[] results) {
 		usedSlots.decrementAndGet();
 		notifyAll();

@@ -35,6 +35,10 @@ import uk.ac.babraham.FastQC.Utilities.NanoporeBasename;
 
 public class OfflineRunner implements AnalysisListener {
 	
+	// One count per file group, counted down exactly once whether the file's
+	// report is written or it fails (in processFile or during the analysis).
+	// The constructor awaits it instead of polling a counter every second, so the
+	// JVM exits as soon as the last report is written (up to 1 s saved per run).
 	private CountDownLatch filesRemaining;
 	private boolean showUpdates = true;
 	
@@ -143,7 +147,8 @@ public class OfflineRunner implements AnalysisListener {
 		}
 		
 		// We need to hold this class open as otherwise the main method
-		// exits when it's finished.
+		// exits when it's finished. Retry on interrupt as nothing is meant
+		// to interrupt this thread and we must not exit early.
 		while (true) {
 			try {
 				filesRemaining.await();
