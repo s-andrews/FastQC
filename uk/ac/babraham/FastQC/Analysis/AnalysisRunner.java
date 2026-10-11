@@ -255,6 +255,13 @@ public class AnalysisRunner implements Runnable {
 			catch (SequenceFormatException e) {
 				readerError[0] = e;
 			}
+			catch (RuntimeException | Error e) {
+				// Otherwise the run would end normally on the reads so far, and a
+				// truncated analysis would be reported as complete
+				SequenceFormatException sfe = new SequenceFormatException("Failed to read the file: " + e);
+				sfe.initCause(e);
+				readerError[0] = sfe;
+			}
 			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -289,9 +296,11 @@ public class AnalysisRunner implements Runnable {
 							try {
 								processBatch(w.module, batch.sequences);
 							}
-							catch (RuntimeException e) {
+							catch (Throwable e) {
 								// Keep consuming batches so the reader doesn't block, and
-								// surface the failure to listeners after join().
+								// surface the failure to listeners after join(). Errors too
+								// (eg OutOfMemoryError): letting one end this thread while it
+								// holds the module would leave the run waiting forever.
 								processorError.compareAndSet(null, e);
 							}
 						}
