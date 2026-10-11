@@ -17,10 +17,11 @@ should be remembered by OSX.
 ## Windows and Linux
 
 FastQC is a java application.  In order to run it needs your system to have a suitable
-Java Runtime Environment (JRE) installed, version 21 or later.  Before you try to run
-FastQC you should therefore ensure that you have a suitable JRE.  There are a number of different JREs
+Java Runtime Environment (JRE) installed, version 21 or later (an older java fails
+with an `UnsupportedClassVersionError`).  Before you try to run FastQC you should
+therefore ensure that you have a suitable JRE.  There are a number of different JREs
 available however the ones we have tested are the latest Oracle runtime environments
-and those from the [adoptOpenJDK project](https://adoptopenjdk.net/).  You need to
+and those from the [Eclipse Adoptium project](https://adoptium.net/).  You need to
 download and install a suitable 64-bit JRE and make sure that the java application
 is in your path (most installers will take care of this for you).
 
