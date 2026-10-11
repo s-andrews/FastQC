@@ -72,23 +72,30 @@ final class Chunk {
 		return out;
 	}
 
-	/** Resolves markers[from, to) into dest. */
+	/**
+	 * Resolves markers[from, to) into dest. Called twice per speculative chunk (for the
+	 * next window, then for the whole marker output on the pool); both only read markers.
+	 */
 	void resolve (byte [] window, int from, int to, byte [] dest, int offset) throws DataFormatError {
 		// A table from any 16 bit value to its byte: values are as often bytes as markers, so
 		// a lookup avoids a mispredicted branch for each. Markers index the last 32KB of output
 		// before the chunk; a shorter window is right aligned. A marker before the start of a
 		// short window is a distance a sequential decoder rejects too.
+		// The 33KB table is built per call, which is small next to a chunk's output.
 		byte [] values = new byte[256 + DeflateDecoder.WINDOW];
 		for (int i = 0; i < 256; i++) values[i] = (byte) i;
 		int shift = DeflateDecoder.WINDOW - window.length;
 		System.arraycopy(window, 0, values, 256 + shift, window.length);
 		for (int i = from; i < to; i++) {
 			char c = markers[i];
+			// Can't happen for output of DeflateDecoder (values < 256 + WINDOW); guards the table
 			if (c >= values.length) throw new DataFormatError("Invalid marker");
 			dest[offset++] = values[c];
 		}
 		if (shift > 0) {
-			// Markers before the start of the data are invalid distances
+			// Markers before the start of the data are invalid distances. Checked in a separate
+			// pass to keep the loop above branch free; it only runs while less than 32KB of
+			// output precedes the chunk. The bytes written above for them are then never used.
 			for (int i = from; i < to; i++) {
 				char c = markers[i];
 				if (c >= 256 && c < 256 + shift) throw new DataFormatError("Invalid distance too far back");
