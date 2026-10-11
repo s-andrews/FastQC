@@ -320,6 +320,7 @@ if ($java_bin ne 'java') {
 # during parallel garbage collection.  When running with a list of filenames we
 # limit the GC to 4 threads, which keeps up with the analysis threads of a file.
 
+# Unlike the Python launcher this doesn't scale with the files processed in parallel.
 if (@ARGV) {
 	push @java_args,"-XX:ParallelGCThreads=4";
 }

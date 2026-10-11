@@ -100,6 +100,10 @@ def get_java_args():
     parallel_files = 1
 
     if len(options.files) > 1:
+        # Mirrors AnalysisQueue.configure: without -t Java budgets 7 threads per
+        # file capped at its available CPUs, so files in parallel = threads // 7.
+        # process_cpu_count (Python 3.13+) honours CPU affinity; Java's count
+        # also honours container CPU limits, which this doesn't see.
         threads = options.threads or getattr(os, "process_cpu_count", os.cpu_count)() or 1
         parallel_files = min(len(options.files), max(1, threads // 7))
 
@@ -126,6 +130,9 @@ def get_java_args():
         if options.delete:
             java_args.append("-Dfastqc.delete=true")
 
+    # No -t means no -Dfastqc.threads, so Java sizes the thread budget itself
+    # (7 per file, capped at the CPUs) rather than being held to the old default
+    # of 4. With the GC change below: WES tumor_1 (7.9 GB) 42.2 s -> 19.4 s.
     if options.threads is not None:
         java_args.append(f"-Dfastqc.threads={options.threads}");
 
@@ -141,6 +148,8 @@ def get_java_args():
     # limit the GC to 4 threads for each file processed in parallel, which keeps up
     # with the analysis threads.
 
+    # With up to 7 analysis threads (plus parallel gzip) allocating per file, a
+    # single GC thread lengthens pauses; 4 per file still bounds GC CPU on big hosts.
     if options.files:
         java_args.append(f"-XX:ParallelGCThreads={4 * parallel_files}")
 
@@ -331,6 +340,7 @@ def get_options():
         if options.memory < 100 or options.memory > 25600:
             exit_with_error("Memory must be in the range 100 - 25600MB")
 
+    # 'is not None' so that -t 0 is rejected rather than taken as "no -t"
     if options.threads is not None:
         if options.threads < 1:
             exit_with_error("Number of threads must be positive")
@@ -341,6 +351,8 @@ def get_options():
             if len(options.files) > 0:
                 write_warning("You can't use more than 7 threads per file - setting this many is a waste")
 
+        # 7 = 1 reader + 6 processor threads per file (AnalysisQueue); the
+        # parallel gzip threads come on top and are not part of this count
         if options.threads > 7 and options.threads % 7 != 0:
             write_warning("Above 7 threads you should use a multiple of 7 (so 7, 14, 21 etc) for maximum benefit")
 
