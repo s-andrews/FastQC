@@ -59,12 +59,13 @@ public class ModuleFactory {
 	}
 
 	/**
-	 * True when the limits file leaves "ignore" at 0 for this module key (the
-	 * names used in limits.txt). Limits are read once per JVM, so every file
-	 * in a run gets the same module list.
+	 * True unless the limits file sets "ignore" above 0 for this module key (the
+	 * names used in limits.txt), the same test the modules' ignoreInReport() use,
+	 * so a module is created exactly when it would be shown. Limits are read once
+	 * per JVM, so every file in a run gets the same module list.
 	 */
 	private static boolean enabled (String module) {
-		return ModuleConfig.getParam(module, "ignore") == 0;
+		return ModuleConfig.getParam(module, "ignore") <= 0;
 	}
 	
 }
