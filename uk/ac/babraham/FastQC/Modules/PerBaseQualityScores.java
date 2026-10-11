@@ -35,7 +35,9 @@ public class PerBaseQualityScores extends AbstractQCModule {
 
 	// Filled from qualities when the results are calculated
 	public QualityCount [] qualityCounts = new QualityCount[0];
-	// Count of each quality character at each position: index position * QualityCount.MAX_CHAR + char
+	// Count of each quality character at each position: index position * QualityCount.MAX_CHAR + char.
+	// A single increment into one array per base, instead of a call on a separate
+	// QualityCount object per position. Same memory as those objects' arrays.
 	private long [] qualities = new long[0];
 	private int maxLength = 0;
 	double [] means = null;
@@ -71,6 +73,7 @@ public class PerBaseQualityScores extends AbstractQCModule {
 
 	private synchronized void getPercentages () {
 
+		// Same totals as adding the values one by one, so the report is unchanged
 		qualityCounts = new QualityCount[maxLength];
 		for (int i=0;i<maxLength;i++) {
 			qualityCounts[i] = new QualityCount();

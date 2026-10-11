@@ -69,6 +69,8 @@ public class AdapterContent extends AbstractQCModule {
 	// bases starting at the first multiple of k-7 from p, so we only look up the 8
 	// bases at each multiple of k-7 in a bitset of the 8-mers at offsets 0 to k-8 of
 	// the adapters, and check the possible starts of an adapter on a hit.
+	// For the default 12 bp adapters that's one lookup every 5 bases instead of one
+	// per base, and few 8-mers in the filter so hits are rare.
 	private byte [][] adapterBytes = null;
 	private long [] adapterFilter;
 	private int adapterStep;
@@ -145,6 +147,8 @@ public class AdapterContent extends AbstractQCModule {
 
 	}
 
+	// The constructor only calls this when all adapters have the same length, so
+	// every adapter has the k-7 offsets added to the filter below.
 	private void buildAdapterTable () {
 		if (adapters.length == 0 || longestAdapter < 8) return;
 
@@ -195,7 +199,9 @@ public class AdapterContent extends AbstractQCModule {
 			nextCheck += step;
 			if ((filter[key >>> 6] & (1L << key)) == 0) continue;
 
-			// An adapter starting at one of these positions would contain these 8 bases
+			// An adapter starting at one of these positions would contain these 8 bases.
+			// Windows and the starts in each are visited in increasing order, and the
+			// windows of later starts never come first, so firstHit gets the first index.
 			int start = end - 7;
 			for (int p=Math.max(0, start-step+1);p<=start && p+k<=length;p++) {
 				for (int a=0;a<adapterBytes.length;a++) {

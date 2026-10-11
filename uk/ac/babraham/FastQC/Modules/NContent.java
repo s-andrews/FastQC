@@ -34,7 +34,8 @@ public class NContent extends AbstractQCModule {
 	public long [] nCounts = new long [0];
 	// Filled when the results are calculated, from the read lengths
 	public long [] notNCounts = new long [0];
-	// Number of reads of each length
+	// Number of reads of each length (index 0 to nCounts.length, so it's always
+	// one longer than nCounts)
 	private long [] lengthCounts = new long [1];
 	public boolean calculated = false;
 	public double [] percentages = null;
@@ -59,7 +60,9 @@ public class NContent extends AbstractQCModule {
 	
 	private synchronized void getPercentages () {
 
-		// Bases at a position are those of the reads longer than it
+		// Bases at a position are those of the reads longer than it, so the
+		// non-N count is that minus the Ns: the same as counting every non-N
+		// base, without a second increment per base while reading
 		notNCounts = new long[nCounts.length];
 		long longer = 0;
 		for (int i=nCounts.length-1;i>=0;i--) {
@@ -107,7 +110,8 @@ public class NContent extends AbstractQCModule {
 		}
 		++lengthCounts[seqLen];
 		
-		// Ns are rare, so only count those
+		// Ns are rare, so only count those: the branch is well predicted and
+		// most bases cost a compare, where the old loop did two increments
 		long [] n = nCounts;
 		for (int i=0;i<seqLen;i++) {
 			if (seq[i] == 'N') ++n[i];

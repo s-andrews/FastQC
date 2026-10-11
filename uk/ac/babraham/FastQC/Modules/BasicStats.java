@@ -42,7 +42,9 @@ public class BasicStats extends AbstractQCModule {
 	private int maxLength = 0;
 	private long totalBases = 0;
 	// Count of each byte in the sequences, in 4 interleaved copies so that
-	// consecutive bases don't wait on each other's increment
+	// consecutive bases don't wait on each other's increment (runs of the same
+	// base would otherwise chain load-add-store on one slot). One increment per
+	// base replaces 4 compare-and-adds; only G, A, T and C are read back.
 	private long [] byteCounts = new long[4 * 256];
 	private char lowestChar = 1000;
 	private String fileType = null;
@@ -143,6 +145,7 @@ public class BasicStats extends AbstractQCModule {
 		return false;
 	}
 	
+	/** Total count of a base byte, summed over the 4 interleaved copies. */
 	private long count (char base) {
 		return byteCounts[base] + byteCounts[256 + base] + byteCounts[512 + base] + byteCounts[768 + base];
 	}

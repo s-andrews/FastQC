@@ -46,7 +46,10 @@ public class QualityCount {
 		actualCounts[(int)c]++;
 	}
 	
-	/** Adds count occurrences of c, which must be below MAX_CHAR. */
+	/**
+	 * Adds count occurrences of c, which must be below MAX_CHAR (not checked:
+	 * callers count into flat tables first and check characters there).
+	 */
 	public void addValue(char c, long count) {
 		totalCounts += count;
 		actualCounts[c] += count;
