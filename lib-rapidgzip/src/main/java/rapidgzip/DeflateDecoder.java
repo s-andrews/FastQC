@@ -16,9 +16,10 @@ import java.util.Arrays;
  * Marker mode: the output buffer starts with WINDOW values 256..256+32767
  * standing for the unknown window, so a back reference of any valid distance
  * just copies values, markers included, and is resolved later by
- * {@link Chunk}. Output before {@link #lastMarker} may contain markers, output
- * after it doesn't. In FASTQ about 55% of the output refers back into the
- * window, so most chunks never leave marker mode.
+ * {@link Chunk}. Whether the last WINDOW values still hold a marker is checked
+ * every MARKER_CHECK values (see markersInWindow); once none do, output switches
+ * to bytes. In FASTQ about 55% of the output refers back into the window, so
+ * most chunks never leave marker mode.
  *
  * Stops only at block boundaries (checked before each block, after the first),
  * so the end bit of a chunk is always a real boundary when its start was one.
@@ -187,7 +188,7 @@ final class DeflateDecoder {
 	 * Switches to byte mode, the last WINDOW values being free of markers. They
 	 * are copied as the byte mode window, and stay in chars as output too, so the
 	 * chunk's output is chars[WINDOW, charPos) then bytes[WINDOW, bytePos).
-	 * Byte mode is cheaper: half the memory and no marker tracking per copy.
+	 * Byte mode is cheaper: half the memory and no periodic marker scans.
 	 */
 	private void switchToBytes () {
 		markerMode = false;
@@ -321,8 +322,8 @@ final class DeflateDecoder {
 	 * after switching to byte mode to continue the block there.
 	 *
 	 * Hot loop: state is kept in locals and written back in the finally block.
-	 * A match records where it ended if it copied any marker (OR of the values
-	 * copied >= 256), which is all lastMarker needs; literals never are markers.
+	 * Markers aren't tracked per copy: markersInWindow scans the window every
+	 * MARKER_CHECK values of output instead.
 	 * Each refill gives >= 56 bits, enough for a literal/length code, its extra
 	 * bits, a distance code and its extra bits (at most 48).
 	 */
