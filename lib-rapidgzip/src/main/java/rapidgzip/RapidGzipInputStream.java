@@ -84,6 +84,8 @@ public final class RapidGzipInputStream extends InputStream {
 	private final BitReader.Source source;
 	private final ExecutorService pool;
 	private final int maxInFlight;
+	// Heap for the output of the chunks in flight
+	private final long budget;
 
 	// Speculative decodes of chunks [nextChunk, nextToSubmit), in chunk order: the
 	// head is always the result for chunk nextChunk
@@ -100,6 +102,9 @@ public final class RapidGzipInputStream extends InputStream {
 	private volatile long expectedBit;
 	private byte [] window = new byte[0];
 	private boolean finished = false;
+	// The first failure reading the data: every later read fails with it too, rather
+	// than returning data past a corrupt member
+	private IOException failure = null;
 
 	// CRC32 and size of the output of the current member so far
 	private final CRC32 crc = new CRC32();
@@ -121,19 +126,30 @@ public final class RapidGzipInputStream extends InputStream {
 	 * @throws EOFException if the file is empty
 	 */
 	public RapidGzipInputStream (Path file, int threads) throws IOException {
-		this(FileChannel.open(file, StandardOpenOption.READ), true, threads, DEFAULT_CHUNK_SIZE);
+		this(open(file, threads, DEFAULT_CHUNK_SIZE), true, threads, DEFAULT_CHUNK_SIZE);
 	}
 
 	public RapidGzipInputStream (Path file, int threads, int chunkSize) throws IOException {
-		this(FileChannel.open(file, StandardOpenOption.READ), true, threads, chunkSize);
+		this(open(file, threads, chunkSize), true, threads, chunkSize);
+	}
+
+	// Checks the arguments before opening the file, so that bad ones don't leak it
+	private static FileChannel open (Path file, int threads, int chunkSize) throws IOException {
+		if (threads < 1) throw new IllegalArgumentException("threads must be >= 1");
+		if (chunkSize < 64 << 10) throw new IllegalArgumentException("chunkSize must be >= 64KB");
+		return FileChannel.open(file, StandardOpenOption.READ);
 	}
 
 	private RapidGzipInputStream (FileChannel channel, boolean closeChannel, int threads, int chunkSize) throws IOException {
-		if (threads < 1) throw new IllegalArgumentException("threads must be >= 1");
-		if (chunkSize < 64 << 10) throw new IllegalArgumentException("chunkSize must be >= 64KB");
 		this.channel = channel;
 		this.closeChannel = closeChannel;
-		this.fileSize = channel.size();
+		try {
+			this.fileSize = channel.size();
+		}
+		catch (IOException e) {
+			if (closeChannel) channel.close();
+			throw e;
+		}
 		this.chunkSize = chunkSize;
 		this.chunkCount = (int) Math.max(1, (fileSize + chunkSize - 1) / chunkSize);
 		this.source = this::readAt;
@@ -142,7 +158,7 @@ public final class RapidGzipInputStream extends InputStream {
 		// (A 2MB chunk, 2 per thread, ran a 512MB heap out of memory.) The 20x estimate assumes a
 		// FASTQ-like compression ratio: much more compressible data uses proportionally more.
 		long perChunk = (long) chunkSize * 20;
-		long budget = Runtime.getRuntime().maxMemory() / 4;
+		this.budget = Runtime.getRuntime().maxMemory() / 4;
 		this.maxInFlight = (int) Math.max(2, Math.min(threads + 2, budget / perChunk));
 
 		try {
@@ -191,10 +207,21 @@ public final class RapidGzipInputStream extends InputStream {
 		return (int) Math.min(Integer.MAX_VALUE - 64, (long) chunkSize * ratio.get() * 9 / 8);
 	}
 
+	/**
+	 * Chunks allowed in flight: maxInFlight, fewer if the data compresses better than
+	 * FASTQ. In marker mode a chunk holds ~3 bytes per output byte (16 bit values, then
+	 * resolved bytes), so from the ratio seen so far each takes chunkSize * 3 * ratio,
+	 * against the chunkSize * 20 maxInFlight assumes. Unchanged for FASTQ (ratio <= 6).
+	 */
+	private int inFlightLimit () {
+		long perChunk = (long) chunkSize * Math.max(20, 3L * ratio.get());
+		return (int) Math.max(2, Math.min(maxInFlight, budget / perChunk));
+	}
+
 	// Chunks being decoded and chunks decoded but not yet read both hold their output,
-	// so both count against maxInFlight
+	// so both count against the in-flight limit
 	private void submitChunks () {
-		while (nextToSubmit < chunkCount && inFlight.size() + ordered.size() < maxInFlight) {
+		while (nextToSubmit < chunkCount && inFlight.size() + ordered.size() < inFlightLimit()) {
 			final int k = nextToSubmit++;
 			inFlight.add(pool.submit(() -> decodeChunk(k)));
 		}
@@ -350,7 +377,7 @@ public final class RapidGzipInputStream extends InputStream {
 	private boolean fill () throws IOException {
 		while (segments.isEmpty()) {
 			// Keep the pipeline busy, waiting for a speculative chunk only if there's nothing else to do
-			while (!finished && ordered.size() < maxInFlight
+			while (!finished && ordered.size() < inFlightLimit()
 					&& (ordered.isEmpty() || nextChunk >= chunkCount || (inFlight.peek() != null && inFlight.peek().isDone()))) {
 				orderNext();
 			}
@@ -429,7 +456,23 @@ public final class RapidGzipInputStream extends InputStream {
 
 	private boolean nextSegment () throws IOException {
 		if (closed) throw new IOException("Stream closed");
-		if (!fill()) return false;
+		if (failure != null) throw failure;
+		boolean more;
+		try {
+			more = fill();
+		}
+		catch (IOException e) {
+			failure = e;
+			pool.shutdownNow();
+			throw e;
+		}
+		if (!more) {
+			// The end of the data: stop the workers now rather than at close(), so a
+			// stream that is read to the end but never closed doesn't keep them, nor
+			// keep decoding chunks past trailing non-gzip data
+			pool.shutdownNow();
+			return false;
+		}
 		current = segments.poll();
 		int [] range = segmentRanges.poll();
 		currentPos = range[0];

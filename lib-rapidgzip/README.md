@@ -12,7 +12,7 @@ try (InputStream in = new RapidGzipInputStream(Path.of("reads.fastq.gz"), thread
 
 ## How it works
 
-1. The compressed file is split into chunks (2 MB by default).
+1. The compressed file is split into chunks (1 MB by default).
 2. For each chunk, a worker thread looks for the first deflate block boundary in it. Every bit
    offset is checked for a valid non-final dynamic Huffman block header: block type, symbol counts,
    a complete precode, valid code length runs and valid literal/length and distance codes with an
