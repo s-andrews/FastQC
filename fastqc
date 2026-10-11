@@ -15,6 +15,31 @@ import subprocess
 base_dir = Path(__file__).resolve().parent
 options = None
 
+def available_cpus():
+    # The CPUs Java's availableProcessors() would see: CPU affinity
+    # (process_cpu_count, Python 3.13+), then any container CPU quota (cgroup
+    # v2 cpu.max, or v1 cfs quota/period), which os.cpu_count() ignores.
+    count = getattr(os, "process_cpu_count", os.cpu_count)() or 1
+    quota = period = None
+    try:
+        with open("/sys/fs/cgroup/cpu.max") as f:
+            quota, period = f.read().split()[:2]
+    except (OSError, ValueError):
+        try:
+            with open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us") as f:
+                quota = f.read().strip()
+            with open("/sys/fs/cgroup/cpu/cpu.cfs_period_us") as f:
+                period = f.read().strip()
+        except OSError:
+            pass
+    try:
+        if quota not in (None, "max", "-1"):
+            count = min(count, max(1, -(-int(quota) // int(period))))
+    except ValueError:
+        pass
+    return count
+
+
 def main():
     ## Often people try to download and run the source distribution of fastqc.  We'll
     ## test for this specifically.
@@ -102,9 +127,7 @@ def get_java_args():
     if len(options.files) > 1:
         # Mirrors AnalysisQueue.configure: without -t Java budgets 7 threads per
         # file capped at its available CPUs, so files in parallel = threads // 7.
-        # process_cpu_count (Python 3.13+) honours CPU affinity; Java's count
-        # also honours container CPU limits, which this doesn't see.
-        threads = options.threads or getattr(os, "process_cpu_count", os.cpu_count)() or 1
+        threads = options.threads or available_cpus()
         parallel_files = min(len(options.files), max(1, threads // 7))
 
         used_memory *= parallel_files
@@ -134,7 +157,7 @@ def get_java_args():
     # (7 per file, capped at the CPUs) rather than being held to the old default
     # of 4. With the GC change below: WES tumor_1 (7.9 GB) 42.2 s -> 19.4 s.
     if options.threads is not None:
-        java_args.append(f"-Dfastqc.threads={options.threads}");
+        java_args.append(f"-Dfastqc.threads={options.threads}")
 
     if options.format:
         java_args.append(f"-Dfastqc.sequence_format={options.format}")
@@ -150,8 +173,12 @@ def get_java_args():
 
     # With up to 7 analysis threads (plus parallel gzip) allocating per file, a
     # single GC thread lengthens pauses; 4 per file still bounds GC CPU on big hosts.
+    # An explicit -t also caps them, so that -t 1 gets a single GC thread.
     if options.files:
-        java_args.append(f"-XX:ParallelGCThreads={4 * parallel_files}")
+        gc_threads = 4 * parallel_files
+        if options.threads is not None:
+            gc_threads = max(1, min(gc_threads, options.threads))
+        java_args.append(f"-XX:ParallelGCThreads={gc_threads}")
 
     if options.files or options.version:
         java_args.append("-Djava.awt.headless=true")

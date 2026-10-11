@@ -210,18 +210,32 @@ else {
 }
 
 
-if ($threads) {
+# Files processed in parallel, as in the Python launcher: Java gives each file
+# up to 7 threads, from -t or the available CPUs. The heap and the GC threads
+# are sized for them.
+my $parallel_files = 1;
+my $file_count = grep { !/^-D/ } @ARGV;
+
+if (defined $threads) {
 	if ($threads < 1) {
 		die "Number of threads must be a positive integer";
 	}
 	
 	push @java_args ,"-Dfastqc.threads=$threads";
-	my $used_memory = $memory * $threads;
-	unshift @java_args,"-Xmx${used_memory}m";
 }
-else {
-	unshift @java_args,"-Xmx${memory}m";
+if ($file_count > 1) {
+	my $cpus = $threads;
+	unless ($cpus) {
+		$cpus = `getconf _NPROCESSORS_ONLN 2>/dev/null`;
+		chomp $cpus;
+		$cpus = 1 unless ($cpus =~ /^\d+$/ and $cpus > 0);
+	}
+	$parallel_files = int($cpus / 7);
+	$parallel_files = 1 if ($parallel_files < 1);
+	$parallel_files = $file_count if ($parallel_files > $file_count);
 }
+my $used_memory = $memory * $parallel_files;
+unshift @java_args,"-Xmx${used_memory}m";
 
 if ($kmer_size) {
 	unless ($kmer_size =~ /^\d+$/) {
@@ -320,9 +334,11 @@ if ($java_bin ne 'java') {
 # during parallel garbage collection.  When running with a list of filenames we
 # limit the GC to 4 threads, which keeps up with the analysis threads of a file.
 
-# Unlike the Python launcher this doesn't scale with the files processed in parallel.
+# 4 per file processed in parallel; an explicit -t also caps them.
 if (@ARGV) {
-	push @java_args,"-XX:ParallelGCThreads=4";
+	my $gc_threads = 4 * $parallel_files;
+	$gc_threads = $threads if (defined $threads and $threads < $gc_threads);
+	push @java_args,"-XX:ParallelGCThreads=$gc_threads";
 }
 
 
