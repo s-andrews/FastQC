@@ -10,6 +10,14 @@ import java.nio.ByteOrder;
  * complete precode, valid code length runs, and valid literal/length and
  * distance codes including an end-of-block code. Most compressors (zlib, igzip,
  * libdeflate...) emit almost only such blocks.
+ *
+ * Stored and fixed Huffman blocks, and final blocks, aren't looked for: too
+ * many random offsets would pass, and missing them only means a sequential
+ * decode. A candidate is a heuristic: the decoder rejects most false positives
+ * within a few symbols, and the reader rejects any chunk whose start isn't
+ * reached by decoding the previous output, so a false positive costs time but
+ * never changes the output. The 13 bit lookup table discards nearly all offsets
+ * before the header is parsed. One instance per thread (reused buffers).
  */
 final class BlockFinder {
 
@@ -30,7 +38,8 @@ final class BlockFinder {
 	/**
 	 * Returns the first bit offset in [fromBit, toBit) of data which looks like a
 	 * dynamic block start, or -1. Bit offsets are relative to data[0], and only
-	 * offsets with at least maxHeaderBytes of data after them are checked.
+	 * offsets with at least 8 bytes of data[0, length) after them are checked; a
+	 * header running past length is rejected.
 	 */
 	long find (byte [] data, int length, long fromBit, long toBit) {
 		// A dynamic block header is at most 3+14+57+(286+30)*7 bits
@@ -44,6 +53,8 @@ final class BlockFinder {
 		return -1;
 	}
 
+	// Parses the header with the same validity rules as DeflateDecoder.dynamicBlock, so a real block
+	// start is never rejected; each bit read is bounds checked against length first
 	private boolean isDynamicHeader (byte [] data, int length, long bit) {
 		long pos = bit + 3;
 		long limit = (long) length * 8;

@@ -33,11 +33,45 @@ import java.util.zip.ZipException;
  *
  * Multiple members are decoded as one stream, and anything after the last
  * member which isn't a gzip header is ignored, as GZIPInputStream does.
+ *
+ * Pipeline: {@link BlockFinder} guesses a block start in each chunk,
+ * {@link DeflateDecoder} decodes from it into a {@link Chunk} (16 bit markers
+ * while the unknown window may still be referenced), and this class orders the
+ * chunks, resolves their markers and checks the gzip trailers.
+ *
+ * Why the output is identical to a sequential decoder: decoding from a real
+ * block boundary with the right window is deterministic, and a chunk is only
+ * accepted when its start bit equals the end bit reached by decoding the
+ * previous output, i.e. when its start is proven to be a real boundary. A false
+ * block start either fails to decode (DataFormatError/EOF, so the finder tries
+ * the next candidate) or produces a chunk whose start doesn't match, which is
+ * dropped and that range decoded sequentially. The CRC32 and ISIZE of each
+ * member are checked on top of that.
+ *
+ * Threading: one caller thread reads, orders chunks, decodes sequentially when
+ * needed and checks CRCs; a fixed pool of {@code threads} daemon workers finds
+ * blocks, decodes chunks and resolves markers. Only {@link #ratio} and
+ * {@link #expectedBit} are shared with other threads. Workers exit only on
+ * {@link #close()}, so the stream must be closed.
+ *
+ * Memory: in FASTQ ~55% of a speculatively decoded chunk refers back to its
+ * unknown window, so chunks usually stay in marker mode (2 bytes per output
+ * byte) until resolved: ~20 bytes per compressed byte. Chunks being decoded
+ * plus chunks waiting to be read are capped at a quarter of the max heap.
+ *
+ * Benefit: a 510MB AVITI file decompresses in 1.89s on 4 threads and 1.42s on
+ * 8, vs 3.58s with GZIPInputStream, at ~2.3x zlib's total CPU.
+ *
+ * Not thread safe, like any InputStream; needs random access, so not for pipes.
  */
 public final class RapidGzipInputStream extends InputStream {
 
+	// Compressed bytes per chunk: small enough to bound memory in marker mode (see
+	// the constructor), large enough that block finding and the sequential
+	// fallbacks are a small part of the work.
 	public static final int DEFAULT_CHUNK_SIZE = 1 << 20;
 
+	// Bytes read from the file at a time by each BitReader
 	private static final int SEGMENT_SIZE = 256 << 10;
 	// Max size of a block header, so the finder can check headers near the end of a chunk
 	private static final int HEADER_SLACK = 1024;
@@ -51,21 +85,27 @@ public final class RapidGzipInputStream extends InputStream {
 	private final ExecutorService pool;
 	private final int maxInFlight;
 
+	// Speculative decodes of chunks [nextChunk, nextToSubmit), in chunk order: the
+	// head is always the result for chunk nextChunk
 	private final ArrayDeque<Future<Chunk>> inFlight = new ArrayDeque<Future<Chunk>>();
 	private int nextToSubmit = 0;
+	// Index of the next chunk to put in order
 	private int nextChunk = 0;
 	private final long firstBlockBit;
 	// Expected decompressed bytes per compressed byte, to size output buffers
 	private final AtomicInteger ratio = new AtomicInteger(4);
 
-	// Bit offset of the next block boundary to decode, and the output preceding it
+	// Bit offset of the next block boundary to decode, and the output preceding it.
+	// Volatile only so that compressedPosition() can be called from another thread.
 	private volatile long expectedBit;
 	private byte [] window = new byte[0];
 	private boolean finished = false;
 
+	// CRC32 and size of the output of the current member so far
 	private final CRC32 crc = new CRC32();
 	private long memberSize = 0;
 
+	// Output ready to be read, as ranges of chunk arrays (no copy)
 	private final ArrayDeque<byte []> segments = new ArrayDeque<byte []>();
 	private final ArrayDeque<int []> segmentRanges = new ArrayDeque<int []>();
 	private byte [] current = null;
@@ -73,6 +113,13 @@ public final class RapidGzipInputStream extends InputStream {
 	private int currentEnd;
 	private boolean closed = false;
 
+	/**
+	 * Opens a gzip file, checks its first header and starts decoding the first
+	 * chunks on {@code threads} worker threads.
+	 *
+	 * @throws ZipException if the file doesn't start with a gzip header
+	 * @throws EOFException if the file is empty
+	 */
 	public RapidGzipInputStream (Path file, int threads) throws IOException {
 		this(FileChannel.open(file, StandardOpenOption.READ), true, threads, DEFAULT_CHUNK_SIZE);
 	}
@@ -92,6 +139,8 @@ public final class RapidGzipInputStream extends InputStream {
 		this.source = this::readAt;
 		// Each chunk in flight holds its output, often all as 16 bit values: for FASTQ ~6x the chunk
 		// size as 16 bit values, then as bytes. Use up to a quarter of the heap for them.
+		// (A 2MB chunk, 2 per thread, ran a 512MB heap out of memory.) The 20x estimate assumes a
+		// FASTQ-like compression ratio: much more compressible data uses proportionally more.
 		long perChunk = (long) chunkSize * 20;
 		long budget = Runtime.getRuntime().maxMemory() / 4;
 		this.maxInFlight = (int) Math.max(2, Math.min(threads + 2, budget / perChunk));
@@ -109,6 +158,7 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 		expectedBit = firstBlockBit;
 
+		// Daemon threads, so an unclosed stream doesn't keep the JVM alive
 		pool = Executors.newFixedThreadPool(threads, r -> {
 			Thread t = new Thread(r, "rapidgzip");
 			t.setDaemon(true);
@@ -117,6 +167,10 @@ public final class RapidGzipInputStream extends InputStream {
 		submitChunks();
 	}
 
+	/**
+	 * Positional read, safe to call from several threads at once as it doesn't
+	 * use the channel position. Returns fewer bytes only at the end of the file.
+	 */
 	private byte [] readAt (long offset, int length) throws IOException {
 		int n = (int) Math.max(0, Math.min(length, fileSize - offset));
 		ByteBuffer buffer = ByteBuffer.allocate(n);
@@ -126,14 +180,19 @@ public final class RapidGzipInputStream extends InputStream {
 		return buffer.position() == n ? buffer.array() : java.util.Arrays.copyOf(buffer.array(), buffer.position());
 	}
 
+	/** Bit where chunk k's range starts, which is where chunk k-1 stops decoding (at the next boundary). */
 	private long chunkStartBit (int k) {
 		return k >= chunkCount ? Long.MAX_VALUE : (long) k * chunkSize * 8;
 	}
 
+	// Output buffer size for a chunk from the ratio seen so far, plus 1/8, so that it's
+	// rarely grown (a copy of the largest array in use)
 	private int sizeHint () {
 		return (int) Math.min(Integer.MAX_VALUE - 64, (long) chunkSize * ratio.get() * 9 / 8);
 	}
 
+	// Chunks being decoded and chunks decoded but not yet read both hold their output,
+	// so both count against maxInFlight
 	private void submitChunks () {
 		while (nextToSubmit < chunkCount && inFlight.size() + ordered.size() < maxInFlight) {
 			final int k = nextToSubmit++;
@@ -141,10 +200,17 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
-	/** Speculatively decodes chunk k, or returns null if no block boundary was found. */
+	/**
+	 * Speculatively decodes chunk k, or returns null if no block boundary was found.
+	 * Runs on a worker thread. Candidates from the finder are tried in order until
+	 * one decodes without error up to the next chunk; a false positive almost
+	 * always fails within a few symbols. A candidate that decodes but isn't the
+	 * real boundary is caught later by the start bit check in orderNext().
+	 */
 	private Chunk decodeChunk (int k) throws IOException {
 		long stopBit = chunkStartBit(k+1);
 		if (k == 0) {
+			// The first block start and its (empty) window are known: no markers
 			Chunk chunk = new DeflateDecoder(new BitReader(source, SEGMENT_SIZE)).decode(firstBlockBit, stopBit, new byte[0], sizeHint());
 			updateRatio(chunk);
 			return chunk;
@@ -152,6 +218,7 @@ public final class RapidGzipInputStream extends InputStream {
 
 		long start = (long) k * chunkSize;
 		int length = (int) Math.min(chunkSize, fileSize - start);
+		// Candidates are searched in this chunk only; the slack lets headers starting near its end be checked
 		byte [] data = readAt(start, length + HEADER_SLACK);
 		BlockFinder finder = new BlockFinder();
 		long from = 0;
@@ -170,11 +237,17 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
+	// Last ratio seen by any worker (a benign race), capped at 64 for the buffer sizes
 	private void updateRatio (Chunk chunk) {
 		long compressed = Math.max(1, (chunk.endBit - chunk.startBit) / 8);
 		ratio.set((int) Math.max(1, Math.min(64, (chunk.length() + compressed - 1) / compressed)));
 	}
 
+	/**
+	 * Waits for the speculative result of chunk nextChunk, or null if it failed.
+	 * A worker exception other than an Error isn't reported here: the range is
+	 * decoded sequentially, which reports a real problem with the data.
+	 */
 	private Chunk nextResult () throws IOException {
 		if (inFlight.isEmpty()) submitChunks();
 		Future<Chunk> future = inFlight.poll();
@@ -193,6 +266,8 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
+	// On the caller thread, from the known boundary with the known window: at least one block, then up
+	// to the first boundary at or after stopBit
 	private Chunk decodeSequentially (long stopBit) throws IOException {
 		sequentialDecodes++;
 		return new DeflateDecoder(new BitReader(source, SEGMENT_SIZE)).decode(expectedBit, stopBit, window, sizeHint());
@@ -209,9 +284,10 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
+	// Chunks put in order, waiting for their markers to be resolved and to be read
 	private final ArrayDeque<Ordered> ordered = new ArrayDeque<Ordered>();
 
-	// Chunks used as decoded speculatively, and sequential decodes when speculation failed
+	// For tests: chunks used as decoded speculatively, and sequential decodes when speculation failed
 	int speculativeChunks = 0;
 	int sequentialDecodes = 0;
 
@@ -222,11 +298,14 @@ public final class RapidGzipInputStream extends InputStream {
 	 */
 	private void orderNext () throws IOException {
 		if (nextChunk >= chunkCount) {
+			// All chunks used or dropped but the data hasn't ended: decode the rest
 			addOrdered(decodeSequentially(Long.MAX_VALUE));
 			return;
 		}
 
 		Chunk chunk = nextResult();
+		// The correctness check: decoding the known stream reached exactly this chunk's
+		// start, so it's a real block boundary and its output is what a sequential decoder gives
 		if (chunk != null && chunk.startBit == expectedBit) {
 			nextChunk++;
 			if (nextChunk > 1) speculativeChunks++;
@@ -234,12 +313,16 @@ public final class RapidGzipInputStream extends InputStream {
 			return;
 		}
 
-		// Speculation failed: decode sequentially up to its start, or else over the whole chunk
+		// Speculation failed: decode sequentially up to its start, or else over the whole chunk.
+		// A start after expectedBit is usually a real boundary the previous chunk's decode
+		// stopped short of (the first boundary was a stored or fixed block, which the finder
+		// doesn't look for). A start before it was a false positive. Each pass decodes at
+		// least one block, so this always makes progress.
 		boolean usable = chunk != null && chunk.startBit > expectedBit;
 		Chunk sequential = decodeSequentially(usable ? chunk.startBit : chunkStartBit(nextChunk+1));
 		addOrdered(sequential);
 		if (usable && sequential.endBit == chunk.startBit && !finished) {
-			// It matches now
+			// It matches now: put it back as the head result for chunk nextChunk
 			inFlight.addFirst(java.util.concurrent.CompletableFuture.completedFuture(chunk));
 		}
 		else {
@@ -247,6 +330,11 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
+	/**
+	 * Appends a chunk to the output order. Only the last 32KB are resolved here, on
+	 * the caller thread, as the next chunk needs them as its window; resolving the
+	 * whole marker part goes to the pool so the caller can move on to the next chunk.
+	 */
 	private void addOrdered (Chunk chunk) throws IOException {
 		final byte [] before = window;
 		window = chunk.windowAfter(before);
@@ -289,6 +377,7 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
+	// A chunk's output is its resolved marker part followed by its byte part
 	private void emit (Chunk chunk, byte [] resolved) throws IOException {
 		addSegment(resolved, 0, resolved.length);
 		addSegment(chunk.bytes, chunk.bytesFrom, chunk.bytesTo);
@@ -302,7 +391,11 @@ public final class RapidGzipInputStream extends InputStream {
 		}
 	}
 
-	/** Updates the CRC32 and size of the current member and checks them at each member end. */
+	/**
+	 * Updates the CRC32 and size of the current member and checks them at each member end.
+	 * Member ends are output offsets within the chunk, which may fall in either part.
+	 * Runs on the caller thread, in output order, as CRC32 can't be combined here.
+	 */
 	private void checkMembers (Chunk chunk, byte [] resolved) throws IOException {
 		int m = 0;
 		long offset = 0;
@@ -365,7 +458,11 @@ public final class RapidGzipInputStream extends InputStream {
 		return n;
 	}
 
-	/** How far decompression has got through the compressed file, in bytes, for progress reporting. */
+	/**
+	 * How far decompression has got through the compressed file, in bytes, for progress reporting.
+	 * Chunks are ordered ahead of the reader, so this can lead what has been read by a few chunks.
+	 * Can be called from any thread.
+	 */
 	public long compressedPosition () {
 		return Math.min(fileSize, expectedBit >>> 3);
 	}
@@ -380,6 +477,11 @@ public final class RapidGzipInputStream extends InputStream {
 		return current == null ? 0 : currentEnd - currentPos;
 	}
 
+	/**
+	 * Stops the workers and closes the file. Doesn't wait for them: a worker still
+	 * decoding fails on the closed (or, being interrupted, closed-by-interrupt)
+	 * channel and its result is dropped.
+	 */
 	@Override
 	public void close () throws IOException {
 		if (closed) return;

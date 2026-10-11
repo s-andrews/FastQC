@@ -8,6 +8,12 @@ package rapidgzip;
  * for byte i of that unknown window. Once the window is known
  * {@link #resolve(byte[])} turns them into bytes. The rest of the output, once
  * no marker can be referenced any more, is in {@link #bytes}.
+ *
+ * Built by a worker, then read by the reader thread (windowAfter) and resolved
+ * on a worker; fields are final apart from markers, which are released after
+ * resolving as they are the bulk of the memory in flight (2 bytes per output
+ * byte). Resolving is a plain lookup, so it gives exactly the bytes a decoder
+ * knowing the window would have produced.
  */
 final class Chunk {
 
@@ -68,7 +74,8 @@ final class Chunk {
 
 	/** Resolves markers[from, to) into dest. */
 	void resolve (byte [] window, int from, int to, byte [] dest, int offset) throws DataFormatError {
-		// Markers index the last 32KB of output before the chunk; a shorter window is right aligned
+		// Markers index the last 32KB of output before the chunk; a shorter window is right aligned.
+		// A marker before the start of a short window is a distance a sequential decoder rejects too.
 		int shift = DeflateDecoder.WINDOW - window.length;
 		for (int i = from; i < to; i++) {
 			char c = markers[i];
@@ -83,7 +90,11 @@ final class Chunk {
 		}
 	}
 
-	/** The last up to 32KB of output up to the end of this chunk, given the window preceding it. */
+	/**
+	 * The last up to 32KB of output up to the end of this chunk, given the window preceding it.
+	 * Resolves only the markers it needs, so the next chunk's window is known without waiting
+	 * for the whole chunk to be resolved: this is what lets resolving run in parallel.
+	 */
 	byte [] windowAfter (byte [] window) throws DataFormatError {
 		int fromBytes = bytesTo - bytesFrom;
 		int fromMarkers = markersTo - markersFrom;

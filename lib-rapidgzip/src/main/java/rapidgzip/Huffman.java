@@ -9,6 +9,10 @@ package rapidgzip;
  * to a second level indexed by the following bits. Bit patterns which aren't a
  * code (only possible in the incomplete codes deflate allows) decode to
  * {@code invalidSymbol}, which the decoder rejects.
+ *
+ * One lookup decodes a code of up to {@code primaryBits} bits, which is most
+ * symbols; the entry's length is the full code length, so the caller consumes
+ * it from the original bits whichever level it came from.
  */
 final class Huffman {
 
@@ -38,6 +42,11 @@ final class Huffman {
 		return codes == 1 && counts[1] == 1;
 	}
 
+	/**
+	 * Builds the decoding table for the code lengths lengths[offset, offset+n).
+	 *
+	 * @throws DataFormatError if the lengths aren't a valid code (see isValid)
+	 */
 	static int [] build (byte [] lengths, int offset, int n, int primaryBits, int invalidSymbol, boolean allowEmpty) throws DataFormatError {
 		int [] counts = new int[MAX_BITS+1];
 		for (int i = 0; i < n; i++) counts[lengths[offset+i]]++;

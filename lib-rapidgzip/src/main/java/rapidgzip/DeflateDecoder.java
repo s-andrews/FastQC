@@ -12,11 +12,25 @@ import java.util.Arrays;
  * boundary) output starts as 16 bit values with markers for the unknown window
  * bytes, and switches to plain bytes once the last 32KB of output contain no
  * marker, as nothing before them can be referenced any more.
+ *
+ * Marker mode: the output buffer starts with WINDOW values 256..256+32767
+ * standing for the unknown window, so a back reference of any valid distance
+ * just copies values, markers included, and is resolved later by
+ * {@link Chunk}. Output before {@link #lastMarker} may contain markers, output
+ * after it doesn't. In FASTQ about 55% of the output refers back into the
+ * window, so most chunks never leave marker mode.
+ *
+ * Stops only at block boundaries (checked before each block, after the first),
+ * so the end bit of a chunk is always a real boundary when its start was one.
+ * Member boundaries are decoded inline: trailer, then the next gzip header.
+ * One instance per decode, used by a single thread.
  */
 final class DeflateDecoder {
 
 	static final int WINDOW = 32768;
 
+	// Primary table sizes (see Huffman); longer codes go through a second level.
+	// Out of range symbols for invalid bit patterns, rejected when decoded.
 	private static final int LIT_BITS = 10;
 	private static final int LIT_MASK = (1 << LIT_BITS) - 1;
 	private static final int DIST_BITS = 8;
@@ -68,6 +82,7 @@ final class DeflateDecoder {
 	private int [] memberCrcs = new int[0];
 	private int [] memberSizes = new int[0];
 
+	// Expected output size, to allocate the output buffer once (growing copies it)
 	private int sizeHint;
 
 	private final byte [] codeLengths = new byte[320];
@@ -82,6 +97,8 @@ final class DeflateDecoder {
 	 * or after stopBit, or the end of the data.
 	 *
 	 * @param window the up to 32KB of output preceding startBit, or null if unknown
+	 * @throws DataFormatError on invalid data, which for a guessed startBit means it wasn't a block start
+	 * @throws EOFException if the data ends before a block boundary at or after stopBit
 	 */
 	Chunk decode (long startBit, long stopBit, byte [] window, int sizeHint) throws IOException {
 		this.sizeHint = Math.max(sizeHint, 1 << 16);
@@ -104,6 +121,7 @@ final class DeflateDecoder {
 		boolean endOfData = false;
 		boolean first = true;
 		while (true) {
+			// At least one block, so a sequential decode always makes progress
 			if (!first && in.position() >= stopBit) break;
 			first = false;
 
@@ -114,6 +132,8 @@ final class DeflateDecoder {
 				case 2: dynamicBlock(); break;
 				default: throw new DataFormatError("Invalid block type");
 			}
+			// BitReader supplies zeros past the end of the data: a block that only
+			// decoded thanks to them is a truncated stream
 			if (in.pastEnd()) throw new EOFException("Unexpected end of compressed data");
 
 			if ((header & 1) != 0) {
@@ -122,6 +142,8 @@ final class DeflateDecoder {
 				int crc = readInt32();
 				int size = readInt32();
 				if (in.pastEnd()) throw new EOFException("Unexpected end of compressed data");
+				// Checked by the reader, which sees the output in order. The output decoded so
+				// far stays the window of the next member, which valid data never references.
 				addMemberEnd(crc, size);
 				if (in.atEnd() || !GzipHeader.skip(in)) {
 					// Like GZIPInputStream, anything after the last member that isn't one is ignored
@@ -132,6 +154,7 @@ final class DeflateDecoder {
 		}
 
 		long endBit = in.position();
+		// Output is chars[WINDOW, charPos) if any marker mode output, then bytes[bytesFrom, bytePos)
 		if (markerMode) {
 			return new Chunk(startBit, endBit, endOfData, chars, WINDOW, charPos, new byte[0], 0, 0, memberEnds, memberCrcs, memberSizes);
 		}
@@ -159,7 +182,12 @@ final class DeflateDecoder {
 		memberSizes[n] = size;
 	}
 
-	/** Switches to byte mode, the last WINDOW values being free of markers. */
+	/**
+	 * Switches to byte mode, the last WINDOW values being free of markers. They
+	 * are copied as the byte mode window, and stay in chars as output too, so the
+	 * chunk's output is chars[WINDOW, charPos) then bytes[WINDOW, bytePos).
+	 * Byte mode is cheaper: half the memory and no marker tracking per copy.
+	 */
 	private void switchToBytes () {
 		markerMode = false;
 		bytes = new byte[Math.max(sizeHint - (charPos - WINDOW), 1 << 16) + WINDOW];
@@ -177,6 +205,7 @@ final class DeflateDecoder {
 			in.readBytes(data, 0, length);
 			ensureChars(length);
 			for (int i = 0; i < length; i++) chars[charPos++] = (char) (data[i] & 0xFF);
+			// Stored data is literal, so it can push the markers out of the window
 			if (charPos - lastMarker >= WINDOW) switchToBytes();
 		}
 		else {
@@ -200,7 +229,8 @@ final class DeflateDecoder {
 		for (int i = 0; i < precodes; i++) {
 			precodeLengths[PRECODE_ORDER[i]] = (byte) in.read(3);
 		}
-		// Only complete precodes are valid, so all codes fit in the 7 bit table
+		// Only complete precodes are valid, so all codes fit in the 7 bit table.
+		// Same validity rules as zlib, so the same streams are rejected.
 		int [] precode = Huffman.build(precodeLengths, 0, 19, 7, INVALID_PRECODE, false);
 		if (!Huffman.isValid(precodeLengths, 0, 19, false) || hasSingleCode(precodeLengths)) throw new DataFormatError("Invalid code lengths set");
 
@@ -267,6 +297,12 @@ final class DeflateDecoder {
 	/**
 	 * Marker mode decoding. Returns true at the end of the block, or false
 	 * after switching to byte mode to continue the block there.
+	 *
+	 * Hot loop: state is kept in locals and written back in the finally block.
+	 * A match records where it ended if it copied any marker (OR of the values
+	 * copied >= 256), which is all lastMarker needs; literals never are markers.
+	 * Each refill gives >= 56 bits, enough for a literal/length code, its extra
+	 * bits, a distance code and its extra bits (at most 48).
 	 */
 	private boolean decodeChars (int [] lit, int [] dist) throws IOException {
 		char [] out = chars;
@@ -325,6 +361,7 @@ final class DeflateDecoder {
 				// The WINDOW markers at the start of the output make any distance <= 32KB valid
 				int from = op - distance;
 				if (from < 0) throw new DataFormatError("Invalid distance too far back");
+				// Element by element, as overlapping copies (distance < length) must repeat the pattern
 				int seen = 0;
 				for (int k = 0; k < length; k++) {
 					char c = out[from + k];
@@ -344,6 +381,7 @@ final class DeflateDecoder {
 		}
 	}
 
+	/** Byte mode decoding to the end of the block: the window is known, as in a plain inflater. */
 	private void decodeBytes (int [] lit, int [] dist) throws IOException {
 		byte [] out = bytes;
 		int op = bytePos;
@@ -390,8 +428,10 @@ final class DeflateDecoder {
 				used += extra;
 				in.consume(used);
 
+				// out starts with the (up to 32KB) window, so this rejects what zlib rejects
 				int from = op - distance;
 				if (from < 0) throw new DataFormatError("Invalid distance too far back");
+				// arraycopy only when source and destination don't overlap
 				if (distance >= length) {
 					System.arraycopy(out, from, out, op, length);
 				}

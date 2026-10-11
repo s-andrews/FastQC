@@ -17,6 +17,9 @@ final class GzipHeader {
 	/**
 	 * Skips a gzip header at the current, byte aligned, position. Returns false if
 	 * there's no valid header there, including a header CRC mismatch.
+	 * Truncation also returns false: the reader's zero padding ends FNAME/FCOMMENT,
+	 * then pastEnd() is checked. After the first member, false means the end of
+	 * the data, as GZIPInputStream ignores what follows.
 	 */
 	static boolean skip (BitReader in) throws IOException {
 		try {

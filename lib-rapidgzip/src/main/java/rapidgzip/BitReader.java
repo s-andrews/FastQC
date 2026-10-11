@@ -10,6 +10,12 @@ import java.nio.ByteOrder;
  * Least significant bit first reader over compressed data, as deflate needs.
  * Data is loaded on demand from a {@link Source} by absolute file offset, so a
  * reader can start at any bit of the file.
+ *
+ * Bits are buffered in a 64 bit word, refilled 8 bytes at a time with one
+ * unaligned little endian load. Past the end of the data it supplies zero
+ * bytes instead of failing in the middle of a symbol; callers check
+ * {@link #pastEnd()} at block and trailer boundaries. Not thread safe: one
+ * reader per decode.
  */
 final class BitReader {
 
@@ -36,7 +42,8 @@ final class BitReader {
 	// Zero bytes supplied past the end of the data
 	private int padding;
 
-	// Bit buffer, the next bit to read is the lowest
+	// Bit buffer, the next bit to read is the lowest. Package private so the decoder's
+	// hot loops can read it directly after a refill.
 	long bits;
 	int count;
 
@@ -77,7 +84,11 @@ final class BitReader {
 		}
 	}
 
-	/** Makes at least 56 bits available. */
+	/**
+	 * Makes at least 56 bits available. The fast path assumes count < 64, which
+	 * holds as every caller consumes bits between refills (the slow path can
+	 * leave count at 64).
+	 */
 	void refill () throws IOException {
 		if (pos + 8 <= limit) {
 			long word = (long) LONG_LE.get(data, pos);
@@ -105,6 +116,7 @@ final class BitReader {
 		}
 	}
 
+	// Appends the next segment to the unread bytes (earlier bytes are dropped)
 	private boolean loadMore () throws IOException {
 		if (endOfData) return false;
 		byte [] more = source.read(base + limit, segmentSize);
