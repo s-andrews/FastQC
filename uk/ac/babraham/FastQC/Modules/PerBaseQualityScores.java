@@ -37,7 +37,8 @@ public class PerBaseQualityScores extends AbstractQCModule {
 	public QualityCount [] qualityCounts = new QualityCount[0];
 	// Count of each quality character at each position: index position * QualityCount.MAX_CHAR + char.
 	// A single increment into one array per base, instead of a call on a separate
-	// QualityCount object per position. Same memory as those objects' arrays.
+	// QualityCount object per position. Takes MAX_CHAR counts per position, more
+	// than QualityCount's range of characters seen, for one table instead of many.
 	private long [] qualities = new long[0];
 	private int maxLength = 0;
 	double [] means = null;

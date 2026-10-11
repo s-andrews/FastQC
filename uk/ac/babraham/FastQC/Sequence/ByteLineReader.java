@@ -78,7 +78,8 @@ class ByteLineReader {
 		return readLine(first);
 	}
 
-	// skipIfFirst is compared with the line's first byte; readLine passes -1
+	// skipIfFirst is compared with the line's first byte as 0-255 (bytes are signed,
+	// so unmasked a 0xFF byte would equal -1); readLine passes -1, matching none
 	private byte [] readLine (int skipIfFirst) throws IOException {
 		// Bytes from pos already known to hold no line end, so that after a
 		// fill the search resumes where it stopped instead of rescanning
@@ -93,7 +94,7 @@ class ByteLineReader {
 			}
 			int end = findLineEnd(pos + scanned);
 			if (end >= 0) {
-				byte [] line = end > pos && buffer[pos] == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, end);
+				byte [] line = end > pos && (buffer[pos] & 0xFF) == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, end);
 				if (buffer[end] == '\r') skipLF = true;
 				pos = end + 1;
 				return line;
@@ -103,7 +104,7 @@ class ByteLineReader {
 			if (!fill()) {
 				if (pos == limit) return null;
 				// Last line without a terminator
-				byte [] line = buffer[pos] == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, limit);
+				byte [] line = (buffer[pos] & 0xFF) == skipIfFirst ? SKIPPED : Arrays.copyOfRange(buffer, pos, limit);
 				pos = limit;
 				return line;
 			}
