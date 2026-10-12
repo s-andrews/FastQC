@@ -48,9 +48,7 @@
   </xsl:template>
 
 <xsl:template match="div[@class='module']">
-     <fo:block text-align="center" page-break-before="always"  font-size="48pt"> 
-           <xsl:value-of select="h2"/>
-      </fo:block>
+     <fo:block text-align="center" page-break-before="always"  font-size="48pt"><xsl:value-of select="normalize-space(h2/div[@class='module-title'])"/></fo:block>
 	<xsl:apply-templates select="p/img|table"/>
 
 </xsl:template>

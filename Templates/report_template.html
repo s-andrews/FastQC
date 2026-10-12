@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{TITLE}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style type="text/css">
+{{CSS_CONTENT}}
+    </style>
+
+</head>
+<body>
+    <!-- Hidden checkbox for mobile menu toggle -->
+    <input type="checkbox" id="menu-toggle" class="menu-toggle-input" />
+
+    <!-- Mobile navigation bar (hidden on desktop) -->
+    <div class="mobile-nav">
+        <label for="menu-toggle" class="menu-toggle">
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+            <span class="hamburger"></span>
+        </label>
+        <div class="mobile-title">
+            {{FASTQC_ICON_SVG_MOBILE}}
+            <span class="mobile-title-app">FastQC:</span>
+            <span class="mobile-title-filename">{{FILENAME}}</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar with header and navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="header-title"><a href="#" alt="Back to top">
+                    {{FASTQC_ICON_SVG_SIDEBAR}}FastQC Report
+                </a></h1>
+                <div class="header-filename">
+                    <p><a href="#" alt="Back to top">{{DATE}}</a></p>
+                    <p><strong><a href="#" alt="Back to top">{{FILENAME}}</a></strong></p>
+                </div>
+            </div>
+
+            <nav class="navigation">
+                <h2>Summary</h2>
+                <ul>
+{{SUMMARY_ITEMS}}
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main content area -->
+        <main class="main">
+{{MODULE_CONTENT}}
+
+            <footer class="footer">
+                Produced by <a href="http://www.bioinformatics.babraham.ac.uk/projects/fastqc/" target="_blank">FastQC</a>
+                (version {{VERSION}}).
+            </footer>
+        </main>
+    </div>
+</body>
+</html>

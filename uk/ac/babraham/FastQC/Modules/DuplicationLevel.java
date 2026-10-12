@@ -237,7 +237,7 @@ public class DuplicationLevel extends AbstractQCModule {
 	}
 
 	public String name() {
-		return "Sequence Duplication Levels";
+		return "Sequence duplication levels";
 	}
 
 	public void processSequence(Sequence sequence) {
