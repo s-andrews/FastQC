@@ -48,6 +48,10 @@ public class GCModel {
 		}
 				
 		
+		// A percentage has the same weight for every GC count that claims it.
+		// Share those immutable values while keeping each count's array separate.
+		GCModelValue [] valuesByPercentage = new GCModelValue[101];
+
 		// We now do a second pass to make up the model using the weightings
 		// we calculated previously.
 		
@@ -66,7 +70,10 @@ public class GCModel {
 			GCModelValue [] modelValues = new GCModelValue [(highPercentage-lowPercentage)+1];
 						
 			for (int p=lowPercentage;p<=highPercentage;p++) {
-				modelValues[p-lowPercentage] = new GCModelValue(p, 1d/claimingCounts[p]);
+				if (valuesByPercentage[p] == null) {
+					valuesByPercentage[p] = new GCModelValue(p, 1d/claimingCounts[p]);
+				}
+				modelValues[p-lowPercentage] = valuesByPercentage[p];
 			}
 			models[pos] = modelValues;
 		}
