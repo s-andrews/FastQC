@@ -194,6 +194,14 @@ public class FastQFile implements SequenceFile {
 				checkColorspace(seq);
 			}
 
+			// The checks above catch a file that ends between lines, but not one cut off part
+			// way through its last line. A quality string shorter or longer than its sequence
+			// catches that (and other corruption). Colourspace files are left alone because
+			// conventions for the primer base's quality vary.
+			if (!isColorspace() && quality.length() != seq.length()) {
+				throw new SequenceFormatException("Quality string length ("+quality.length()+") doesn't match sequence length ("+seq.length()+") at line "+lineNumber+".  Your file is probably truncated or corrupt");
+			}
+
 			if (isColorspace()) {
 				nextSequence = new Sequence(this,convertColorspaceToBases(seq.toUpperCase()), seq.toUpperCase(), quality, id);
 			} 
